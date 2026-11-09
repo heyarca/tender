@@ -350,9 +350,11 @@ export function noEligibleEntry(
   fromId: ProviderId | null,
   fromReasons: readonly ExclusionReason[],
   triggerText?: string,
+  cancelledPendingId?: ProviderId | null,
 ): EntryFields {
   const details: string[] = [];
   if (triggerText) details.push(`Trigger: ${sentence(triggerText)}`);
+  if (cancelledPendingId) details.push(`Scheduled switch to ${providerName(marketId, cancelledPendingId)} cancelled.`);
   if (fromId) details.push(`${providerName(marketId, fromId)} ${failureText(fromReasons)}.`);
   details.push(NO_ELIGIBLE_TEXT);
   return {

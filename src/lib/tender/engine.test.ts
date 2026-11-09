@@ -200,6 +200,21 @@ describe("no eligible provider", () => {
     expect(state.markets[W].requests[0]).toMatchObject({ status: "ok", providerId: "cloudflare" });
   });
 
+  it("mentions the cancelled scheduled switch in the no-eligible entry", () => {
+    // A switch back to Together is pending when the policy excludes every provider.
+    const setup = run(
+      createInitialState(),
+      update(W, "together", { p95LatencyMs: 640 }, E + 1_000),
+      update(W, "together", { p95LatencyMs: 210 }, E + 3_000),
+    );
+    expect(setup.markets[W].route.pending).not.toBeNull();
+    const state = run(setup, { type: "set-policy", marketId: W, patch: { maxPrice: 15 }, now: E + 4_000 });
+    expect(active(state, W)).toBeNull();
+    expect(state.markets[W].route.pending).toBeNull();
+    const entry = latestOf(state, W, "no-eligible")!;
+    expect(entry.details).toContain("Scheduled switch to Together cancelled.");
+  });
+
   it("never routes to a provider that fails the policy", () => {
     const state = run(createInitialState(), { type: "set-policy", marketId: B, patch: { maxP95LatencyMs: 30 }, now: E + 1_000 });
     expect(active(state, B)).toBeNull();
@@ -209,6 +224,31 @@ describe("no eligible provider", () => {
 describe("pinned mode", () => {
   const pinned = () =>
     run(createInitialState(), { type: "set-routing-mode", marketId: W, mode: { kind: "pinned", providerId: "together" }, now: E + 1_000 });
+
+  it("cancels the pending optimization switch when a provider is pinned", () => {
+    // Together fails over to DeepInfra at E+1s, is restored at E+3s, and a switch back is scheduled for E+11s.
+    const setup = run(
+      createInitialState(),
+      update(W, "together", { p95LatencyMs: 640 }, E + 1_000),
+      update(W, "together", { p95LatencyMs: 210 }, E + 3_000),
+    );
+    expect(setup.markets[W].route.pending).toEqual({
+      providerId: "together",
+      executeAt: E + 1_000 + SWITCH_COOLDOWN_MS,
+      scheduledAt: E + 3_000,
+    });
+    const state = run(setup, { type: "set-routing-mode", marketId: W, mode: { kind: "pinned", providerId: "fireworks" }, now: E + 4_000 });
+    expect(state.markets[W].route.pending).toBeNull();
+    expect(active(state, W)).toBe("fireworks");
+    const entry = latestOf(state, W, "switch-cancelled")!;
+    expect(entry.toProviderId).toBe("together");
+    expect(entry.title).toBe("Scheduled switch to Together cancelled");
+
+    // The pinned route holds after the pending switch would have been due.
+    const later = run(state, { type: "tick", now: E + 12_000 });
+    expect(active(later, W)).toBe("fireworks");
+    expect(later.markets[W].route.pending).toBeNull();
+  });
 
   it("surfaces a violation without switching", () => {
     const state = run(pinned(), update(W, "together", { p95LatencyMs: 640 }, E + 2_000));
