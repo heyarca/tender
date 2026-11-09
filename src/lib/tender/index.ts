@@ -1,7 +1,8 @@
 /**
  * Server-safe entry point of the Tender engine: types, static market
- * definitions, formatting, evaluation, the pure reducer, and selectors.
- * Client hooks live in `@/lib/tender/client`.
+ * definitions, formatting, evaluation, the pure reducer, selectors, and
+ * stateless route selection for Route Handlers. Never imports React or zustand.
+ * Client hooks live in `@/lib/tender/client`. Reference: `./README.md`.
  */
 export type * from "./types";
 
@@ -43,7 +44,7 @@ export {
   successRateOf,
 } from "./evaluate";
 export type { RankableProvider } from "./evaluate";
-export { pinViolationText, providerName } from "./activity";
+export { NO_ELIGIBLE_TEXT, pinViolationText, providerName, recommendedSummaryText } from "./activity";
 export { createInitialState, rebaseState, reduce } from "./engine";
 export type { InitialStateOptions, TenderAction } from "./engine";
 export { evaluateMarketState } from "./router";
@@ -58,15 +59,16 @@ export {
 } from "./selectors";
 export { parsePersistedPolicies, policiesChanged, serializePolicies } from "./persistence";
 export type { PersistedPolicies } from "./persistence";
-export { sanitizePolicy, sanitizePolicyPatch, sanitizeConditionsPatch } from "./sanitize";
+export { sanitizeConditionsPatch, sanitizeMode, sanitizePolicy, sanitizePolicyPatch } from "./sanitize";
 export { getApiSnippets, getResponseJson } from "./snippets";
 export { getInitialMarketView, getInitialState } from "./sample-state";
-export { BTC_BASELINE_PRICE, btcPriceAt, SF_BASELINE, SF_LOCATION, weatherAt } from "./signals";
+export { BTC_BASELINE_PRICE, btcPriceAt, conditionLabel, SF_BASELINE, SF_LOCATION, weatherAt } from "./signals";
 export type { WeatherState } from "./signals";
 export {
   anchoredBtcPriceAt,
   anchoredWeatherAt,
   btcProviderPrice,
+  dewPointF,
   sampleDataAge,
   sampleLatency,
   sampleRequest,

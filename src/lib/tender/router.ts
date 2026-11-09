@@ -185,6 +185,10 @@ function reconcilePinned(
       pinViolationEntry(market.id, pinnedId, pinned.reasons, evaluation.recommendedId),
     );
   }
+  if (market.route.pinViolation && market.route.pinViolation.providerId !== pinnedId) {
+    // A different provider is pinned now; the old violation no longer applies.
+    return { ...market, route: { ...market.route, pinViolation: null } };
+  }
   if (market.route.pinViolation) {
     return pushActivity(
       ctx,

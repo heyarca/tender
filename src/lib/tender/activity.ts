@@ -33,7 +33,8 @@ function joinWords(words: string[]): string {
   return `${words.slice(0, -1).join(", ")} and ${words[words.length - 1]}`;
 }
 
-const lowerFirst = (text: string) => text.charAt(0).toLowerCase() + text.slice(1);
+/** Lowercase the first letter unless it starts an acronym ("P95 latency" stays). */
+const lowerFirst = (text: string) => (/^[A-Z][a-z]/.test(text) ? text.charAt(0).toLowerCase() + text.slice(1) : text);
 
 /** "failed the latency check: P95 640 ms exceeds 400 ms" (all failing checks). */
 export function failureText(reasons: readonly ExclusionReason[]): string {
