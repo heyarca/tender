@@ -165,8 +165,6 @@ export function ProvidersTable({ view, selectedId, onSelect }: ProvidersTablePro
               transition={LAYOUT_TRANSITION}
               colSpan={COLUMN_COUNT}
               data-slot="excluded-divider"
-              // Let the sticky label below take the full-width cell as its containing block.
-              className="[&>td>div>span:first-child]:contents"
             >
               {/* Sticky on small screens so the label stays beside the sticky provider column while scrolling. */}
               <span className="flex items-center gap-1.5 max-md:sticky max-md:left-4">
