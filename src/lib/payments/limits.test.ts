@@ -19,7 +19,7 @@ describe("payer controls", () => {
   });
   it("rejects unknown provider ids with a typed safety error", () => {
     expect(() => assertSafePayment({ ...safe, extra: { providerId: "nosuch" } })).toThrow(PaymentSafetyError);
-    expect(() => assertSafePayment({ ...safe, payTo: PAYEES.parasail, extra: { providerId: "nosuch" } })).toThrow(PaymentSafetyError);
+    expect(() => assertSafePayment({ ...safe, payTo: PAYEES["the-zone-bio"], extra: { providerId: "nosuch" } })).toThrow(PaymentSafetyError);
     expect(() => assertSafePayment({ ...safe, extra: { providerId: "nosuch" } })).toThrow("Untrusted payment recipient");
   });
   it("allows one in-flight request and six attempts per minute", () => {
