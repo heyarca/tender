@@ -3,9 +3,8 @@
 import { useId, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { cn } from "@/lib/utils";
 import { ChartTooltip } from "./ChartTooltip";
-import { providerColor } from "./colors";
 import { formatClock, formatUsd } from "./format";
-import { ProviderGlyph } from "./ProviderGlyph";
+import { ProviderLogo } from "@/components/ui/provider-logo";
 import { clamp, extent, monotonePath, nearestIndex, niceAxis, scaleLinear, timeTicks } from "./scale";
 import type { PricePoint, VizProviders } from "./types";
 import { useAnimatedDomain, type ChartDomain } from "./use-animated-domain";
@@ -79,7 +78,6 @@ export function PriceChart({
   const points = isSorted(input) ? input : [...input].sort((a, b) => a.t - b.t);
   const pointTimes = points.map((p) => p.t);
   const okPoints = points.filter(isOk);
-  const providerIds = providers ? Object.keys(providers) : [];
 
   const priceExtent = extent(okPoints.map((p) => p.price));
   const axis = niceAxis(priceExtent?.[0] ?? 0, priceExtent?.[1] ?? 1, 4);
@@ -370,7 +368,7 @@ export function PriceChart({
               title={provider ? `Switched to ${provider.name}` : undefined}
             >
               {provider?.logo ? (
-                <ProviderGlyph name={provider.name} logo={provider.logo} size={14} />
+                <ProviderLogo src={provider.logo} name={provider.name} size={16} />
               ) : (
                 <span className="max-w-20 truncate rounded-sm bg-card px-1 text-[10px] leading-4 text-muted-foreground">
                   {provider?.name ?? m.providerId}
@@ -391,7 +389,6 @@ export function PriceChart({
           zoneLabel={zoneLabel}
           formatPrice={formatPrice}
           provider={providerOf(hovered.providerId)}
-          fallbackColor={hovered.providerId ? providerColor(hovered.providerId, providerIds) : undefined}
         />
       )}
     </div>
@@ -412,7 +409,6 @@ function PriceTooltip({
   zoneLabel,
   formatPrice,
   provider,
-  fallbackColor,
 }: {
   point: PricePoint;
   x: number;
@@ -422,8 +418,7 @@ function PriceTooltip({
   timeZone: string;
   zoneLabel: string;
   formatPrice: (price: number) => string;
-  provider?: { name: string; logo?: string; color?: string };
-  fallbackColor?: string;
+  provider?: { name: string; logo?: string };
 }) {
   const left = x + 12 + TOOLTIP_WIDTH > width ? x - 12 - TOOLTIP_WIDTH : x + 12;
   const top = clamp(y - TOOLTIP_HEIGHT / 2, 0, Math.max(0, height - TOOLTIP_HEIGHT));
@@ -443,12 +438,7 @@ function PriceTooltip({
       </div>
       {(provider || point.providerId) && (
         <div className="mt-1 flex items-center gap-1.5 text-foreground">
-          <ProviderGlyph
-            name={provider?.name ?? point.providerId ?? ""}
-            logo={provider?.logo}
-            color={provider?.color ?? fallbackColor}
-            size={14}
-          />
+          <ProviderLogo src={provider?.logo} name={provider?.name ?? point.providerId ?? ""} size={16} />
           <span className="truncate">{provider?.name ?? point.providerId}</span>
           {point.id && <span className="ml-auto font-mono text-[11px] text-muted-foreground">{point.id}</span>}
         </div>
