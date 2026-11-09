@@ -237,7 +237,7 @@ describe("page helpers", () => {
 
   it("links the TopNav to the market, its sections, and the API dialog", () => {
     expect(topNavLinks("btc-usd").map((link) => link.href)).toEqual([
-      "/markets/btc-usd",
+      "/markets",
       "#providers",
       "#routing",
       "#payments",

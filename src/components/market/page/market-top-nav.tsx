@@ -7,7 +7,6 @@ import { TopNav, type TopNavLink } from "@/components/shell/top-nav";
 import { Button } from "@/components/ui/button";
 import { focusSection, MARKET_SECTIONS, type MarketSectionId } from "@/components/market/market-ui";
 import type { MarketId } from "@/lib/tender";
-import { marketHref } from "./routes";
 
 /** Hash of the TopNav link that opens the API dialog. */
 export const API_HASH = "#api";
@@ -18,10 +17,10 @@ export function isSectionId(value: string): value is MarketSectionId {
   return SECTION_IDS.has(value);
 }
 
-/** TopNav links: the market itself, its sections, and the API dialog. */
+/** TopNav links: the API directory, this market's sections, and the API dialog. */
 export function topNavLinks(marketId: MarketId): TopNavLink[] {
   return [
-    { label: "Markets", href: marketHref(marketId) },
+    { label: "Markets", href: "/markets" },
     { label: "Providers", href: "#providers" },
     { label: "Routing", href: "#routing" },
     { label: "Payments", href: "#payments" },
@@ -37,15 +36,10 @@ export interface MarketTopNavProps {
   onRun: () => void;
 }
 
-function scrollToTop() {
-  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
-}
-
 /**
  * The shared `TopNav` wired to the market page. Section links scroll to the section and move
- * focus to its heading, "API" opens the API dialog, and "Markets" returns to the top of the
- * current market. Plain hrefs keep the links usable in a new tab.
+ * focus to its heading, "API" opens the API dialog, and "Markets" opens the API directory.
+ * Plain hrefs keep the links usable in a new tab.
  */
 export function MarketTopNav({ marketId, onSearch, onOpenApi, onRun }: MarketTopNavProps) {
   const links = useMemo(() => topNavLinks(marketId), [marketId]);
@@ -63,9 +57,6 @@ export function MarketTopNav({ marketId, onSearch, onOpenApi, onRun }: MarketTop
     } else if (href.startsWith("#") && isSectionId(href.slice(1))) {
       event.preventDefault();
       focusSection(href.slice(1) as MarketSectionId);
-    } else if (href === marketHref(marketId)) {
-      event.preventDefault();
-      scrollToTop();
     }
   };
 
@@ -73,7 +64,6 @@ export function MarketTopNav({ marketId, onSearch, onOpenApi, onRun }: MarketTop
     <div className="contents" onClickCapture={onClickCapture}>
       <TopNav
         links={links}
-        activeHref={marketHref(marketId)}
         homeHref="/landing"
         onSearch={onSearch}
         searchLabel="Search"
