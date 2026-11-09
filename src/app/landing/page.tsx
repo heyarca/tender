@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AgentBanner } from "@/components/landing/AgentBanner";
 import { ClosingSection } from "@/components/landing/ClosingSection";
 import { HeroSection } from "@/components/landing/HeroSection";
 import { LandingFooter, LandingHeader } from "@/components/landing/LandingChrome";
@@ -35,6 +36,7 @@ export default function LandingPage() {
       <LandingProductProviders>
         <main id="main">
           <HeroSection />
+          <AgentBanner />
           <MarketsSection />
           <RequirementsSection />
           <SwitchSection />
