@@ -1,0 +1,31 @@
+# Tender
+
+Tender is a marketplace where API providers bid to serve each request.
+You set requirements; Tender routes every call to the cheapest qualified provider.
+Payments use x402 in USDC on Base Sepolia (testnet only, no mainnet funds).
+
+## Discover markets (free)
+GET https://tender.heyarca.app/api/v1/markets
+Markets: sf-weather, ny-weather, london-weather, seoul-weather, tokyo-weather, singapore-weather,
+btc-usd, eth-usd, sol-usd, xrp-usd, eur-usd, gbp-usd.
+GET https://tender.heyarca.app/api/v1/markets/{market} shows providers, bids and the current route.
+OpenAPI: https://tender.heyarca.app/api/v1/openapi.json
+
+## Paid endpoints (x402, USDC on Base Sepolia)
+GET https://tender.heyarca.app/api/v1/prices/spot?pair=BTC-USD
+GET https://tender.heyarca.app/api/v1/weather/current?location=san-francisco
+An unpaid request returns HTTP 402 with a PAYMENT-REQUIRED header (x402 v2 requirements).
+Sign it with an x402 client and retry the same URL with a PAYMENT-SIGNATURE header.
+Pair values: BTC-USD, ETH-USD, SOL-USD, XRP-USD, EUR-USD, GBP-USD.
+Location values: san-francisco, new-york, london, seoul, tokyo, singapore.
+
+## Requirements (query parameter or header; query wins)
+max_price          / Tender-Max-Price        USD per 1M requests
+max_p95_ms         / Tender-Max-P95-Ms       p95 latency in ms
+max_data_age_ms    / Tender-Max-Data-Age-Ms  max data age in ms
+min_success_rate   / Tender-Min-Success-Rate fraction 0-1 (0.999 = 99.9%)
+preference         / Tender-Preference       lowest-cost | lowest-latency | freshest-data
+pin                / Tender-Pin              force a provider id
+Example: /api/v1/prices/spot?pair=BTC-USD&max_p95_ms=300&preference=lowest-latency
+If no provider qualifies the API returns HTTP 409 before any payment.
+Response headers: Tender-Provider, Tender-Price-USD, Tender-Settled-Atomic, Tender-Route-Reason.
