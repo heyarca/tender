@@ -170,7 +170,7 @@ describe("route labels and tags", () => {
   it("names the route of every role", () => {
     const view = getInitialMarketView("sf-weather");
     expect(routeLabel(view.providersById.together)).toEqual({ text: "Active", tone: "active" });
-    expect(routeLabel(view.providersById.deepinfra)).toEqual({ text: "Rank #2 standby", tone: "neutral" });
+    expect(routeLabel(view.providersById.deepinfra)).toEqual({ text: "#2 standby", tone: "neutral" });
     expect(routeLabel(view.providersById.cloudflare)).toEqual({ text: "Excluded", tone: "faint" });
     expect(providerTags(view.providersById.together)).toEqual(["active", "best-price"]);
     expect(providerTags(view.providersById.deepinfra)).toEqual([]);

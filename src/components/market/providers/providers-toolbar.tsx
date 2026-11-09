@@ -50,7 +50,7 @@ export function ProvidersToolbar({ view }: ProvidersToolbarProps) {
             data-modified={chip.modified || undefined}
             className={cn(
               "tabular-nums",
-              chip.modified && "border-solid border-accent-border text-foreground",
+              chip.modified && "border-solid border-primary-strong/40 text-foreground",
               chip.failing && "border-solid border-negative/30 bg-negative-bg text-negative-text hover:bg-negative-bg hover:text-negative-text",
             )}
           >

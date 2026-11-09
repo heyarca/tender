@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { motion, type Transition } from "motion/react";
 import { Check, Pin, X } from "lucide-react";
 
@@ -189,7 +189,7 @@ export function ProvidersTable({ view, selectedId, onSelect }: ProvidersTablePro
 /** Flash the row that just became active (Web Animations, so hover and selection classes keep working). */
 function useActiveRowFlash(
   view: MarketView,
-  rowRefs: React.RefObject<Map<string, HTMLTableRowElement>>,
+  rowRefs: RefObject<Map<string, HTMLTableRowElement>>,
   reduceMotion: boolean,
 ) {
   const activeId = view.route.activeProviderId;
@@ -200,7 +200,8 @@ function useActiveRowFlash(
     if (!prev || prev.marketId !== view.id || prev.activeId === activeId || !activeId) return;
     const el = rowRefs.current.get(activeId);
     if (!el || typeof el.animate !== "function") return;
-    const flash = getComputedStyle(document.documentElement).getPropertyValue("--accent-border").trim();
+    // The selected-row wash (lime 25%): lime is a fill only, the row text stays ink.
+    const flash = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim();
     if (!flash) return;
     const rest = getComputedStyle(el).backgroundColor;
     const animation = el.animate([{ backgroundColor: flash }, { backgroundColor: rest }], {
@@ -264,11 +265,12 @@ function ProviderTableRow({ row, view, selected, onSelect, layoutKey, reduceMoti
         muted={excluded}
         className={cn(
           // Small screens: the provider column stays in view while the metrics scroll, and tags wrap under the name.
-          "max-md:sticky max-md:left-0 max-md:z-[1] max-md:max-w-44 max-md:bg-card max-md:whitespace-normal",
+          // Wider screens: tags wrap under the name only when the table runs out of room.
+          "whitespace-normal max-md:sticky max-md:left-0 max-md:z-[1] max-md:max-w-44 max-md:bg-card",
           selected && "shadow-[inset_2px_0_0_var(--primary-strong)]",
         )}
       >
-        <div className="flex min-w-0 items-center gap-2 max-md:flex-wrap max-md:gap-y-1">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           <button
             type="button"
             aria-pressed={selected}
@@ -276,7 +278,7 @@ function ProviderTableRow({ row, view, selected, onSelect, layoutKey, reduceMoti
             className="flex min-w-0 cursor-pointer items-center gap-2.5 rounded-sm text-left outline-none focus-visible:ring-1 focus-visible:ring-ring"
           >
             <ProviderLogo src={row.logo} name={row.name} className={cn(excluded && "opacity-75")} />
-            <span className={cn("truncate text-xs", excluded ? "text-muted-foreground" : "text-foreground")}>
+            <span className={cn("truncate text-xs whitespace-nowrap", excluded ? "text-muted-foreground" : "text-foreground")}>
               {row.name}
             </span>
           </button>
@@ -349,7 +351,7 @@ function ProviderTags({ row }: { row: ProviderRow }) {
   const tags = providerTags(row);
   if (!tags.length) return null;
   return (
-    <span className="flex shrink-0 items-center gap-1.5">
+    <span className="flex shrink-0 items-center gap-1.5 whitespace-nowrap">
       {tags.map((tag) => {
         switch (tag) {
           case "active":
@@ -360,7 +362,7 @@ function ProviderTags({ row }: { row: ProviderRow }) {
             );
           case "pinned":
             return (
-              <Badge key={tag} variant="outline" tone={row.role === "pinned-failing" ? "negative" : "active"} icon={<Pin aria-hidden="true" />} data-tag="pinned">
+              <Badge key={tag} tone={row.role === "pinned-failing" ? "negative" : "active"} icon={<Pin aria-hidden="true" />} data-tag="pinned">
                 Pinned
               </Badge>
             );
@@ -492,7 +494,12 @@ function RouteText({ route }: { route: ReturnType<typeof routeLabel> }) {
     case "warning":
       return <span className="text-warning-text">{route.text}</span>;
     case "neutral":
-      return <span className="text-muted-foreground">{route.text}</span>;
+      return (
+        <span className="text-muted-foreground">
+          <span className="sr-only">Rank </span>
+          {route.text}
+        </span>
+      );
     case "faint":
       return <span className="text-faint">{route.text}</span>;
   }

@@ -43,7 +43,7 @@ export const badgeVariants = cva(
       { variant: "soft", tone: "ultrafast", className: "bg-tier-ultrafast-bg text-tier-ultrafast" },
 
       { variant: "outline", tone: "neutral", className: "border-border text-muted-foreground" },
-      { variant: "outline", tone: "active", className: "border-accent-border text-accent-foreground" },
+      { variant: "outline", tone: "active", className: "border-primary-strong/40 text-accent-foreground" },
       { variant: "outline", tone: "positive", className: "border-positive/30 text-positive-text" },
       { variant: "outline", tone: "warning", className: "border-warning/30 text-warning-text" },
       { variant: "outline", tone: "negative", className: "border-negative/30 text-negative-text" },
