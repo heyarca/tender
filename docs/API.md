@@ -35,7 +35,10 @@ unknown preferences, or a pin outside the market return HTTP 400.
 Numeric limits must be finite and nonnegative. Zero is accepted as a strict limit.
 Omitted fields use the shared engine's defaults. Provider bids, conditions, qualification,
 exclusion priority, and tie-breaking come from the same server-safe engine as the console.
-The API does not read the browser's local storage or provider edits.
+Public contract endpoints do not read the browser's local storage or provider edits. They
+never accept condition changes through query parameters or headers. The console payment
+endpoint can pass sanitized condition patches through a trusted in-process call instead;
+those patches affect only that request, not the public API's defaults.
 
 The API is **stateless per request**. It selects the rank-1 qualified provider on each request.
 Switch cooldowns, pending switches, and pinned-mode notifications are console behaviors, not
@@ -138,8 +141,13 @@ vercel -Q ~/.config/tender-vercel curl /api/v1/markets \
 
 ## Server interfaces
 
-- `handleContract(request: Request, marketId: MarketId): Promise<Response>` validates inputs,
-  freezes routing, invokes the payment wrapper, and serves the normalized contract.
+- `handleContract(request: Request, marketId: MarketId, options?: ContractOptions): Promise<Response>`
+  validates inputs, freezes routing, invokes the payment wrapper, and serves the normalized contract.
+  `ContractOptions` accepts `conditions?: Partial<Record<ProviderId, ConditionsPatch>>` **in process
+  only**. Known provider patches are clamped by the shared engine's `sanitizeConditionsPatch`
+  and merged over fixture defaults. Unknown providers and invalid patch containers are ignored.
+  Patches never mutate shared fixtures. A selected zero bid returns HTTP 400 `unsupported_bid`
+  before payment; paid requests require a positive bid.
 - `readPolicyOverrides(request: Request)` parses wire policy inputs without changing defaults.
 - `marketDetail(request: Request, marketId: MarketId)` builds discovery data with shared evaluation.
 - `getWeatherReference()` / `getPriceReference()` return `{value, timestamp, source}`.

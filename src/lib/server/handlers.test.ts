@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PaymentQuote, SettlementAmounts } from "@/lib/payments/types";
+import { getPayee } from "@/lib/payments/payees";
+import type { ConditionsPatch } from "@/lib/tender";
 const payments = vi.hoisted(() => ({ calls: [] as PaymentQuote[], fail: false, failureResponse: false }));
 vi.mock("node:crypto", () => ({ randomUUID: () => "84d53c30-6de2-4439-b910-67ff8b1fc974" }));
 vi.mock("@/lib/payments/server", async () => {
@@ -111,6 +113,49 @@ describe("paid contract handlers", () => {
   it.each(["prices/spot?pair=ETH-USD", "prices/spot?pair=BTC-USD&pair=BTC-USD", "prices/spot?pin=together", "prices/spot?min_success_rate=99.9"])("rejects invalid input %s before payment", async (path) => {
     expect((await price(req(path))).status).toBe(400);
     expect(payments.calls).toHaveLength(0);
+  });
+  it("routes and pays the same replacement when in-process conditions change", async () => {
+    const response = await handleContract(req("weather/current"), "sf-weather", { conditions: { together: { bidPrice: 45 } } });
+    const data = await response.json();
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Tender-Provider")).toBe("deepinfra");
+    expect(data.provider).toBe("deepinfra");
+    expect(data.price_usd).toBe(22 / 1e6);
+    expect(payments.calls).toHaveLength(1);
+    expect(payments.calls[0]).toMatchObject({ providerId: "deepinfra", payTo: getPayee("deepinfra"), amountUsd: 22 / 1e6 });
+    expect(payments.calls[0].payTo).not.toBe(getPayee("together"));
+  });
+  it("uses changed availability without mutating shared defaults", async () => {
+    const changed = await handleContract(req("prices/spot"), "btc-usd", { conditions: { parasail: { available: false } } });
+    expect(changed.headers.get("Tender-Provider")).toBe("inference-net");
+    const unchanged = await price(req("prices/spot"));
+    expect(unchanged.headers.get("Tender-Provider")).toBe("parasail");
+  });
+  it("sanitizes/clamps conditions while preserving unspecified defaults", async () => {
+    const response = await handleContract(req("prices/spot?pin=parasail"), "btc-usd", { conditions: { parasail: { p95LatencyMs: -100, dataAgeMs: -5, errorRate: -1, bidPrice: Number.NaN } } });
+    const data = await response.json();
+    expect(response.status).toBe(200);
+    expect(data.latency_ms).toBeLessThanOrEqual(7);
+    expect(data.data_age_ms).toBe(0);
+    expect(data.price_usd).toBe(0.7 / 1e6);
+    expect(data.policy_violation).toBe(false);
+  });
+  it("ignores unknown providers and invalid patch containers", async () => {
+    const response = await handleContract(req("prices/spot"), "btc-usd", { conditions: { unknown: { bidPrice: 0.1 }, parasail: null as unknown as ConditionsPatch } });
+    expect(response.headers.get("Tender-Provider")).toBe("parasail");
+  });
+  it("rejects zero-price selected bids clearly before payment", async () => {
+    const response = await handleContract(req("prices/spot"), "btc-usd", { conditions: { parasail: { bidPrice: 0 } } });
+    expect(response.status).toBe(400);
+    expect((await response.json()).error.code).toBe("unsupported_bid");
+    expect(payments.calls).toHaveLength(0);
+  });
+  it("never reads condition changes from public query parameters or headers", async () => {
+    const encoded = encodeURIComponent(JSON.stringify({ parasail: { available: false, bidPrice: 20 } }));
+    const response = await price(req(`prices/spot?conditions=${encoded}&conditions[parasail][available]=false`, true, { "Tender-Conditions": JSON.stringify({ parasail: { available: false } }) }));
+    expect(response.headers.get("Tender-Provider")).toBe("parasail");
+    expect(payments.calls[0].amountUsd).toBe(0.7 / 1e6);
+    expect(payments.calls[0].payTo).toBe(getPayee("parasail"));
   });
   it("does not accept HEAD/POST as paid contract requests", async () => {
     expect(priceHead().status).toBe(405);
