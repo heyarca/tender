@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import { ActivitySection } from "@/components/market/activity/activity-section";
 import { ProviderConditionsSection } from "@/components/market/conditions/provider-conditions-section";
 import { MarketUiProvider } from "@/components/market/market-ui";
@@ -17,7 +17,7 @@ import { RoutingPolicySection } from "@/components/market/policy/routing-policy-
 import { ProvidersSection } from "@/components/market/providers/providers-section";
 import { useHotkey } from "@/components/shell/command-palette";
 import { PageContainer } from "@/components/shell/page-container";
-import type { MarketId, ProviderIdentity } from "@/lib/tender";
+import type { MarketId } from "@/lib/tender";
 import { useMarketView, useTenderActions } from "@/lib/tender/client";
 
 export interface MarketPageProps {
@@ -41,8 +41,6 @@ export function MarketPage({ marketId, onSwitchMarket }: MarketPageProps) {
 
 function MarketPageContent({ marketId, onSwitchMarket }: MarketPageProps) {
   const view = useMarketView(marketId);
-  const weather = useMarketView("sf-weather");
-  const bitcoin = useMarketView("btc-usd");
   const actions = useTenderActions();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [apiOpen, setApiOpen] = useState(false);
@@ -53,14 +51,6 @@ function MarketPageContent({ marketId, onSwitchMarket }: MarketPageProps) {
 
   useRouteToasts(marketId, onSwitchMarket);
   useHotkey("mod+enter", run);
-
-  const activeProviders = useMemo<Record<MarketId, ProviderIdentity | null>>(
-    () => ({
-      "sf-weather": weather.route.activeProvider?.identity ?? null,
-      "btc-usd": bitcoin.route.activeProvider?.identity ?? null,
-    }),
-    [weather.route.activeProvider, bitcoin.route.activeProvider],
-  );
 
   return (
     <>
@@ -77,7 +67,7 @@ function MarketPageContent({ marketId, onSwitchMarket }: MarketPageProps) {
         />
         <MarketOverview key={marketId} view={view} />
         <div className="mt-6 grid grid-cols-1 gap-x-6 border-t border-border pt-6 lg:grid-cols-[200px_minmax(0,1fr)]">
-          <MarketSidebar marketId={marketId} activeProviders={activeProviders} onSwitchMarket={onSwitchMarket} />
+          <MarketSidebar marketId={marketId} onSwitchMarket={onSwitchMarket} />
           <div className="min-w-0">
             <ProvidersSection key={`providers-${marketId}`} marketId={marketId} />
             <div className="grid grid-cols-1 gap-x-6 xl:grid-cols-2">
