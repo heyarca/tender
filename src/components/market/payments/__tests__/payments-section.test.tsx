@@ -247,4 +247,21 @@ describe("PaymentsSection", () => {
     mount(createTenderStore(), "sf-weather");
     expect(document.querySelector('[data-slot="payment-receipt"]')?.textContent).toContain("Together");
   });
+
+  it("previews five receipts and expands the table on request", async () => {
+    mockFetch(() => Response.json({}));
+    const base = paidResult("together", "Together", 18).receipt;
+    const records = Array.from({ length: 7 }, (_, index) => {
+      const txHash = `0x${String(index + 1).padStart(2, "0").repeat(32)}`;
+      return { id: txHash, at: 1_000 + index, receipt: { ...base, txHash, explorerUrl: `https://sepolia.basescan.org/tx/${txHash}` }, summary: "61°F Overcast" };
+    });
+    window.localStorage.setItem(RECORDS_STORAGE_KEY, JSON.stringify({ version: 1, records: { "sf-weather": records } }));
+    mount();
+    const table = await screen.findByRole("table", { name: "Recent paid requests" });
+    expect(table.querySelectorAll("tbody tr")).toHaveLength(5);
+    fireEvent.click(screen.getByRole("button", { name: "Show all 7" }));
+    expect(table.querySelectorAll("tbody tr")).toHaveLength(7);
+    fireEvent.click(screen.getByRole("button", { name: "Show fewer" }));
+    expect(table.querySelectorAll("tbody tr")).toHaveLength(5);
+  });
 });

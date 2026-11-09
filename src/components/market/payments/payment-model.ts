@@ -86,13 +86,6 @@ export function formatUsdcAtomic(atomic: string | bigint): string {
   return `${negative ? "\u2212" : ""}${whole}.${fraction}`;
 }
 
-/** Decimal USDC string (e.g. from `formatUnits`) to atomic units, or `null` when invalid. */
-export function usdcToAtomic(amount: string): bigint | null {
-  const match = /^(\d+)(?:\.(\d{0,6}))?$/.exec(amount.trim());
-  if (!match) return null;
-  return BigInt(match[1]) * BigInt(1_000_000) + BigInt((match[2] ?? "").padEnd(USDC_DECIMALS, "0") || "0");
-}
-
 /** `"18"` → `"18 atomic units"`, `"1"` → `"1 atomic unit"`. */
 export function atomicUnitsLabel(atomic: string): string {
   return `${atomic} atomic ${atomic === "1" ? "unit" : "units"}`;
