@@ -74,6 +74,8 @@ ${bold("Usage")}
 ${bold("Commands")}
   init                Add Tender instructions for coding agents to AGENTS.md / CLAUDE.md (default)
   markets             List every market
+  categories          List groups and categories with market counts
+  contracts           List contracts (the API shapes markets implement)
   market <id>         Show provider bids and the routing decision for a market
   quote <id>          Ask a market's contract for a price (returns the x402 payment requirements)
 
@@ -107,15 +109,37 @@ async function main() {
     table(markets, [
       { label: "ID", get: (m) => m.id },
       { label: "MARKET", get: (m) => m.name },
+      { label: "CATEGORY", get: (m) => m.category?.label ?? "" },
       { label: "PROVIDERS", get: (m) => m.provider_count },
       { label: "CONTRACT", get: (m) => m.contract },
+    ]);
+    return;
+  }
+  if (command === "categories") {
+    const groups = await tender.categories();
+    const rows = groups.flatMap((g) => g.categories.map((c) => ({ group: g.label, ...c })));
+    table(rows, [
+      { label: "GROUP", get: (r) => r.group },
+      { label: "CATEGORY", get: (r) => r.label },
+      { label: "ID", get: (r) => r.id },
+      { label: "MARKETS", get: (r) => r.market_count },
+    ]);
+    return;
+  }
+  if (command === "contracts") {
+    const contracts = await tender.contracts();
+    table(contracts, [
+      { label: "CONTRACT", get: (c) => c.id },
+      { label: "PATH", get: (c) => c.path },
+      { label: "PARAMS", get: (c) => c.params.map((p) => p.key).join(", ") },
+      { label: "MARKETS", get: (c) => c.markets.length },
     ]);
     return;
   }
   if (command === "market") {
     if (!args[1]) throw new Error("Usage: tender market <id>");
     const m = await tender.market(args[1], policyFrom(flags));
-    console.log(`${bold(m.name)} ${dim(m.identifier)}\n`);
+    console.log(`${bold(m.name)} ${dim(m.contract_url ?? m.identifier)}\n`);
     table(m.providers ?? [], [
       { label: "PROVIDER", get: (p) => p.name },
       { label: "BID /M REQ", get: (p) => `$${Number(p.bid_per_million).toFixed(2)}` },

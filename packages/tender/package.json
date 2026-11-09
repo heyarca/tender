@@ -1,6 +1,6 @@
 {
   "name": "@heyarca/tender",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Let your agent buy API access on Tender, the execution market where providers compete on price, latency, freshness, and reliability.",
   "type": "module",
   "bin": {

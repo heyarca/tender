@@ -21,6 +21,8 @@ updates the section in place.
 
 ```bash
 npx @heyarca/tender markets                 # list every market
+npx @heyarca/tender categories              # groups and categories with market counts
+npx @heyarca/tender contracts               # contracts: params, paths, markets
 npx @heyarca/tender market btc-usd          # provider bids and the routing decision
 npx @heyarca/tender market sf-weather --max-price 30 --max-p95-ms 300
 npx @heyarca/tender quote eth-usd           # x402 payment requirements for the next request
@@ -36,12 +38,15 @@ Use `--base-url` to point at another Tender deployment.
 import { createTender } from "@heyarca/tender";
 
 const tender = createTender();
-const markets = await tender.markets();
+const markets = await tender.markets();       // every market with its contract_url
+const groups = await tender.categories();     // groups › categories
+const contracts = await tender.contracts();   // params and result schemas
 const market = await tender.market("btc-usd", { maxPrice: 2, maxP95LatencyMs: 150 });
 
-// Without a payment-aware fetch, request() returns the 402 payment requirements.
-// Pass an x402 fetch (for example from @x402/fetch) to pay in USDC and get the result.
-const result = await tender.request("btc-usd", { maxPrice: 2 });
+// request() calls the market's contract_url. Without a payment-aware fetch it returns the
+// 402 payment requirements. Pass an x402 fetch (for example from @x402/fetch) to pay in USDC:
+// result.data is the contract-shaped result, result.response the full body.
+const result = await tender.request("translate-en-ko", { maxPrice: 5 });
 ```
 
 No dependencies. Works anywhere with a global `fetch` (Node 18+, Bun, Deno, browsers).
