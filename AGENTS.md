@@ -9,7 +9,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 <!-- END:nextjs-agent-rules -->
 
 
-# ESCAPE — agent guide
+# Tender — agent guide
 
 Read `docs/SPEC.md` (behavior + engine contract) and `docs/DESIGN.md` (OpenRouter-aligned design system) before coding.
 

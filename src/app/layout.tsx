@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ESCAPE — The execution market for APIs",
+  title: "Tender — The execution market for APIs",
   description:
     "Providers compete to serve your API requests on price, latency, freshness, and reliability.",
 };

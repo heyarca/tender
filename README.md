@@ -1,7 +1,7 @@
-# ESCAPE
+# Tender
 
 The execution market for APIs. Providers compete to serve each request on price, latency, freshness,
-and reliability. ESCAPE enforces your routing policy and switches providers when the current one stops
+and reliability. Tender enforces your routing policy and switches providers when the current one stops
 qualifying.
 
 This repository contains the frontend product surface (Next.js 16, React 19, Tailwind CSS v4) with two

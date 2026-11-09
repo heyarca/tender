@@ -1,6 +1,6 @@
-# ESCAPE design system (OpenRouter-aligned)
+# Tender design system (OpenRouter-aligned)
 
-ESCAPE uses **OpenRouter's current light design system** as the primary reference
+Tender uses **OpenRouter's current light design system** as the primary reference
 (https://openrouter.ai/deepseek/deepseek-v4.1-flash-1017#providers). Stripe is only a secondary reference
 for alignment and hierarchy. Prioritize OpenRouter fidelity over a generic SaaS dashboard.
 
@@ -33,7 +33,7 @@ hard-code hex colors in components.
 ## Layout
 
 - TopNav: `sticky top-0 z-40 h-14 border-b border-border bg-background`; inner `mx-auto flex h-full items-center px-4 lg:px-6`.
-  Left: ESCAPE lockup (mark + lowercase "escape" wordmark, ~24px tall). Then a search trigger
+  Left: Tender lockup (mark + lowercase "tender" wordmark, ~24px tall). Then a search trigger
   (`h-8 w-60 rounded-md border border-input bg-input-bg px-3 text-muted-foreground`, ⌘ K `kbd` chips
   `h-5 min-w-5 rounded-sm bg-muted px-1.5 font-mono text-overline`). Right: ghost nav buttons
   (`h-8 px-2 rounded-md text-button font-medium text-muted-foreground hover:bg-accent-subtle hover:text-accent-foreground`)

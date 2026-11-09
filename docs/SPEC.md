@@ -1,8 +1,8 @@
-# ESCAPE — product & architecture spec
+# Tender — product & architecture spec
 
-ESCAPE is an API marketplace where providers compete to serve an application's requests on
-**price, latency, freshness, and reliability**. It looks and feels like **OpenRouter for general-purpose APIs**:
-developers declare the result and the requirements; providers bid; ESCAPE monitors, enforces the policy,
+Tender is an API marketplace where providers compete to serve an application's requests on
+**price, latency, freshness, and reliability** — the name comes from a procurement tender, where suppliers bid for a contract. It looks and feels like **OpenRouter for general-purpose APIs**:
+developers declare the result and the requirements; providers bid; Tender monitors, enforces the policy,
 and switches the route to a qualified provider when the current one stops meeting it.
 
 This repository is a **frontend-only** product surface (Next.js 16 App Router, React 19, TypeScript,
@@ -36,7 +36,7 @@ The core interaction must be obvious within seconds:
 Page layout (desktop ≥ 1024px; content `max-w-7xl` like OpenRouter):
 
 ```
-TopNav (h-14, sticky): [mark] escape   [Search ⌘K]                    Markets · Providers · Routing · Activity   [Run request]
+TopNav (h-14, sticky): [mark] tender   [Search ⌘K]                    Markets · Providers · Routing · Activity   [Run request]
 ──────────────────────────────────────────────────────────────────────────────────────────────────────────────
 Market switcher (segmented: ☁ San Francisco Weather | ₿ Bitcoin Price)
 Title row: (market icon) San Francisco Weather                                      [API]  [Run request]
@@ -64,7 +64,7 @@ Prices are bids in **USD per 1M requests** in both markets. Show the unit explic
 ### 3.1 San Francisco Weather (`sf-weather`)
 
 - Identifier: `weather/san-francisco`, contract `weather.current({ location: "san-francisco" })`.
-- Description: "Current conditions for San Francisco through one normalized contract. Providers bid to serve each request; ESCAPE routes to the best one that meets your policy."
+- Description: "Current conditions for San Francisco through one normalized contract. Providers bid to serve each request; Tender routes to the best one that meets your policy."
 - Display time zone: `America/Los_Angeles` (label "PT").
 - Normalized result: location `San Francisco, CA` (37.7749, −122.4194), `observedAt`, temperature °F,
   feels like °F, condition (e.g. "Overcast"), humidity %, wind mph + compass direction, pressure hPa,
@@ -208,14 +208,14 @@ replacement qualifies (all four checks with values vs limits).
 
 ### 4.6 Persistence and reset
 
-- Persist **policies** (including mode) per market in `localStorage` (`escape:v1:policies`). Rehydrate after
+- Persist **policies** (including mode) per market in `localStorage` (`tender:v1:policies`). Rehydrate after
   mount, then re-evaluate. Provider conditions, requests, and activity are not persisted.
 - **Reset conditions** restores every provider in the market to fixture defaults (policy unchanged) and logs it.
 - **Restore provider** restores one provider. **Reset policy** restores the market's default policy.
 
-## 5. Engine/store contract (`src/lib/escape`)
+## 5. Engine/store contract (`src/lib/tender`)
 
-Public API from `@/lib/escape` (client hooks are in a `"use client"` module):
+Public API: `@/lib/tender` (server-safe: types, market definitions, format, evaluation) and `@/lib/tender/client` ("use client": provider, store hooks). The authoritative API reference is `src/lib/tender/README.md`; this section is the summary.
 
 ```ts
 type MarketId = "sf-weather" | "btc-usd";
@@ -227,9 +227,9 @@ interface RoutingPolicy { maxPrice: number; maxP95LatencyMs: number; maxDataAgeM
 interface ProviderConditions { bidPrice: number; p95LatencyMs: number; dataAgeMs: number;
   errorRate: number /* 0..1 */; available: boolean }
 
-<EscapeProvider>{children}</EscapeProvider>        // root layout; owns store, clock, rebase, persistence
+<TenderProvider>{children}</TenderProvider>        // root layout; owns store, clock, rebase, persistence
 useMarketView(marketId): MarketView                 // memoized derived view (see below)
-useEscapeActions(): {
+useTenderActions(): {
   runRequest(m), setAutoRun(m, on),
   setPolicy(m, patch: Partial<Omit<RoutingPolicy,"mode">>), setRoutingMode(m, mode), resetPolicy(m),
   updateProvider(m, providerId, patch: Partial<ProviderConditions>), restoreProvider(m, providerId),
@@ -254,10 +254,10 @@ activity (newest first, ≤ 200), and `autoRun`.
 ```
 src/app/                         routes, layout, globals.css (tokens)
 src/lib/utils.ts                 cn() — tailwind-merge configured for the custom type scale
-src/lib/escape/                  engine: types, fixtures, evaluate, router, requests, random, format, store, tests
+src/lib/tender/                  engine: types, fixtures, evaluate, router, requests, random, format, store, tests
 src/components/ui/               primitives (Button, Badge, SegmentedControl, Select, NumberField, Switch, Tooltip,
                                  Popover, Dialog, Toast, Table, Card, StatCard, Section, ProviderLogo, Kbd, CodeBlock …)
-src/components/shell/            TopNav, EscapeMark/Logo, PageContainer, SidebarNav (+ scroll-spy), StickyBar, CommandPalette
+src/components/shell/            TopNav, TenderMark/Logo, PageContainer, SidebarNav (+ scroll-spy), StickyBar, CommandPalette
 src/components/viz/              Sparkline, UptimeBars, PriceChart, … (SVG, no chart library)
 src/components/market/           feature sections composed from the above
 public/providers/                provider logos
