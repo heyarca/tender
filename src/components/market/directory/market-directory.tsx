@@ -23,9 +23,10 @@ import { PageContainer } from "@/components/shell/page-container";
 import { cn } from "@/lib/utils";
 import { MarketGlyph } from "@/components/market/page/market-icon";
 import { format, MARKET_IDS, type MarketIcon, type MarketId, type ProviderRow } from "@/lib/tender";
+import { CATALOG_MARKETS } from "@/lib/catalog";
 import { useMarketView } from "@/lib/tender/client";
 
-type Category = "Weather" | "Crypto prices" | "Currencies";
+type Category = string;
 
 /** Hard-coded: cloud is Weather, euro and pound are Currencies, everything else is Crypto prices. */
 function categoryFor(icon: MarketIcon): Category {
@@ -41,7 +42,8 @@ function thumbnailFor(index: number): string {
 }
 
 interface DirectoryRow {
-  id: MarketId;
+  id: string;
+  href: string;
   name: string;
   identifier: string;
   contract: string;
@@ -59,7 +61,7 @@ interface DirectoryRow {
   activeProviderName: string | null;
   activeProviderLogo: string | undefined;
   successRate: number | null;
-  mode: "auto" | "pinned";
+  mode: "auto" | "pinned" | "demo";
   logos: { name: string; logo?: string }[];
   thumbnail: string;
 }
@@ -72,37 +74,65 @@ function useDirectoryRows(): DirectoryRow[] {
   // MARKET_IDS is a fixed-length constant, so a fixed number of hook calls is safe here.
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const views = MARKET_IDS.map((id) => useMarketView(id));
-  return useMemo(
-    () =>
-      views.map((view, index) => {
-        const q = qualified(view.providers);
-        const active = view.metrics.activeProviderId ? view.providersById[view.metrics.activeProviderId] : null;
-        return {
-          id: view.id,
-          name: view.definition.name,
-          identifier: view.definition.identifier,
-          contract: view.definition.contract,
-          description: view.definition.description,
-          category: categoryFor(view.definition.icon),
-          icon: view.definition.icon,
-          priceUnit: view.definition.units.price,
-          providerCount: view.providers.length,
-          qualifiedCount: view.qualifiedCount,
-          bestPrice: view.bestPrice?.conditions.bidPrice ?? null,
-          bestPriceProviderName: view.bestPrice?.identity.name ?? null,
-          bestP95: q.length ? Math.min(...q.map((p) => p.conditions.p95LatencyMs)) : null,
-          freshestDataAgeMs: q.length ? Math.min(...q.map((p) => p.conditions.dataAgeMs)) : null,
-          activeProviderId: view.metrics.activeProviderId,
-          activeProviderName: view.metrics.activeProviderName,
-          activeProviderLogo: active?.identity.logo,
-          successRate: view.metrics.successRate,
-          mode: view.policy.mode.kind,
-          logos: view.providers.slice(0, 5).map((p) => ({ name: p.identity.name, logo: p.identity.logo })),
-          thumbnail: thumbnailFor(index),
-        } satisfies DirectoryRow;
-      }),
-    [views],
-  );
+  return useMemo(() => {
+    const liveRows = views.map((view, index) => {
+      const q = qualified(view.providers);
+      const active = view.metrics.activeProviderId ? view.providersById[view.metrics.activeProviderId] : null;
+      return {
+        id: view.id,
+        href: `/markets/${view.id}`,
+        name: view.definition.name,
+        identifier: view.definition.identifier,
+        contract: view.definition.contract,
+        description: view.definition.description,
+        category: categoryFor(view.definition.icon),
+        icon: view.definition.icon,
+        priceUnit: view.definition.units.price,
+        providerCount: view.providers.length,
+        qualifiedCount: view.qualifiedCount,
+        bestPrice: view.bestPrice?.conditions.bidPrice ?? null,
+        bestPriceProviderName: view.bestPrice?.identity.name ?? null,
+        bestP95: q.length ? Math.min(...q.map((p) => p.conditions.p95LatencyMs)) : null,
+        freshestDataAgeMs: q.length ? Math.min(...q.map((p) => p.conditions.dataAgeMs)) : null,
+        activeProviderId: view.metrics.activeProviderId,
+        activeProviderName: view.metrics.activeProviderName,
+        activeProviderLogo: active?.identity.logo,
+        successRate: view.metrics.successRate,
+        mode: view.policy.mode.kind,
+        logos: view.providers.slice(0, 5).map((p) => ({ name: p.identity.name, logo: p.identity.logo })),
+        thumbnail: thumbnailFor(index),
+      } satisfies DirectoryRow;
+    });
+    const catalogRows = CATALOG_MARKETS.map((market, index) => {
+      const providers = [...market.providers];
+      const best = [...providers].sort((a, b) => a.pricePerMillionUsd - b.pricePerMillionUsd)[0] ?? null;
+      return {
+        id: market.id,
+        href: `/catalog/${market.id}`,
+        name: market.name,
+        identifier: market.identifier,
+        contract: market.contract,
+        description: market.description,
+        category: market.category,
+        icon: "coins" as MarketIcon,
+        priceUnit: "/M req",
+        providerCount: providers.length,
+        qualifiedCount: providers.length,
+        bestPrice: best?.pricePerMillionUsd ?? null,
+        bestPriceProviderName: best?.name ?? null,
+        bestP95: providers.length ? Math.min(...providers.map((provider) => provider.p95LatencyMs)) : null,
+        freshestDataAgeMs: providers.length ? Math.min(...providers.map((provider) => provider.freshnessMs)) : null,
+        activeProviderId: best?.id ?? null,
+        activeProviderName: best?.name ?? null,
+        activeProviderLogo: best?.logo,
+        successRate: best?.successRate ?? null,
+        mode: "demo" as const,
+        logos: providers.map((provider) => ({ name: provider.name, logo: provider.logo })),
+        thumbnail: thumbnailFor(liveRows.length + index),
+      } satisfies DirectoryRow;
+    });
+    return [...liveRows, ...catalogRows];
+  }, [views]);
 }
 
 type SortKey = "recommended" | "price" | "latency" | "freshness" | "providers";
@@ -356,7 +386,7 @@ function MetaLine({ row }: { row: DirectoryRow }) {
 function MarketCard({ row }: { row: DirectoryRow }) {
   return (
     <Link
-      href={`/markets/${row.id}`}
+      href={row.href}
       className="group flex items-start gap-4 rounded-lg border border-border bg-card p-4 no-underline transition-colors hover:border-primary-strong/40 hover:bg-card-hover"
     >
       <img
@@ -427,7 +457,7 @@ function DirectoryTable({ rows }: { rows: DirectoryRow[] }) {
         {rows.map((row) => (
           <TableRow key={row.id} interactive>
             <TableRowHeader>
-              <Link href={`/markets/${row.id}`} className="flex min-w-0 items-center gap-2 text-foreground no-underline">
+              <Link href={row.href} className="flex min-w-0 items-center gap-2 text-foreground no-underline">
                 <span className="flex size-5 shrink-0 items-center justify-center text-muted-foreground">
                   <MarketGlyph icon={row.icon} className="size-4" />
                 </span>
@@ -456,8 +486,8 @@ function DirectoryTable({ rows }: { rows: DirectoryRow[] }) {
               )}
             </TableCell>
             <TableCell>
-              <Badge tone={row.mode === "pinned" ? "warning" : "neutral"} variant="soft">
-                {row.mode === "pinned" ? "Pinned" : "Automatic"}
+              <Badge tone={row.mode === "pinned" ? "warning" : row.mode === "demo" ? "active" : "neutral"} variant="soft">
+                {row.mode === "pinned" ? "Pinned" : row.mode === "demo" ? "Preview" : "Automatic"}
               </Badge>
             </TableCell>
           </TableRow>
