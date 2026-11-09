@@ -84,7 +84,7 @@ const SEEDS: Record<MarketId, number> = {
   "sol-usd": 0x7f4a7c15,
   "xrp-usd": 0x6a09e667,
   "eur-usd": 0xbb67ae85,
-  "gbp-usd": 0x3c6ef372,
+  "gbp-usd": 0x3c6ef372, "sz-mlcc": 0x2c1b3c6d, "lithium-carbonate": 0x297a2d39, "freight-sha-lax": 0x6b43a9b5,
 };
 const SERIES_STEP_MS: Record<MarketId, number> = {
   "sf-weather": 60_000,
@@ -98,7 +98,7 @@ const SERIES_STEP_MS: Record<MarketId, number> = {
   "sol-usd": 3_000,
   "xrp-usd": 3_000,
   "eur-usd": 3_000,
-  "gbp-usd": 3_000,
+  "gbp-usd": 3_000, "sz-mlcc": 60_000, "lithium-carbonate": 60_000, "freight-sha-lax": 60_000,
 };
 
 export interface InitialStateOptions {

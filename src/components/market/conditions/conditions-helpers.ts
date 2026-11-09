@@ -102,7 +102,7 @@ export const LATENCY_STEP_MS: Record<MarketDefinition["id"], number> = {
   "sol-usd": 100,
   "xrp-usd": 100,
   "eur-usd": 100,
-  "gbp-usd": 100,
+  "gbp-usd": 100, "sz-mlcc": 100, "lithium-carbonate": 100, "freight-sha-lax": 100,
 };
 /** Data delay added by "Delay data" (ms), per market. */
 export const DATA_DELAY_MS: Record<MarketDefinition["id"], number> = {
@@ -117,7 +117,7 @@ export const DATA_DELAY_MS: Record<MarketDefinition["id"], number> = {
   "sol-usd": 1_000,
   "xrp-usd": 1_000,
   "eur-usd": 1_000,
-  "gbp-usd": 1_000,
+  "gbp-usd": 1_000, "sz-mlcc": 30 * 60_000, "lithium-carbonate": 15 * 60_000, "freight-sha-lax": 60 * 60_000,
 };
 
 function scaledBid(definition: MarketDefinition, bid: number, factor: number): number {

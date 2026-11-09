@@ -238,6 +238,10 @@ export const PRICE_MARKETS: Partial<Record<MarketId, { pair: string; basePrice: 
   "xrp-usd": { pair: "XRP-USD", basePrice: 2.14, sensitivity: 1.8 },
   "eur-usd": { pair: "EUR-USD", basePrice: 1.0812, sensitivity: 0.08 },
   "gbp-usd": { pair: "GBP-USD", basePrice: 1.2734, sensitivity: 0.09 },
+  // Sample indexes for real-world goods, not live feeds.
+  "sz-mlcc": { pair: "MLCC-0402-100NF", basePrice: 3.42, sensitivity: 0.15 },
+  "lithium-carbonate": { pair: "LI2CO3-CN", basePrice: 10_480, sensitivity: 0.1 },
+  "freight-sha-lax": { pair: "SHA-LAX-40FT", basePrice: 2_315, sensitivity: 0.12 },
 };
 
 /** True price at `at` for any price market; `btc-usd` is byte-identical to `btcPriceAt`. */

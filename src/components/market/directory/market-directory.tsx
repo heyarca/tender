@@ -32,6 +32,7 @@ type Category = string;
 function categoryFor(icon: MarketIcon): Category {
   if (icon === "cloud") return "Weather";
   if (icon === "euro" || icon === "pound") return "Currencies";
+  if (icon === "cpu" || icon === "pickaxe" || icon === "ship") return "Real-world goods";
   return "Crypto prices";
 }
 
