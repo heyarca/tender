@@ -1,6 +1,6 @@
 "use client";
 
-import { Bitcoin, Cloud, LayoutGrid, Search, Table2, X } from "lucide-react";
+import { LayoutGrid, Search, Table2, X } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -21,12 +21,17 @@ import {
 import { TopNav } from "@/components/shell/top-nav";
 import { PageContainer } from "@/components/shell/page-container";
 import { cn } from "@/lib/utils";
-import { format, MARKET_IDS, type MarketId, type ProviderRow } from "@/lib/tender";
+import { MarketGlyph } from "@/components/market/page/market-icon";
+import { format, MARKET_IDS, type MarketIcon, type MarketId, type ProviderRow } from "@/lib/tender";
 import { useMarketView } from "@/lib/tender/client";
 
-/** Hard-coded: "cloud" markets are Weather, everything else is Crypto prices. */
-function categoryFor(icon: "cloud" | "bitcoin"): "Weather" | "Crypto prices" {
-  return icon === "cloud" ? "Weather" : "Crypto prices";
+type Category = "Weather" | "Crypto prices" | "Currencies";
+
+/** Hard-coded: cloud is Weather, euro and pound are Currencies, everything else is Crypto prices. */
+function categoryFor(icon: MarketIcon): Category {
+  if (icon === "cloud") return "Weather";
+  if (icon === "euro" || icon === "pound") return "Currencies";
+  return "Crypto prices";
 }
 
 /** Decorative square thumbnails, cycled by market order so new markets pick one up automatically. */
@@ -41,8 +46,8 @@ interface DirectoryRow {
   identifier: string;
   contract: string;
   description: string;
-  category: "Weather" | "Crypto prices";
-  icon: "cloud" | "bitcoin";
+  category: Category;
+  icon: MarketIcon;
   priceUnit: string;
   providerCount: number;
   qualifiedCount: number;
@@ -131,15 +136,12 @@ const FRESHNESS_BUCKETS = [
   { id: "15m", label: "\u2264 15 min", maxMs: 900_000 },
 ] as const;
 
-const CATEGORY_ICON: Record<DirectoryRow["category"], React.ReactNode> = {
-  Weather: <Cloud className="size-4" />,
-  "Crypto prices": <Bitcoin className="size-4" />,
-};
+
 
 export function MarketDirectory() {
   const rows = useDirectoryRows();
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState<"All" | DirectoryRow["category"]>("All");
+  const [category, setCategory] = useState<"All" | Category>("All");
   const [sort, setSort] = useState<SortKey>("recommended");
   const [view, setView] = useState<"list" | "table">(() => {
     if (typeof window === "undefined") return "list";
@@ -155,7 +157,7 @@ export function MarketDirectory() {
   };
 
   const categories = useMemo(() => {
-    const counts = new Map<DirectoryRow["category"], number>();
+    const counts = new Map<Category, number>();
     for (const row of rows) counts.set(row.category, (counts.get(row.category) ?? 0) + 1);
     return counts;
   }, [rows]);
@@ -368,7 +370,7 @@ function MarketCard({ row }: { row: DirectoryRow }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
           <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-border bg-background text-muted-foreground">
-            {CATEGORY_ICON[row.category]}
+            <MarketGlyph icon={row.icon} className="size-4" />
           </span>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
@@ -427,7 +429,7 @@ function DirectoryTable({ rows }: { rows: DirectoryRow[] }) {
             <TableRowHeader>
               <Link href={`/markets/${row.id}`} className="flex min-w-0 items-center gap-2 text-foreground no-underline">
                 <span className="flex size-5 shrink-0 items-center justify-center text-muted-foreground">
-                  {CATEGORY_ICON[row.category]}
+                  <MarketGlyph icon={row.icon} className="size-4" />
                 </span>
                 <span className="min-w-0">
                   <span className="block truncate text-xs text-foreground">{row.name}</span>

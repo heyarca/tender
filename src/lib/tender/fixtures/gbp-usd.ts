@@ -103,7 +103,7 @@ export const GBP_USD: MarketDefinition = {
     "GBP/USD spot price through one normalized contract. Every provider returns the same price definition, so bids compare like for like.",
   timeZone: "UTC",
   timeZoneLabel: "UTC",
-  icon: "bitcoin",
+  icon: "pound",
   units: { price: "/M req", dataAge: "ms", value: "USD" },
   priceDefinition: "GBP/USD spot mid price in USD, volume-weighted across major venues.",
   resultFields: [

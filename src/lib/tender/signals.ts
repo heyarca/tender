@@ -228,21 +228,25 @@ export function weatherLocationFor(marketId: MarketId): MarketLocation {
   return WEATHER_MARKETS[marketId]?.location ?? SF_LOCATION;
 }
 
-/** Baseline price and noise sensitivity (relative to the BTC/USD noise) for every price market besides BTC/USD. */
+/**
+ * Baseline price and relative volatility (1 = same percentage moves as BTC/USD) for every price
+ * market besides BTC/USD.
+ */
 export const PRICE_MARKETS: Partial<Record<MarketId, { pair: string; basePrice: number; sensitivity: number }>> = {
-  "eth-usd": { pair: "ETH-USD", basePrice: 3180.4, sensitivity: 1 },
-  "sol-usd": { pair: "SOL-USD", basePrice: 148.25, sensitivity: 1 },
-  "xrp-usd": { pair: "XRP-USD", basePrice: 2.14, sensitivity: 1 },
-  "eur-usd": { pair: "EUR-USD", basePrice: 1.0812, sensitivity: 0.02 },
-  "gbp-usd": { pair: "GBP-USD", basePrice: 1.2734, sensitivity: 0.02 },
+  "eth-usd": { pair: "ETH-USD", basePrice: 3180.4, sensitivity: 1.2 },
+  "sol-usd": { pair: "SOL-USD", basePrice: 148.25, sensitivity: 1.6 },
+  "xrp-usd": { pair: "XRP-USD", basePrice: 2.14, sensitivity: 1.8 },
+  "eur-usd": { pair: "EUR-USD", basePrice: 1.0812, sensitivity: 0.08 },
+  "gbp-usd": { pair: "GBP-USD", basePrice: 1.2734, sensitivity: 0.09 },
 };
 
 /** True price at `at` for any price market; `btc-usd` is byte-identical to `btcPriceAt`. */
 export function priceAtFor(marketId: MarketId, at: number, origin: number): number {
   const other = PRICE_MARKETS[marketId];
   if (!other) return btcPriceAt(at, origin);
-  const noise = anchoredNoise((at - origin) / 1000, BTC_OCTAVES);
-  return other.basePrice + other.sensitivity * noise;
+  // Percentage moves of the BTC walk, scaled by this market's relative volatility.
+  const relativeMove = anchoredNoise((at - origin) / 1000, BTC_OCTAVES) / BTC_BASELINE_PRICE;
+  return other.basePrice * (1 + other.sensitivity * relativeMove);
 }
 
 /** Pair label for any price market; `btc-usd` is `"BTC-USD"`. */

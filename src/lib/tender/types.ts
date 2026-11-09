@@ -38,7 +38,7 @@ export type MarketTimeZone =
   | "UTC";
 
 /** Icon hint for a market (the UI maps it to an icon). */
-export type MarketIcon = "cloud" | "bitcoin";
+export type MarketIcon = "cloud" | "bitcoin" | "coins" | "euro" | "pound";
 
 /**
  * Spec for one numeric input (policy control or provider condition).

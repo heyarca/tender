@@ -103,7 +103,7 @@ export const SOL_USD: MarketDefinition = {
     "SOL/USD spot price through one normalized contract. Every provider returns the same price definition, so bids compare like for like.",
   timeZone: "UTC",
   timeZoneLabel: "UTC",
-  icon: "bitcoin",
+  icon: "coins",
   units: { price: "/M req", dataAge: "ms", value: "USD" },
   priceDefinition: "SOL/USD spot mid price in USD, volume-weighted across major venues.",
   resultFields: [

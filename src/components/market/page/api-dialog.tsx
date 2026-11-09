@@ -176,7 +176,7 @@ function PaidRequestFlow({ view }: { view: MarketView }) {
         )}
       </div>
       <ul className="grid gap-1 text-caption text-muted-foreground sm:grid-cols-2">
-        <EndpointRow path="/api/v1/markets" note="Both markets and default policies" />
+        <EndpointRow path="/api/v1/markets" note="All markets and default policies" />
         <EndpointRow path={marketPath(view.id)} note="Bids, performance, and route" />
         <EndpointRow path={contractPath(view.id).split("?")[0]} note="Normalized result (x402)" />
         <EndpointRow path="/api/v1/openapi.json" note="OpenAPI 3.1 document" />
