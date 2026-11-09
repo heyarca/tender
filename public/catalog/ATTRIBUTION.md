@@ -85,3 +85,33 @@ These assets are derived from free Unsplash photos. Source pages are retained fo
 - Source page: https://unsplash.com/photos/stadium-floodlights-illuminating-night-snow-29Jx9qyTW14
 - Direct image: https://images.unsplash.com/photo-1509928015542-fcc9b3bcd048?auto=format&fit=crop&q=60&crop=entropy&cs=srgb&fm=jpg&ixid=NHwxMjA3fDA&ixlib=rb-4.1.0
 - License: [Unsplash License](https://unsplash.com/license)
+
+## `parcel-tracking`
+- Photographer: Adrian Sulyok
+- Source page: https://unsplash.com/photos/yellow-and-white-plastic-box-lot-sczNLg6rrhQ
+- Direct image: https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&q=60&crop=entropy&cs=srgb&fm=jpg&ixid=NHwxMjA3fDA&ixlib=rb-4.1.0
+- License: [Unsplash License](https://unsplash.com/license)
+
+## `traffic-eta`
+- Photographer: Michael Myers
+- Source page: https://unsplash.com/photos/an-aerial-view-of-a-busy-intersection-in-a-city-XzAUWNPCp1A
+- Direct image: https://images.unsplash.com/photo-1639037179118-d1a475030792?auto=format&fit=crop&q=60&crop=entropy&cs=srgb&fm=jpg&ixid=NHwxMjA3fDA&ixlib=rb-4.1.0
+- License: [Unsplash License](https://unsplash.com/license)
+
+## `geocoding`
+- Photographer: Paulo Simões Mendes
+- Source page: https://unsplash.com/photos/aerial-photography-of-roads-on-hill-V8YzvXKLwDw
+- Direct image: https://images.unsplash.com/photo-1441644599508-24ae08965c5c?auto=format&fit=crop&q=60&crop=entropy&cs=srgb&fm=jpg&ixid=NHwxMjA3fDA&ixlib=rb-4.1.0
+- License: [Unsplash License](https://unsplash.com/license)
+
+## `ip-intelligence`
+- Photographer: JJ Ying
+- Source page: https://unsplash.com/photos/purple-and-blue-light-digital-wallpaper-8bghKxNU1j0
+- Direct image: https://images.unsplash.com/photo-1597733336794-12d05021d510?auto=format&fit=crop&q=60&crop=entropy&cs=srgb&fm=jpg&ixid=NHwxMjA3fDA&ixlib=rb-4.1.0
+- License: [Unsplash License](https://unsplash.com/license)
+
+## `company-data`
+- Photographer: Nastuh Abootalebi
+- Source page: https://unsplash.com/photos/hallway-between-glass-panel-doors-yWwob8kwOCk
+- Direct image: https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&q=60&crop=entropy&cs=srgb&fm=jpg&ixid=NHwxMjA3fDA&ixlib=rb-4.1.0
+- License: [Unsplash License](https://unsplash.com/license)

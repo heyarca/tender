@@ -75,4 +75,29 @@ export const CATALOG_IMAGE_PATHS: Record<string, CatalogImagePath> = {
     jpg: "/catalog/sports-scores.jpg",
     alt: "Stadium floodlights glowing through falling snow.",
   },
+  "parcel-tracking": {
+    avif: "/catalog/parcel-tracking.avif",
+    jpg: "/catalog/parcel-tracking.jpg",
+    alt: "Clean yellow and white storage containers.",
+  },
+  "traffic-eta": {
+    avif: "/catalog/traffic-eta.avif",
+    jpg: "/catalog/traffic-eta.jpg",
+    alt: "Aerial view of a busy city intersection.",
+  },
+  "geocoding": {
+    avif: "/catalog/geocoding.avif",
+    jpg: "/catalog/geocoding.jpg",
+    alt: "Aerial landscape with winding roads.",
+  },
+  "ip-intelligence": {
+    avif: "/catalog/ip-intelligence.avif",
+    jpg: "/catalog/ip-intelligence.jpg",
+    alt: "Purple and blue abstract light network.",
+  },
+  "company-data": {
+    avif: "/catalog/company-data.avif",
+    jpg: "/catalog/company-data.jpg",
+    alt: "Glass-walled office corridor.",
+  },
 };
