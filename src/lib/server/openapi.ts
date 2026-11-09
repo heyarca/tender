@@ -20,6 +20,8 @@ const routeHeaders = {
   "Tender-Provider": { description: "Selected provider id, identical to the quoted payee's provider", schema: string },
   "Tender-Route-Reason": { description: "Automatic ranking preference or explicit pin", schema: string },
   "Tender-Policy-Violation": { description: "true when a pinned provider fails the policy", schema: { type: "string", enum: ["true", "false"] } },
+  "Tender-Price-USD": { description: "Exact winning bid divided by 1,000,000 requests, as a decimal string; matches the JSON price_usd", schema: string },
+  "Tender-Settled-Atomic": { description: "USDC atomic units (6 decimals) actually settled, encoded as an integer string; matches the JSON settled_atomic", schema: string },
 };
 const errors = {
   "400": { description: "Invalid contract input or policy", content: content("Error") },

@@ -30,4 +30,13 @@ describe("OpenAPI", () => {
     expect(operation.parameters.some((p) => p.name === "PAYMENT-SIGNATURE")).toBe(true);
     expect(openapiDocument.components.schemas.PriceResult.properties).toHaveProperty("settled_atomic");
   });
+  it("lists the settlement response headers on every paid operation and status", () => {
+    for (const path of ["/prices/spot", "/weather/current"] as const) {
+      for (const status of ["200", "402"] as const) {
+        const headers = openapiDocument.paths[path].get.responses[status].headers;
+        expect(headers["Tender-Price-USD"], `${path} ${status}`).toBeDefined();
+        expect(headers["Tender-Settled-Atomic"], `${path} ${status}`).toBeDefined();
+      }
+    }
+  });
 });

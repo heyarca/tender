@@ -51,7 +51,10 @@ Discovery still returns HTTP 200 with a null active provider and an empty rankin
 
 Every contract request computes its routing selection once. The same provider supplies the
 x402 amount/payee and the normalized result. `Tender-Provider` identifies it.
-`Tender-Route-Reason` is the preference or `pinned`. Errors and paid responses are not cached.
+`Tender-Route-Reason` is the preference or `pinned`. Every paid-route response (including the
+402 challenge) also carries `Tender-Price-USD`, the exact winning bid per request as a decimal
+string matching the JSON `price_usd`, and `Tender-Settled-Atomic`, the settled USDC amount in
+atomic units as an integer string matching the JSON `settled_atomic`. Errors and paid responses are not cached.
 Provider failures return `provider_error` with the provider, request id, latency, and policy
 violation fields (HTTP 500, 502, 503, or 504). Payment-service exceptions return HTTP 503 with
 `payment_unavailable`. Failed provider requests are not settled: the x402 SDK cancels the
