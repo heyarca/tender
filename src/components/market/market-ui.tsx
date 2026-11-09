@@ -68,7 +68,8 @@ export function focusSection(id: MarketSectionId): void {
   if (typeof document === "undefined") return;
   const section = document.getElementById(id);
   if (!section) return;
-  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const reduce =
+    typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   section.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
   const heading = document.getElementById(`${id}-title`);
   if (heading) {
