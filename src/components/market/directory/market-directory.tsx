@@ -361,7 +361,7 @@ export function MarketDirectory() {
           )}
         </div>
 
-        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
+        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[248px_minmax(0,1fr)]">
           <aside className="order-2 lg:sticky lg:top-[calc(var(--navbar-height)+24px)] lg:order-1 lg:max-h-[calc(100vh-var(--navbar-height)-48px)] lg:self-start lg:overflow-y-auto">
             <div className="flex flex-col gap-5 rounded-lg border border-border bg-card p-4 lg:border-0 lg:bg-transparent lg:p-0">
               <div>
