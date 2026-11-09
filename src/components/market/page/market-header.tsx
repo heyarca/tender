@@ -92,10 +92,9 @@ export interface MarketHeaderProps {
  * Market switcher, then the OpenRouter model-page title row: icon, name, identifier with a copy
  * button, the contract, and the API / Auto-run / Run request actions, then the description.
  */
-export function MarketHeader({ definition, autoRun, onSwitchMarket, onOpenApi, onAutoRunChange, onRun }: MarketHeaderProps) {
+export function MarketHeader({ definition, autoRun, onOpenApi, onAutoRunChange, onRun }: MarketHeaderProps) {
   return (
     <header>
-      <MarketSwitcher marketId={definition.id} onSwitchMarket={onSwitchMarket} className="mb-4" />
       <div id={MARKET_TITLE_ID} className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-2.5">

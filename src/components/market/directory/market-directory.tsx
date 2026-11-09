@@ -174,11 +174,7 @@ export function MarketDirectory() {
 
   return (
     <div className="flex min-h-full flex-col">
-      <TopNav
-        links={[{ label: "Markets", href: "/markets" }]}
-        activeHref="/markets"
-        onSearch={() => searchRef.current?.focus()}
-      />
+      <TopNav links={[]} onSearch={() => searchRef.current?.focus()} />
       <PageContainer>
         <AgentInstallBanner />
         <div className="flex flex-wrap items-center justify-between gap-3">
