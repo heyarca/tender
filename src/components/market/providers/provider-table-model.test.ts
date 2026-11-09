@@ -30,8 +30,11 @@ import {
 
 const E = FIXTURE_EPOCH;
 
+/** A reducer action without its timestamp (distributes over the action union). */
+type ActionInput = TenderAction extends infer A ? (A extends TenderAction ? Omit<A, "now"> : never) : never;
+
 /** Apply actions (each stamped 1 s apart) to a fresh initial state and return the market view. */
-function viewAfter(marketId: MarketId, ...actions: Omit<TenderAction, "now">[]) {
+function viewAfter(marketId: MarketId, ...actions: ActionInput[]) {
   let state: TenderState = createInitialState();
   actions.forEach((action, index) => {
     state = reduce(state, { ...action, now: E + (index + 1) * 1_000 } as TenderAction);
