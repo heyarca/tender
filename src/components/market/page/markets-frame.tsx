@@ -3,7 +3,8 @@
 import { useRouter, useSelectedLayoutSegment } from "next/navigation";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { MarketPage } from "@/components/market/market-page";
-import { isMarketId, MARKET_IDS, type MarketId } from "@/lib/tender";
+import { getMarketSpec, listMarkets } from "@/lib/registry";
+import { isMarketId, type MarketId } from "@/lib/tender";
 import { marketHref } from "./routes";
 
 /**
@@ -27,9 +28,12 @@ export function MarketsFrame({ children }: { children: ReactNode }) {
     [router],
   );
 
+  // Prefetch the markets one switch away (same category), not all of them.
+  const categoryId = marketId ? getMarketSpec(marketId)?.categoryId : undefined;
   useEffect(() => {
-    for (const id of MARKET_IDS) router.prefetch(marketHref(id));
-  }, [router]);
+    if (!categoryId) return;
+    for (const market of listMarkets({ categoryId })) router.prefetch(marketHref(market.id));
+  }, [router, categoryId]);
 
   if (!isMarketId(marketId)) return children;
   return (
