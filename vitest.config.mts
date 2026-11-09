@@ -11,5 +11,11 @@ export default defineConfig({
     environment: "node",
     include: ["src/**/*.test.{ts,tsx}"],
     passWithNoTests: true,
+    server: {
+      deps: {
+        // @x402/next imports `next/server` without an extension; let Vite transform it.
+        inline: ["@x402/next"],
+      },
+    },
   },
 });
