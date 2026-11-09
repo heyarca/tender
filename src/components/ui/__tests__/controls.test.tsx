@@ -8,6 +8,7 @@ import { Field, FieldDescription, FieldError, FieldLabel } from "../field";
 import { Input } from "../input";
 import { NumberField } from "../number-field";
 import { Select } from "../select";
+import { Slider } from "../slider";
 import { Switch } from "../switch";
 import { Tooltip } from "../tooltip";
 
@@ -80,6 +81,24 @@ describe("Switch and Checkbox", () => {
     expect(onSwitch).toHaveBeenCalledWith(true);
     fireEvent.click(screen.getByRole("checkbox", { name: "Pin provider" }));
     expect(onCheck).toHaveBeenCalledWith(true);
+  });
+});
+
+describe("focus treatment", () => {
+  it("uses the shared shadow-focus recipe instead of inline accent shadows", () => {
+    render(
+      <>
+        <Switch aria-label="Auto-run" />
+        <Checkbox aria-label="Pin provider" />
+        <Slider aria-label="Max latency" value={50} onValueChange={() => {}} />
+      </>,
+    );
+    // The slider's visible thumb wraps the focused range input.
+    const thumb = screen.getByRole("slider").parentElement;
+    for (const control of [screen.getByRole("switch"), screen.getByRole("checkbox"), thumb]) {
+      expect(control?.className).toContain("shadow-focus");
+      expect(control?.className).not.toContain("shadow-[0_0_0_3px");
+    }
   });
 });
 

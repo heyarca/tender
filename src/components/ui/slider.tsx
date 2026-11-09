@@ -77,7 +77,7 @@ export function Slider({
             className={cn(
               "size-4 cursor-grab rounded-full border border-input bg-background shadow-sm select-none",
               "transition-[box-shadow,border-color] duration-quick data-dragging:cursor-grabbing",
-              "has-[:focus-visible]:border-primary-strong has-[:focus-visible]:shadow-[0_0_0_3px_var(--color-accent)]",
+              "has-[:focus-visible]:border-primary-strong has-[:focus-visible]:shadow-focus",
               "data-dragging:border-primary-strong",
             )}
           />
