@@ -1,40 +1,42 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { SimpleHeader } from "@/components/market/page/simple-header";
-import { PageContainer } from "@/components/shell/page-container";
-
-const TITLE = "Make APIs compete for your traffic";
+import { TenderLogo } from "@/components/shell/tender-logo";
+import { ProviderLogo } from "@/components/ui/provider-logo";
 
 export const metadata: Metadata = {
-  title: `Tender demo — ${TITLE}`,
-  description: "Watch Tender route each request to the API provider that meets your requirements.",
-  alternates: { canonical: "/demo" },
+  title: "Demo",
+  description: "Watch Tender route API requests to the provider that meets your policy.",
 };
 
+/** `/demo`: the product video, full width. */
 export default function DemoPage() {
   return (
-    <>
-      <SimpleHeader />
-      <PageContainer className="pt-12 pb-16">
-        <div className="mx-auto max-w-5xl text-center">
-          <h1>{TITLE}</h1>
-          <video
-            className="mt-8 w-full rounded-lg border border-border bg-black"
-            controls
-            playsInline
-            preload="metadata"
-            poster="/demo/tender-demo-poster.jpg"
-            src="/demo/tender-demo.mp4"
-          />
-          <Link
-            href="/landing"
-            className="mt-6 inline-flex items-center gap-1.5 text-body font-medium text-accent-foreground"
-          >
-            <ArrowLeft size={16} strokeWidth={1.75} aria-hidden /> Back to Tender
-          </Link>
-        </div>
-      </PageContainer>
-    </>
+    <main className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col gap-6 px-4 py-6 lg:px-6">
+      <header className="flex items-center justify-between gap-4">
+        <Link href="/" aria-label="Tender home" className="text-foreground">
+          <TenderLogo />
+        </Link>
+        <span className="flex items-center gap-2 text-caption text-muted-foreground">
+          by
+          <ProviderLogo src="/providers/arca-labs.png" name="Arca Labs" size={20} />
+          <span className="font-medium text-foreground">Arca Labs</span>
+        </span>
+      </header>
+      <video
+        className="aspect-video w-full rounded-lg border border-border bg-foreground"
+        src="/demo.mp4"
+        controls
+        playsInline
+        preload="metadata"
+      />
+      <Link
+        href="/"
+        className="inline-flex items-center gap-1.5 self-start text-button font-medium text-accent-foreground hover:underline"
+      >
+        <ArrowLeft className="size-4" aria-hidden />
+        Back to Tender
+      </Link>
+    </main>
   );
 }
