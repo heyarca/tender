@@ -42,3 +42,9 @@ Read `docs/SPEC.md` (behavior + engine contract) and `docs/DESIGN.md` (OpenRoute
   `GIT_AUTHOR_*`, `--author`), never add `Co-authored-by` trailers.
 - Atomic conventional commits; stage files explicitly (`git add <file>`), never `git add -A`.
 - Never run `git stash`, `git reset --hard`, `git checkout -- .`, or delete other people's work.
+
+## Release
+
+- `main` is production: Vercel (`the-zone-bio/tender`) deploys every commit on `main`; other branches get previews.
+- Never push to `main` directly. Open a PR to `main`; CI (`.github/workflows/ci.yml`) runs `bun run verify` and
+  merges green, ready (non-draft), same-repository PRs automatically. Keep a PR in draft to hold it.
