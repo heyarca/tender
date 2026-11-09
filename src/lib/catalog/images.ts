@@ -15,4 +15,9 @@ export const CATALOG_IMAGE_PATHS: Record<string, CatalogImagePath> = {
     jpg: "/catalog/lithium-carbonate.jpg",
     alt: "Polished pale stone with crystalline veins.",
   },
+  "freight-sha-lax": {
+    avif: "/catalog/freight-sha-lax.avif",
+    jpg: "/catalog/freight-sha-lax.jpg",
+    alt: "Aerial view of shipping containers at a cargo port.",
+  },
 };

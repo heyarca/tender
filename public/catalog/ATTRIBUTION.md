@@ -13,3 +13,9 @@ These assets are derived from free Unsplash photos. Source pages are retained fo
 - Source page: https://unsplash.com/photos/polished-beige-stone-with-crystalline-veins-1nrY9CLAGcI
 - Direct image: https://images.unsplash.com/photo-1532467411038-57680e3dc0f1?auto=format&fit=crop&q=60&crop=entropy&cs=srgb&fm=jpg&ixid=NHwxMjA3fDA&ixlib=rb-4.1.0
 - License: [Unsplash License](https://unsplash.com/license)
+
+## `freight-sha-lax`
+- Photographer: Cosmin Andrei Buzamat
+- Source page: https://unsplash.com/photos/aerial-view-of-a-busy-port-with-colorful-shipping-containers-b4lmjXJi9e4
+- Direct image: https://images.unsplash.com/photo-1782398138711-72c37bce4b38?auto=format&fit=crop&q=60&crop=entropy&cs=srgb&fm=jpg&ixid=NHwxMjA3fDA&ixlib=rb-4.1.0
+- License: [Unsplash License](https://unsplash.com/license)
