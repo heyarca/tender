@@ -24,7 +24,10 @@ const routeHeaders = {
 const errors = {
   "400": { description: "Invalid contract input or policy", content: content("Error") },
   "409": { description: "No eligible provider; no payment requested", content: content("Error") },
-  "503": { description: "Selected provider unavailable or payment service unavailable", content: content("Error") },
+  "500": { description: "Selected provider failed; no settlement", content: content("ProviderError") },
+  "502": { description: "Selected provider failed; no settlement", content: content("ProviderError") },
+  "503": { description: "provider_error (selected provider unavailable, no settlement) or payment_unavailable (payment service unavailable, no payload)", content: { "application/json": { schema: { oneOf: [ref("ProviderError"), ref("PaymentUnavailable")] } } } },
+  "504": { description: "Selected provider timed out; no settlement", content: content("ProviderError") },
 };
 function paidOperation(operationId: string, parameter: string, value: string, schema: string) {
   return {
@@ -70,6 +73,8 @@ export const openapiDocument = {
   },
   components: { schemas: {
     Error: { type: "object", required: ["error"], properties: { error: { type: "object", required: ["code", "message"], properties: { code: string, message: string } } } },
+    ProviderError: { type: "object", required: ["error", "provider", "request_id", "latency_ms", "policy_violation", "policy_violations"], properties: { error: { type: "object", required: ["code", "message"], properties: { code: { const: "provider_error" }, message: string } }, provider: string, request_id: string, latency_ms: number, policy_violation: { type: "boolean" }, policy_violations: { type: "array", items: string } } },
+    PaymentUnavailable: { type: "object", required: ["error"], properties: { error: { type: "object", required: ["code", "message"], properties: { code: { const: "payment_unavailable" }, message: { const: "Payment service unavailable" } } } } },
     Policy: { type: "object", required: ["maxPrice", "maxP95LatencyMs", "maxDataAgeMs", "minSuccessRate", "preference", "mode"], properties: {
       maxPrice: number, maxP95LatencyMs: number, maxDataAgeMs: number, minSuccessRate: { type: "number", minimum: 0, maximum: 1 }, preference: { type: "string", enum: PREFERENCES },
       mode: { oneOf: [{ type: "object", required: ["kind"], properties: { kind: { const: "auto" } } }, { type: "object", required: ["kind", "providerId"], properties: { kind: { const: "pinned" }, providerId: string } }] },
@@ -86,7 +91,7 @@ export const openapiDocument = {
       location: { type: "object", properties: { name: string, latitude: number, longitude: number } }, observed_at: timestamp,
       temperature_f: number, feels_like_f: number, condition: string, humidity_percent: number, wind_mph: number, wind_direction_degrees: number, wind_direction: string, pressure_hpa: number, visibility_mi: number, dew_point_f: number, cloud_cover_percent: number,
     } },
-    PriceResult: { type: "object", required: [...requiredResult, "pair", "price", "source_timestamp"], properties: { ...result, pair: { const: "BTC-USD" }, price: { type: "number", description: "BTC spot price in USD, two decimals" }, currency: { const: "USD" }, change_usd: { type: ["number", "null"], description: "Null: stateless API has no previous-request history" }, source_timestamp: timestamp } },
+    PriceResult: { type: "object", required: [...requiredResult, "pair", "price", "source_timestamp"], properties: { ...result, pair: { const: "BTC-USD" }, price: { type: "number", description: "BTC spot price in USD, two decimals" }, currency: { const: "USD" }, source_timestamp: timestamp } },
     PaymentRequired: { type: "object", description: "Tender payment challenge body. Standard x402 v2 requirements are encoded in PAYMENT-REQUIRED, including accepts[].extra settlement metadata.", required: ["error", "providerId", "payTo", "price_usd", "settled_usd", "settled_atomic"], properties: { error: { type: "string" }, providerId: string, payTo: string, ...settlement } },
   } },
 };

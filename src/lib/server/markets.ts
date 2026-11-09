@@ -1,4 +1,4 @@
-import { getMarketDefinition, isMarketId, MARKET_IDS, evaluateMarket, type MarketDefinition, type MarketId, type RoutingPolicy } from "@/lib/tender";
+import { getMarketDefinition, isMarketId, MARKET_IDS, selectRoute, type MarketDefinition, type MarketId, type RoutingPolicy } from "@/lib/tender";
 import { ApiError } from "./http";
 import { readPolicyOverrides } from "./policy";
 
@@ -25,9 +25,10 @@ export function requestPolicy(request: Request, market: MarketDefinition): Routi
 export function marketDetail(request: Request, marketId: MarketId) {
   const market = getMarketDefinition(marketId);
   const policy = requestPolicy(request, market);
-  const evaluation = evaluateMarket(market.providers.map((p) => ({ id: p.id, name: p.name, conditions: p.defaults })), policy);
-  const activeId = policy.mode.kind === "pinned" ? policy.mode.providerId : evaluation.recommendedId;
-  const violations = activeId ? evaluation.byId[activeId].reasons.map((r) => r.message) : [];
+  const selection = selectRoute(marketId, { policy });
+  const evaluation = selection.evaluation;
+  const activeId = selection.providerId;
+  const violations = selection.violations.map((r) => r.message);
   return { ...marketSummary(market), policy,
     providers: market.providers.map((provider) => ({ id: provider.id, name: provider.name, logo: provider.logo,
       bid_per_million: provider.defaults.bidPrice, p95_latency_ms: provider.defaults.p95LatencyMs,

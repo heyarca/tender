@@ -23,7 +23,7 @@ beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(new Date("2026-11-09T18:30:05Z"));
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ bid: "75000", ask: "75002", time: "2026-11-09T18:30:00Z" })));
 });
-afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
+afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); vi.restoreAllMocks(); });
 
 describe("paid contract handlers", () => {
   it("quotes once and serves the same provider with explicit sub-unit settlement", async () => {
@@ -38,6 +38,7 @@ describe("paid contract handlers", () => {
     expect(data.data_age_ms).toBeLessThanOrEqual(264);
     expect(Date.now() - Date.parse(data.source_timestamp)).toBe(data.data_age_ms);
     expect(data.price).toBeGreaterThan(74000);
+    expect(data).not.toHaveProperty("change_usd");
   });
   it("does not load upstream values before payment", async () => {
     const response = await price(req("prices/spot", false));
@@ -92,9 +93,11 @@ describe("paid contract handlers", () => {
   });
   it("fails closed when the payment service fails", async () => {
     payments.fail = true;
+    const logger = vi.spyOn(console, "error").mockImplementation(() => {});
     const response = await price(req("prices/spot"));
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({ error: { code: "payment_unavailable", message: "Payment service unavailable" } });
+    expect(logger).toHaveBeenCalledWith("Tender payment service error", { name: "Error", message: "Facilitator unavailable" });
     expect(fetch).not.toHaveBeenCalled();
   });
   it.each(["prices/spot?pair=ETH-USD", "prices/spot?pair=BTC-USD&pair=BTC-USD", "prices/spot?pin=together", "prices/spot?min_success_rate=99.9"])("rejects invalid input %s before payment", async (path) => {
