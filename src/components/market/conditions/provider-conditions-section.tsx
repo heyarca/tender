@@ -33,7 +33,7 @@ import { useMarketView, useTenderActions, useTenderStore } from "@/lib/tender/cl
 import { cn } from "@/lib/utils";
 
 import { useSelectedProvider, type MarketSectionProps } from "../market-ui";
-import { describeMarketChange, type ChangeNote } from "../policy/market-change";
+import { decisionFingerprint, describeMarketChange, type ChangeNote } from "../policy/market-change";
 import { NOTE_TEXT } from "../policy/routing-policy-section";
 import { SpecField, type FieldDraft } from "../policy/spec-field";
 import { displayOf, engineOf, formatSpecValue } from "../policy/spec-values";
@@ -131,8 +131,19 @@ function ConditionsEditor({
   const [selectedId, select] = useSelectedProvider(marketId);
   const { restoreProvider } = useTenderActions();
   const row = resolveEditedProvider(view, selectedId);
+  /**
+   * Edits pin the panel to the edited provider, so a failover away from the
+   * serving provider does not swap the panel to the new one mid-task.
+   */
+  const applyToRow = (providerId: ProviderId | null, action: () => void) => {
+    if (providerId && selectedId !== providerId) select(providerId);
+    apply(providerId, action);
+  };
   const status = roleBadge(row);
-  const visibleNote = note && (note.providerId === null || note.providerId === row.id) ? note : null;
+  const visibleNote =
+    note && (note.providerId === null || note.providerId === row.id) && note.fingerprint === decisionFingerprint(view)
+      ? note
+      : null;
 
   const pickerItems = view.definition.providers.map((provider) => {
     const providerRow = view.providersById[provider.id];
@@ -174,11 +185,16 @@ function ConditionsEditor({
               Modified
             </Badge>
           ) : null}
+        </div>
+        <div className="flex items-start gap-3">
+          <p className="min-w-0 flex-1 pt-1 text-caption leading-snug text-muted-foreground">
+            {roleSummary(row, view.policy.preference)}
+          </p>
           <Button
             variant="ghost"
             size="sm"
-            className="ml-auto"
-            onClick={() => apply(row.id, () => restoreProvider(marketId, row.id))}
+            className="-mr-2.5 shrink-0"
+            onClick={() => applyToRow(row.id, () => restoreProvider(marketId, row.id))}
             disabled={!row.modified}
             aria-label={`Restore provider ${row.name} to default conditions`}
           >
@@ -186,12 +202,11 @@ function ConditionsEditor({
             Restore provider
           </Button>
         </div>
-        <p className="text-caption leading-snug text-muted-foreground">{roleSummary(row, view.policy.preference)}</p>
       </div>
 
-      <ProviderFields key={row.id} view={view} row={row} apply={apply} />
+      <ProviderFields key={row.id} view={view} row={row} apply={applyToRow} />
 
-      <ScenarioBar view={view} row={row} apply={apply} />
+      <ScenarioBar view={view} row={row} apply={applyToRow} />
 
       <div className="mt-auto flex flex-col gap-3">
         <div
@@ -343,6 +358,7 @@ function ScenarioBar({
               key={scenario.id}
               variant="outline"
               size="sm"
+              className="gap-1 px-2 [&_svg]:size-3.5 [&_svg]:text-muted-foreground"
               disabled={!patch}
               onClick={patch ? () => apply(row.id, () => updateProvider(view.id, row.id, patch)) : undefined}
             >

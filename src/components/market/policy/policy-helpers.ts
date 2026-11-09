@@ -16,6 +16,8 @@ export interface EligibilityPreview {
   /** Policy with in-progress edits applied (equals the committed policy when idle). */
   policy: RoutingPolicy;
   qualifiedIds: Set<ProviderId>;
+  /** Qualified provider ids, best first for the policy's preference. */
+  ranking: ProviderId[];
   /** Failing-check copy per excluded provider ("P95 640 ms exceeds 400 ms"). */
   reasons: Record<ProviderId, string>;
   /** Providers passing each check under `policy`. */
@@ -58,5 +60,5 @@ export function previewEligibility(
     const providerEvaluation = evaluation.byId[row.id];
     if (!providerEvaluation.qualifies) reasons[row.id] = providerEvaluation.reasons.map((reason) => reason.message).join("; ");
   }
-  return { policy, qualifiedIds: new Set(evaluation.ranking), reasons, passCounts };
+  return { policy, qualifiedIds: new Set(evaluation.ranking), ranking: evaluation.ranking, reasons, passCounts };
 }

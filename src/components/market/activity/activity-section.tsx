@@ -40,6 +40,7 @@ import {
   type MarketId,
   type MarketTimeZone,
   type ProviderId,
+  type RouteEstablishedEntry,
   type RouteSwitchEntry,
   type Tone,
 } from "@/lib/tender";
@@ -244,7 +245,7 @@ function ActivityRow({ entry, marketId, timeZone }: { entry: ActivityEntry; mark
           </div>
           <RelativeTime at={entry.at} timeZone={timeZone} />
         </div>
-        {entry.kind === "route-switch" ? (
+        {entry.kind === "route-switch" || entry.kind === "route-established" ? (
           <SwitchDetails entry={entry} />
         ) : entry.details.length ? (
           <div className="mt-0.5 flex flex-col gap-0.5">
@@ -292,7 +293,7 @@ function SwitchTitle({ entry, marketId }: { entry: RouteSwitchEntry; marketId: M
   );
 }
 
-function SwitchDetails({ entry }: { entry: RouteSwitchEntry }) {
+function SwitchDetails({ entry }: { entry: RouteSwitchEntry | RouteEstablishedEntry }) {
   const parts = parseRouteSwitchDetails(entry.details);
   return (
     <div className="mt-1 flex flex-col gap-1">

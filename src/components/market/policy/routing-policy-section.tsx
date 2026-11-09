@@ -23,7 +23,7 @@ import { useMarketView, usePendingSwitch, useTenderActions, useTenderStore } fro
 import { cn } from "@/lib/utils";
 
 import type { MarketSectionProps } from "../market-ui";
-import { describeMarketChange, type ChangeNote } from "./market-change";
+import { decisionFingerprint, describeMarketChange, type ChangeNote } from "./market-change";
 import { POLICY_FIELDS, previewEligibility, type PolicyField } from "./policy-helpers";
 import { SpecField, type FieldDraft } from "./spec-field";
 import { displayOf, engineOf, formatSpecValue } from "./spec-values";
@@ -255,6 +255,7 @@ function DecisionSummary({
 }) {
   const pending = usePendingSwitch(view.id);
   const { decision } = view;
+  const visibleNote = note && note.fingerprint === decisionFingerprint(view) ? note : null;
   const title = pending ? pending.label : decision.title;
   const total = view.providers.length;
 
@@ -270,49 +271,82 @@ function DecisionSummary({
         </Badge>
       </div>
       <p className="text-caption leading-snug text-muted-foreground">{decision.summary}</p>
-      <ul aria-label="Provider eligibility" className="flex flex-wrap items-center gap-1.5">
-        {view.definition.providers.map((provider) => {
-          const qualifies = preview.qualifiedIds.has(provider.id);
-          const reasons = preview.reasons[provider.id];
-          const serving = view.route.activeProviderId === provider.id;
-          return (
-            <li key={provider.id}>
-              <Tooltip
-                content={
-                  <span className="flex flex-col gap-0.5">
-                    <span className="font-medium text-foreground">
-                      {provider.name}
-                      {serving ? " · serving" : ""}
-                    </span>
-                    <span>{qualifies ? "Meets your policy" : reasons}</span>
-                  </span>
-                }
-              >
-                <span
-                  tabIndex={0}
-                  aria-label={`${provider.name}: ${qualifies ? "qualifies" : `excluded, ${reasons}`}${serving ? ", serving requests" : ""}`}
-                  className={cn(
-                    "relative flex rounded-sm transition-[opacity,filter] duration-quick focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                    qualifies ? "opacity-100" : "opacity-35 grayscale",
-                    serving && "ring-2 ring-primary ring-offset-1 ring-offset-muted",
-                  )}
-                >
-                  <ProviderLogo src={provider.logo} name={provider.name} size={20} />
-                </span>
-              </Tooltip>
-            </li>
-          );
-        })}
-      </ul>
-      {note ? (
-        <div role="status" className={cn("flex flex-col gap-0.5 border-t border-border pt-2 text-caption leading-snug", NOTE_TEXT[note.tone])}>
-          {note.lines.map((line) => (
-            <p key={line}>{line}</p>
-          ))}
-        </div>
+      <EligibilityStrip view={view} preview={preview} />
+      <div
+        role="status"
+        className={cn(
+          visibleNote ? "flex flex-col gap-0.5 border-t border-border pt-2 text-caption leading-snug" : "sr-only",
+          visibleNote && NOTE_TEXT[visibleNote.tone],
+        )}
+      >
+        {visibleNote?.lines.map((line) => (
+          <p key={line}>{line}</p>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function EligibilityStrip({ view, preview }: { view: MarketView; preview: ReturnType<typeof previewEligibility> }) {
+  const qualified = preview.ranking.map((id) => view.providersById[id]).filter(Boolean);
+  const excluded = view.providers.filter((row) => !preview.qualifiedIds.has(row.id));
+  const servingId = view.route.activeProviderId;
+
+  const item = (row: MarketView["providers"][number]) => {
+    const qualifies = preview.qualifiedIds.has(row.id);
+    const reasons = preview.reasons[row.id];
+    const serving = servingId === row.id;
+    return (
+      <li key={row.id}>
+        <Tooltip
+          content={
+            <span className="flex flex-col gap-0.5">
+              <span className="font-medium text-foreground">
+                {row.name}
+                {serving ? " · serving requests" : ""}
+              </span>
+              <span>{qualifies ? "Meets your policy" : reasons}</span>
+            </span>
+          }
+        >
+          <span
+            tabIndex={0}
+            aria-label={`${row.name}: ${qualifies ? "qualifies" : `excluded, ${reasons}`}${serving ? ", serving requests" : ""}`}
+            className={cn(
+              "relative flex rounded-sm transition-[opacity,filter] duration-quick focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              qualifies ? "opacity-100" : "opacity-40 grayscale",
+            )}
+          >
+            <ProviderLogo src={row.logo} name={row.name} size={20} />
+            {serving ? (
+              <span
+                aria-hidden="true"
+                className="absolute -right-1 -bottom-1 size-2.5 rounded-full border-2 border-muted bg-primary"
+              />
+            ) : null}
+          </span>
+        </Tooltip>
+      </li>
+    );
+  };
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+      {qualified.length ? (
+        <ul aria-label="Qualifying providers" className="flex flex-wrap items-center gap-1.5">
+          {qualified.map(item)}
+        </ul>
       ) : (
-        <div role="status" className="sr-only" />
+        <span className="text-caption text-negative-text">No provider qualifies</span>
       )}
+      {excluded.length ? (
+        <>
+          <span aria-hidden="true" className="h-4 w-px bg-border" />
+          <ul aria-label="Excluded providers" className="flex flex-wrap items-center gap-1.5">
+            {excluded.map(item)}
+          </ul>
+        </>
+      ) : null}
     </div>
   );
 }

@@ -4,6 +4,8 @@ import { SWITCH_COOLDOWN_MS, type MarketView, type ProviderId, type ProviderRow,
 export interface ChangeNote {
   tone: Tone;
   lines: string[];
+  /** `decisionFingerprint` of the view right after the change. */
+  fingerprint: string;
 }
 
 const TONE_RANK: Record<Tone, number> = { neutral: 0, positive: 1, warning: 2, negative: 3 };
@@ -109,5 +111,18 @@ export function describeMarketChange(before: MarketView, after: MarketView, focu
       raise("negative");
     }
   }
-  return { tone, lines };
+  return { tone, lines, fingerprint: decisionFingerprint(after) };
+}
+
+/**
+ * Fingerprint of everything that decides eligibility and the route: policy,
+ * provider conditions, the serving provider, and a pending switch. Monitor
+ * samples and requests do not change it, so a change note stays visible until
+ * something it describes changes.
+ */
+export function decisionFingerprint(view: MarketView): string {
+  const conditions = [...view.providers]
+    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+    .map((row) => [row.id, row.conditions]);
+  return JSON.stringify([view.policy, conditions, view.route.activeProviderId, view.route.pending?.providerId ?? null]);
 }
