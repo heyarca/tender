@@ -37,10 +37,16 @@ import { ReceiptsTable } from "./receipts-table";
 const sectionLinkClass =
   "cursor-pointer rounded-sm text-accent-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
 
+/** Rows of the receipts table before "Show all". */
+const TABLE_PREVIEW_ROWS = 5;
+
 /** Balances older than this are read again when the section mounts. */
 const BALANCES_STALE_MS = 30_000;
-/** Second balance read after a payment, for RPC nodes that lag a block behind. */
-const BALANCES_RECHECK_MS = 4_000;
+/**
+ * Second balance read after a payment, for RPC nodes that lag a block behind.
+ * Longer than the balances endpoint's 5 s cache so it is a fresh read.
+ */
+const BALANCES_RECHECK_MS = 6_000;
 
 interface Attempt {
   marketId: MarketId;
@@ -111,6 +117,7 @@ export function PaymentsSection({ marketId }: MarketSectionProps) {
   const { run, pending, error, failure, stage } = usePaidRequest(marketId);
   const payments = usePaymentsState();
   const [attempt, setAttempt] = useState<Attempt | null>(null);
+  const [showAll, setShowAll] = useState(false);
   const starting = useRef(false);
 
   const quote = useMemo(() => buildPaymentQuote(view), [view]);
@@ -332,7 +339,16 @@ export function PaymentsSection({ marketId }: MarketSectionProps) {
         {records.length > 0 ? (
           <div>
             <SubHeading>Recent paid requests</SubHeading>
-            <ReceiptsTable records={records} marketId={marketId} timeZone={definition.timeZone} />
+            <ReceiptsTable
+              records={showAll ? records : records.slice(0, TABLE_PREVIEW_ROWS)}
+              marketId={marketId}
+              timeZone={definition.timeZone}
+            />
+            {records.length > TABLE_PREVIEW_ROWS ? (
+              <Button variant="ghost" size="sm" className="mt-2" onClick={() => setShowAll((value) => !value)} aria-expanded={showAll}>
+                {showAll ? "Show fewer" : `Show all ${records.length}`}
+              </Button>
+            ) : null}
           </div>
         ) : null}
       </div>
