@@ -1,0 +1,141 @@
+
+/* Tender landing: shared foundation. Product tokens (--lime, --olive, --primary-*) come from globals.css. */
+.tenderLanding_site {
+  --lp-page: #f5f5f5;
+  --lp-panel: #ececec;
+  --lp-surface: #ffffff;
+  --lp-ink: var(--ink);
+  --lp-ink-2: rgb(3 8 10 / 0.72);
+  --lp-ink-3: rgb(3 8 10 / 0.62);
+  --lp-ink-4: rgb(3 8 10 / 0.44);
+  --lp-line: rgb(3 8 10 / 0.08);
+  --lp-line-strong: rgb(3 8 10 / 0.14);
+  --lp-lime: var(--lime);
+  --lp-lime-hover: var(--primary-hover);
+  --lp-lime-active: var(--primary-active);
+  --lp-lime-border: var(--primary-border);
+  --lp-lime-wash: var(--accent);
+  --lp-olive: var(--olive);
+  --lp-shadow-xs: 0 1px 2px rgb(3 8 10 / 0.06);
+  --lp-shadow-sm: 0 1px 2px rgb(3 8 10 / 0.05), 0 4px 12px -4px rgb(3 8 10 / 0.08);
+  --lp-shadow-window: 0 0 0 1px rgb(3 8 10 / 0.06), 0 2px 4px rgb(3 8 10 / 0.04), 0 32px 72px -28px rgb(3 8 10 / 0.34);
+  --lp-radius-button: 10px;
+  --lp-radius-card: 20px;
+  --lp-radius-media: 24px;
+  --lp-gutter: 80px;
+  --lp-measure: 1280px;
+  --lp-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --lp-font: var(--font-pp-mori), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  min-height: 100vh;
+  overflow-x: clip;
+  background: var(--lp-page);
+  color: var(--lp-ink);
+  font-family: var(--lp-font);
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+/* Element resets live in Tailwind's base layer, so the utilities of embedded product UI still win. */
+@layer base {
+  .tenderLanding_site *,
+  .tenderLanding_site *::before,
+  .tenderLanding_site *::after { box-sizing: border-box; }
+  .tenderLanding_site a { color: inherit; text-decoration: none; }
+  .tenderLanding_site h1, .tenderLanding_site h2, .tenderLanding_site h3, .tenderLanding_site h4, .tenderLanding_site p, .tenderLanding_site figure, .tenderLanding_site dl, .tenderLanding_site dd, .tenderLanding_site blockquote { margin: 0; }
+  .tenderLanding_site h1, .tenderLanding_site h2, .tenderLanding_site h3, .tenderLanding_site h4 { font-family: var(--lp-font); font-weight: 400; text-wrap: balance; }
+  .tenderLanding_site p { text-wrap: pretty; }
+  .tenderLanding_site img, .tenderLanding_site video, .tenderLanding_site svg { display: block; }
+  .tenderLanding_site a:focus-visible, .tenderLanding_site summary:focus-visible, .tenderLanding_site [tabindex]:focus-visible { outline: 2px solid var(--lp-olive); outline-offset: 3px; border-radius: 6px; }
+  .tenderLanding_site ::selection { background: var(--lp-lime); color: var(--lp-ink); }
+  .tenderLanding_site section[id] { scroll-margin-top: 96px; }
+}
+
+.tenderLanding_container { width: min(var(--lp-measure), calc(100% - var(--lp-gutter) * 2)); margin-inline: auto; }
+.tenderLanding_section { padding-top: 176px; }
+.tenderLanding_sectionHeader { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: end; gap: 48px; margin-bottom: 56px; }
+.tenderLanding_sectionTitle { font-size: 44px; line-height: 1.06; letter-spacing: -0.032em; color: var(--lp-ink); }
+.tenderLanding_sectionLead { max-width: 31em; font-size: 18px; line-height: 1.5; color: var(--lp-ink-2); }
+.tenderLanding_card { background: var(--lp-surface); border-radius: var(--lp-radius-card); }
+.tenderLanding_mediaFrame { position: relative; isolation: isolate; overflow: hidden; border-radius: var(--lp-radius-media); background: #d9dcd6; }
+.tenderLanding_mediaFill { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.tenderLanding_window { overflow: hidden; border-radius: 16px; background: var(--lp-surface); box-shadow: var(--lp-shadow-window); }
+.tenderLanding_productUi { font-family: var(--lp-font); font-size: 14px; line-height: 1.625; color: var(--lp-ink); text-align: left; }
+.tenderLanding_srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.tenderLanding_skipLink { position: fixed; top: -80px; left: 20px; z-index: 100; padding: 10px 16px; border-radius: 10px; background: var(--lp-ink); color: #fff; font-size: 15px; }
+.tenderLanding_skipLink:focus { top: 16px; }
+
+/* Header: floating tray */
+.tenderLanding_header { position: fixed; inset: 20px 0 auto; z-index: 60; display: flex; justify-content: center; padding-inline: 20px; pointer-events: none; }
+.tenderLanding_headerInner { pointer-events: auto; display: flex; align-items: center; gap: 12px; width: min(880px, 100%); height: 56px; padding: 8px 8px 8px 22px; border-radius: 16px; background: rgb(236 236 236 / 0.8); -webkit-backdrop-filter: saturate(1.6) blur(16px); backdrop-filter: saturate(1.6) blur(16px); box-shadow: inset 0 0 0 1px rgb(3 8 10 / 0.05), 0 10px 28px -18px rgb(3 8 10 / 0.3); }
+.tenderLanding_logo { display: inline-flex; flex-shrink: 0; align-items: center; color: var(--lp-ink); border-radius: 6px; }
+.tenderLanding_logo svg { width: auto; height: 20px; }
+.tenderLanding_logoLarge svg { height: 52px; color: var(--lp-lime); }
+.tenderLanding_navigation { display: flex; flex: 1; justify-content: center; gap: 2px; }
+.tenderLanding_navLink { padding: 8px 14px; border-radius: 10px; font-size: 15px; line-height: 20px; color: var(--lp-ink-2); transition: background-color 0.15s var(--lp-ease), color 0.15s var(--lp-ease); }
+.tenderLanding_navLink:hover { background: rgb(3 8 10 / 0.05); color: var(--lp-ink); }
+
+/* Buttons: 36/44px, xs shadow, inner highlight, press motion, offset focus ring */
+.tenderLanding_button { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 2px; height: 36px; padding: 8px; overflow: hidden; border: 1px solid transparent; border-radius: var(--lp-radius-button); font: inherit; font-size: 15px; font-weight: 400; line-height: 20px; white-space: nowrap; text-decoration: none; user-select: none; cursor: pointer; outline: none; -webkit-tap-highlight-color: transparent; transition: background-color 0.15s var(--lp-ease), border-color 0.15s var(--lp-ease), box-shadow 0.15s var(--lp-ease), color 0.15s var(--lp-ease), transform 0.12s var(--lp-ease); }
+.tenderLanding_button:active:not(:disabled):not([aria-disabled="true"]) { transform: scale(0.97); }
+.tenderLanding_button:focus-visible { box-shadow: 0 0 0 2px var(--lp-page), 0 0 0 4px var(--lp-olive); }
+.tenderLanding_button:disabled, .tenderLanding_button[aria-disabled="true"] { cursor: not-allowed; }
+.tenderLanding_buttonLabel { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; padding-inline: 4px; }
+.tenderLanding_buttonIcon { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; width: 20px; height: 20px; }
+.tenderLanding_buttonIcon svg { width: 20px; height: 20px; }
+.tenderLanding_buttonPrimary { background: var(--lp-lime); border-color: var(--lp-lime-border); color: var(--lp-ink); box-shadow: var(--lp-shadow-xs), inset 0 1px 0 rgb(255 255 255 / 0.5); }
+.tenderLanding_buttonPrimary:hover { background: var(--lp-lime-hover); }
+.tenderLanding_buttonPrimary:active { background: var(--lp-lime-active); }
+.tenderLanding_buttonPrimary:focus-visible { box-shadow: var(--lp-shadow-xs), inset 0 1px 0 rgb(255 255 255 / 0.5), 0 0 0 2px var(--lp-page), 0 0 0 4px var(--lp-olive); }
+.tenderLanding_buttonPrimary:disabled, .tenderLanding_buttonPrimary[aria-disabled="true"] { background: #e8f3c6; border-color: #dbe8b2; color: rgb(3 8 10 / 0.45); box-shadow: none; }
+.tenderLanding_buttonSecondary { background: var(--lp-surface); border-color: rgb(3 8 10 / 0.12); color: var(--lp-ink); box-shadow: var(--lp-shadow-xs); }
+.tenderLanding_buttonSecondary:hover { background: #fafafa; border-color: rgb(3 8 10 / 0.2); }
+.tenderLanding_buttonSecondary:active { background: #f2f2f2; border-color: rgb(3 8 10 / 0.24); }
+.tenderLanding_buttonSecondary:disabled, .tenderLanding_buttonSecondary[aria-disabled="true"] { background: #f7f7f7; border-color: rgb(3 8 10 / 0.08); color: rgb(3 8 10 / 0.42); box-shadow: none; }
+.tenderLanding_buttonDark { background: var(--lp-ink); border-color: var(--lp-ink); color: #ffffff; box-shadow: 0 1px 2px rgb(3 8 10 / 0.24), inset 0 1px 0 rgb(255 255 255 / 0.14); }
+.tenderLanding_buttonDark:hover { background: #1a1f22; }
+.tenderLanding_buttonDark:active { background: #283034; }
+.tenderLanding_buttonGlass { background: rgb(255 255 255 / 0.14); border-color: rgb(255 255 255 / 0.24); color: #ffffff; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18); }
+.tenderLanding_buttonGlass:hover { background: rgb(255 255 255 / 0.22); }
+.tenderLanding_buttonGlass:active { background: rgb(255 255 255 / 0.3); }
+.tenderLanding_buttonGlass:focus-visible { box-shadow: 0 0 0 2px var(--lp-ink), 0 0 0 4px var(--lp-lime); }
+.tenderLanding_buttonGlass:disabled, .tenderLanding_buttonGlass[aria-disabled="true"] { background: rgb(255 255 255 / 0.08); color: rgb(255 255 255 / 0.5); box-shadow: none; }
+.tenderLanding_buttonLg { height: 44px; padding: 10px 12px; border-radius: 12px; font-size: 16px; }
+
+/* Footer */
+.tenderLanding_footer { margin-top: 176px; padding: 96px 0 40px; background: var(--lp-ink); color: #ffffff; }
+.tenderLanding_footerTop { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr); gap: 48px; }
+.tenderLanding_footerBrand p { margin-top: 28px; font-size: 22px; line-height: 1.3; letter-spacing: -0.01em; color: rgb(255 255 255 / 0.72); }
+.tenderLanding_footer nav { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.tenderLanding_footer nav h3 { margin-bottom: 14px; font-size: 16px; color: #ffffff; }
+.tenderLanding_footer nav a { display: inline-flex; align-items: center; gap: 6px; padding: 5px 0; font-size: 16px; color: rgb(255 255 255 / 0.64); transition: color 0.15s var(--lp-ease); }
+.tenderLanding_footer nav a:hover { color: var(--lp-lime); }
+.tenderLanding_footer a:focus-visible { outline-color: var(--lp-lime); }
+.tenderLanding_footerBottom { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-top: 128px; padding-top: 24px; border-top: 1px solid rgb(255 255 255 / 0.12); font-size: 16px; color: rgb(255 255 255 / 0.6); }
+.tenderLanding_footerBottom a { display: inline-flex; align-items: center; gap: 6px; color: var(--lp-lime); }
+
+@media (max-width: 1279px) { .tenderLanding_site { --lp-gutter: 48px; } }
+@media (max-width: 1023px) {
+  .tenderLanding_section { padding-top: 128px; }
+  .tenderLanding_sectionHeader { grid-template-columns: minmax(0, 1fr); gap: 20px; margin-bottom: 40px; }
+  .tenderLanding_sectionTitle { font-size: 38px; }
+  .tenderLanding_footerTop { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .tenderLanding_footerBrand { grid-column: 1 / -1; }
+}
+@media (max-width: 767px) {
+  .tenderLanding_site { --lp-gutter: 20px; font-size: 16px; }
+  .tenderLanding_section { padding-top: 96px; }
+  .tenderLanding_sectionTitle { font-size: 31px; line-height: 1.1; }
+  .tenderLanding_sectionLead { font-size: 17px; }
+  .tenderLanding_header { top: 12px; padding-inline: 12px; }
+  .tenderLanding_headerInner { height: 52px; padding-left: 16px; justify-content: space-between; }
+  .tenderLanding_navigation { display: none; }
+  .tenderLanding_footer { margin-top: 112px; padding-top: 72px; }
+  .tenderLanding_footerBottom { margin-top: 72px; flex-direction: column; align-items: flex-start; }
+  .tenderLanding_buttonFluid { flex: 1 1 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tenderLanding_site *, .tenderLanding_site *::before, .tenderLanding_site *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
