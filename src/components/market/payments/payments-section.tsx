@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Section } from "@/components/ui/section";
+import { Skeleton } from "@/components/ui/skeleton";
 import { InfoTooltip } from "@/components/ui/tooltip";
 import { usePaidRequest } from "@/lib/payments/client";
 import { format, getMarketDefinition, type MarketId, PREFERENCE_LABELS } from "@/lib/tender";
@@ -282,7 +283,11 @@ export function PaymentsSection({ marketId }: MarketSectionProps) {
                 <span>USDC</span>
               </>
             ) : (
-              <span>{payments.balancesStatus === "error" ? "balance unavailable" : payerMissing ? "not configured" : "loading…"}</span>
+              payments.balancesStatus === "error" || payerMissing ? (
+                <span>{payerMissing ? "not configured" : "balance unavailable"}</span>
+              ) : (
+                <Skeleton className="h-3.5 w-40" />
+              )
             )}
             <Button
               variant="ghost"
@@ -330,7 +335,7 @@ export function PaymentsSection({ marketId }: MarketSectionProps) {
                 icon={<Receipt aria-hidden="true" />}
                 title="No paid requests yet"
                 description={`Run a paid request to settle ${definition.shortName} in USDC and see its receipt and transaction.`}
-                className="py-8"
+                className="py-7"
               />
             </div>
           )}
