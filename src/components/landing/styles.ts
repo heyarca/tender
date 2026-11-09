@@ -55,6 +55,7 @@ export const landingStyles = {
   heroLaneMark: "tenderLanding_heroLaneMark",
   heroLaneWin: "tenderLanding_heroLaneWin",
   heroLead: "tenderLanding_heroLead",
+  heroLeadLine: "tenderLanding_heroLeadLine",
   heroLimit: "tenderLanding_heroLimit",
   heroLimits: "tenderLanding_heroLimits",
   heroMarketIcon: "tenderLanding_heroMarketIcon",

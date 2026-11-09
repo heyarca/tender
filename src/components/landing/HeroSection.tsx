@@ -94,7 +94,9 @@ export function HeroSection() {
           <span className={styles.heroTitleLine}>best API.</span>
         </h1>
         <p className={styles.heroLead}>
-          If an API breaks, Tender switches. If a better one shows up, Tender switches. Your app never notices.
+          <span className={styles.heroLeadLine}>If an API breaks, Tender switches.</span>{" "}
+          <span className={styles.heroLeadLine}>If a better one shows up, Tender switches.</span>{" "}
+          <span className={styles.heroLeadLine}>Your app never notices.</span>
         </p>
         <div className={styles.heroActions}>
           <ButtonLink href={DEMO_HREF} size="lg" fluid icon={<ArrowUpRight size={20} />}>
