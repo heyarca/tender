@@ -32,7 +32,9 @@ Read `docs/SPEC.md` (behavior + engine contract) and `docs/DESIGN.md` (OpenRoute
   styled with Tailwind to match `docs/DESIGN.md`. Icons from `lucide-react` (16px, stroke 1.75–2).
 - Client components only where needed (`"use client"`). No `Date.now()`, `new Date()`, or `Math.random()` during render.
 - No environment-variable feature flags or toggles.
-- Light theme only. No hard-coded hex colors in components.
+- Light theme only. No hard-coded hex colors in components. Typeface: PP Mori only (`src/fonts/pp-mori.ts`; no other
+  UI fonts). Brand color: lime `#C8FF00` as a fill with ink text; olive `#4A6000` (`primary-strong`/`accent-foreground`)
+  for accent text, icons, lines, and focus rings on light surfaces. See `docs/DESIGN.md`.
 - Product copy: concise English, sentence case. Never show "Demo", "Simulation", "Mock", "Hackathon",
   "Coming soon", or disclaimer banners.
 

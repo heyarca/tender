@@ -38,7 +38,7 @@ export interface PriceChartProps {
 const DEFAULT_WIDTH = 640;
 const MARGIN = { top: 24, right: 14, bottom: 22 };
 const TICK_FONT_PX = 11;
-/** Approximate advance of an 11px tabular digit in Plus Jakarta Sans. */
+/** Approximate advance of an 11px tabular digit in PP Mori. */
 const CHAR_PX = 6.6;
 const MIN_X_TICK_SPACING = 96;
 const MARKER_LABEL_MIN_GAP = 20;
@@ -283,7 +283,7 @@ export function PriceChart({
             strokeWidth={1.5}
             strokeLinecap="round"
             strokeLinejoin="round"
-            style={{ stroke: "var(--primary)" }}
+            style={{ stroke: "var(--primary-strong)" }}
           />
           {latestPos && (
             <>
@@ -294,7 +294,7 @@ export function PriceChart({
                 r={3}
                 className="animate-ping motion-reduce:hidden"
                 style={{
-                  fill: "var(--primary)",
+                  fill: "var(--primary-strong)",
                   opacity: 0.35,
                   transformBox: "fill-box",
                   transformOrigin: "center",
@@ -306,7 +306,7 @@ export function PriceChart({
                 cy={latestPos.y}
                 r={3}
                 strokeWidth={1.5}
-                style={{ fill: "var(--primary)", stroke: "var(--card)" }}
+                style={{ fill: "var(--primary-strong)", stroke: "var(--card)" }}
               />
             </>
           )}
@@ -329,7 +329,7 @@ export function PriceChart({
                 cy={y(hovered.price)}
                 r={3.5}
                 strokeWidth={1.5}
-                style={{ fill: "var(--card)", stroke: "var(--primary)" }}
+                style={{ fill: "var(--card)", stroke: "var(--primary-strong)" }}
               />
             )}
           </g>

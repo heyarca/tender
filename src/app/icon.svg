@@ -1,10 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="32" height="32">
-  <style>
-    .m { color: #7624f4; }
-    @media (prefers-color-scheme: dark) { .m { color: #a47bff; } }
-  </style>
-  <g class="m">
-    <path d="M3.8 3.8h12.4M3.8 10h7.6M3.8 16.2h1.6" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
-    <circle cx="12.6" cy="16.2" r="3.1" fill="currentColor"/>
+  <rect width="20" height="20" rx="5" fill="#c8ff00"/>
+  <g transform="translate(3.2 3.2) scale(0.68)">
+    <path d="M3.8 3.8h12.4M3.8 10h7.6M3.8 16.2h1.6" fill="none" stroke="#03080a" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="12.6" cy="16.2" r="3.1" fill="#03080a"/>
   </g>
 </svg>

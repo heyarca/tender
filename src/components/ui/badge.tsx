@@ -107,7 +107,7 @@ const statusDotVariants = cva("relative inline-flex shrink-0 rounded-full", {
   variants: {
     tone: {
       neutral: "bg-faint",
-      active: "bg-primary",
+      active: "bg-primary-strong",
       positive: "bg-positive",
       warning: "bg-warning",
       negative: "bg-negative",
