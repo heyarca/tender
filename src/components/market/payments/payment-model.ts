@@ -1,5 +1,6 @@
 import {
   getProviderFixture,
+  MARKETS,
   PREFERENCE_LABELS,
   selectRoute,
   type ConditionsPatch,
@@ -264,10 +265,12 @@ function finite(value: unknown): value is number {
 /** One line for a paid response: "61°F Overcast" or "$75,230.75". */
 export function summarizePayload(marketId: MarketId, payload: Record<string, unknown> | null | undefined): string | null {
   if (!payload) return null;
-  if (marketId === "btc-usd") {
+  if (MARKETS[marketId].units.dataAge === "ms") {
     if (!finite(payload.price)) return null;
     const abs = Math.abs(payload.price);
-    const text = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(abs);
+    // Pairs priced near $1 (FX, XRP) need more decimals than BTC/ETH to be meaningful.
+    const decimals = abs < 10 ? 4 : 2;
+    const text = new Intl.NumberFormat("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(abs);
     return `${payload.price < 0 ? "\u2212" : ""}$${text}`;
   }
   if (!finite(payload.temperature_f)) return null;

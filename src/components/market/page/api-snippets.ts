@@ -1,8 +1,12 @@
-import type { MarketId, RoutingPolicy } from "@/lib/tender";
+import { MARKETS, type MarketId, type RoutingPolicy } from "@/lib/tender";
 
 /** Contract endpoint of a market (path + its one supported argument). */
 export function contractPath(marketId: MarketId): string {
-  return marketId === "sf-weather" ? "/api/v1/weather/current?location=san-francisco" : "/api/v1/prices/spot?pair=BTC-USD";
+  const definition = MARKETS[marketId];
+  const slug = definition.identifier.split("/")[1] ?? "";
+  return definition.units.dataAge === "min"
+    ? `/api/v1/weather/current?location=${slug}`
+    : `/api/v1/prices/spot?pair=${slug.toUpperCase()}`;
 }
 
 /** Discovery endpoint of a market (bids, performance, qualification, route). */

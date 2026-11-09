@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { executeSelection, getMarketDefinition, seedFromString, selectRoute, sanitizeConditionsPatch, type ConditionsPatch, type ProviderId, type ProviderConditions, type MarketId, type MarketReference, type RouteSelection } from "@/lib/tender";
+import { executeSelection, getMarketDefinition, MARKET_IDS, seedFromString, selectRoute, sanitizeConditionsPatch, type ConditionsPatch, type ProviderId, type ProviderConditions, type MarketId, type MarketReference, type RouteSelection } from "@/lib/tender";
 import { quoteFromBid, withX402Payment, type SettlementAmounts } from "@/lib/payments/server";
 import { ApiError, errorResponse, json } from "./http";
 import { requestPolicy } from "./markets";
@@ -22,13 +22,32 @@ function conditionOverrides(marketId: MarketId, patches: ContractOptions["condit
   return conditions;
 }
 
+/** Query argument of a market's contract: weather markets take `location`, price markets take `pair`. */
+export function contractInput(marketId: MarketId): { key: "location" | "pair"; value: string } {
+  const definition = getMarketDefinition(marketId);
+  const slug = definition.identifier.split("/")[1] ?? "";
+  return definition.units.dataAge === "min" ? { key: "location", value: slug } : { key: "pair", value: slug.toUpperCase() };
+}
+
+/** Market served by `/weather/current` or `/prices/spot` for the given argument; `null` when unsupported. */
+export function marketForContract(kind: "weather" | "price", value: string | null): MarketId | null {
+  const fallback: MarketId = kind === "weather" ? "sf-weather" : "btc-usd";
+  if (value === null) return fallback;
+  const wanted = value.toLowerCase();
+  for (const id of MARKET_IDS) {
+    const def = getMarketDefinition(id);
+    if ((def.units.dataAge === "min") !== (kind === "weather")) continue;
+    if (contractInput(id).value.toLowerCase() === wanted) return id;
+  }
+  return null;
+}
+
 function validateContract(request: Request, marketId: MarketId) {
   if (request.method !== "GET") throw new ApiError(405, "method_not_allowed", "Use GET for this contract");
   const query = new URL(request.url).searchParams;
-  const key = marketId === "sf-weather" ? "location" : "pair";
-  const expected = marketId === "sf-weather" ? "san-francisco" : "BTC-USD";
-  if (query.getAll(key).length > 1 || (query.has(key) && query.get(key) !== expected)) {
-    throw new ApiError(400, "unsupported_input", `Supported ${key}: ${expected}`);
+  const { key, value } = contractInput(marketId);
+  if (query.getAll(key).length > 1 || (query.has(key) && query.get(key)?.toLowerCase() !== value.toLowerCase())) {
+    throw new ApiError(400, "unsupported_input", `Supported ${key}: ${value}`);
   }
 }
 function routingHeaders(selection: RouteSelection) {
@@ -38,7 +57,11 @@ function routingHeaders(selection: RouteSelection) {
     "Tender-Policy-Violation": String(selection.policyViolation),
   };
 }
-async function referenceFor(marketId: MarketId): Promise<{ reference: MarketReference; source: string; timestamp: string }> {
+async function referenceFor(marketId: MarketId): Promise<{ reference: MarketReference | undefined; source: string; timestamp: string }> {
+  // Live upstream reference data only exists for San Francisco and BTC/USD; every other market serves the deterministic signal.
+  if (marketId !== "sf-weather" && marketId !== "btc-usd") {
+    return { source: "signal", timestamp: new Date().toISOString(), reference: undefined };
+  }
   if (marketId === "btc-usd") {
     const input = await getPriceReference();
     return { source: input.source, timestamp: input.timestamp, reference: { kind: "btc", at: Date.parse(input.timestamp), priceUsd: input.value } };
