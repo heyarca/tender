@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { createInitialState, FIXTURE_EPOCH, reduce, selectMarketView, type ActivityEntry, type ActivityKind } from "@/lib/tender";
+import {
+  createInitialState,
+  FIXTURE_EPOCH,
+  reduce,
+  selectMarketView,
+  type ActivityEntry,
+  type ActivityKind,
+} from "@/lib/tender";
 
 import {
   ACTIVITY_FILTERS,
@@ -17,12 +24,29 @@ function busyMarket(): ActivityEntry[] {
   const step = (action: Parameters<typeof reduce>[1]) => {
     state = reduce(state, action);
   };
-  step({ type: "update-provider", marketId: "sf-weather", providerId: "together", patch: { p95LatencyMs: 640 }, now: (now += 1_000) });
-  step({ type: "update-provider", marketId: "sf-weather", providerId: "deepinfra", patch: { bidPrice: 30 }, now: (now += 1_000) });
+  step({
+    type: "update-provider",
+    marketId: "sf-weather",
+    providerId: "together",
+    patch: { p95LatencyMs: 640 },
+    now: (now += 1_000),
+  });
+  step({
+    type: "update-provider",
+    marketId: "sf-weather",
+    providerId: "deepinfra",
+    patch: { bidPrice: 30 },
+    now: (now += 1_000),
+  });
   step({ type: "set-policy", marketId: "sf-weather", patch: { maxPrice: 5 }, now: (now += 1_000) });
   step({ type: "run-request", marketId: "sf-weather", now: (now += 1_000) });
   step({ type: "reset-policy", marketId: "sf-weather", now: (now += 1_000) });
-  step({ type: "set-routing-mode", marketId: "sf-weather", mode: { kind: "pinned", providerId: "cloudflare" }, now: (now += 1_000) });
+  step({
+    type: "set-routing-mode",
+    marketId: "sf-weather",
+    mode: { kind: "pinned", providerId: "cloudflare" },
+    now: (now += 1_000),
+  });
   return selectMarketView(state.markets["sf-weather"]).activity;
 }
 
@@ -54,9 +78,25 @@ describe("activity filters", () => {
 
   it("assigns every activity kind to a group", () => {
     const kinds: ActivityKind[] = [
-      "route-established", "route-switch", "no-eligible", "switch-scheduled", "switch-cancelled", "pin-violation",
-      "pin-recovered", "request-served", "request-failed", "request-rejected", "bid-updated", "conditions-updated",
-      "provider-restored", "conditions-reset", "policy-updated", "policy-reset", "policy-restored", "mode-changed", "auto-run",
+      "route-established",
+      "route-switch",
+      "no-eligible",
+      "switch-scheduled",
+      "switch-cancelled",
+      "pin-violation",
+      "pin-recovered",
+      "request-served",
+      "request-failed",
+      "request-rejected",
+      "bid-updated",
+      "conditions-updated",
+      "provider-restored",
+      "conditions-reset",
+      "policy-updated",
+      "policy-reset",
+      "policy-restored",
+      "mode-changed",
+      "auto-run",
     ];
     expect(Object.keys(ACTIVITY_GROUP).sort()).toEqual([...kinds].sort());
   });

@@ -41,7 +41,13 @@ export function filterActivity(entries: readonly ActivityEntry[], filter: Activi
 
 /** Number of entries per filter (for empty states and labels). */
 export function countByFilter(entries: readonly ActivityEntry[]): Record<ActivityFilter, number> {
-  const counts: Record<ActivityFilter, number> = { all: entries.length, routing: 0, requests: 0, conditions: 0, policy: 0 };
+  const counts: Record<ActivityFilter, number> = {
+    all: entries.length,
+    routing: 0,
+    requests: 0,
+    conditions: 0,
+    policy: 0,
+  };
   for (const entry of entries) counts[ACTIVITY_GROUP[entry.kind]] += 1;
   return counts;
 }
@@ -90,7 +96,10 @@ export function parseRouteSwitchDetails(details: readonly string[]): RouteSwitch
     const qualifies = QUALIFIES_RE.exec(line);
     if (qualifies && parts.checks.length === 0) {
       parts.qualifiedName = qualifies[1];
-      parts.checks = qualifies[2].split(" · ").map((check) => check.trim()).filter(Boolean);
+      parts.checks = qualifies[2]
+        .split(" · ")
+        .map((check) => check.trim())
+        .filter(Boolean);
       continue;
     }
     if (FAILS_RE.test(line) && parts.failure === null) {

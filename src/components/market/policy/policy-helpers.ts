@@ -1,4 +1,11 @@
-import { evaluateMarket, runChecks, type CheckId, type MarketView, type ProviderId, type RoutingPolicy } from "@/lib/tender";
+import {
+  evaluateMarket,
+  runChecks,
+  type CheckId,
+  type MarketView,
+  type ProviderId,
+  type RoutingPolicy,
+} from "@/lib/tender";
 
 import { engineOf } from "./spec-values";
 
@@ -58,7 +65,8 @@ export function previewEligibility(
   for (const row of view.providers) {
     for (const check of runChecks(row.conditions, policy)) if (check.passed) passCounts[check.check] += 1;
     const providerEvaluation = evaluation.byId[row.id];
-    if (!providerEvaluation.qualifies) reasons[row.id] = providerEvaluation.reasons.map((reason) => reason.message).join("; ");
+    if (!providerEvaluation.qualifies)
+      reasons[row.id] = providerEvaluation.reasons.map((reason) => reason.message).join("; ");
   }
   return { policy, qualifiedIds: new Set(evaluation.ranking), ranking: evaluation.ranking, reasons, passCounts };
 }

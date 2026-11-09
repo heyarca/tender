@@ -2,7 +2,15 @@ import { describe, expect, it } from "vitest";
 
 import { BTC_USD, SF_WEATHER } from "@/lib/tender";
 
-import { clampDisplay, displayOf, engineOf, formatSpecValue, numberFormatOf, roundDisplay, stepDisplay } from "./spec-values";
+import {
+  clampDisplay,
+  displayOf,
+  engineOf,
+  formatSpecValue,
+  numberFormatOf,
+  roundDisplay,
+  stepDisplay,
+} from "./spec-values";
 
 const sf = SF_WEATHER.policyInputs;
 const btc = BTC_USD.policyInputs;

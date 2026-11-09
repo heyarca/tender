@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { createInitialState, FIXTURE_EPOCH, reduce, selectMarketView, type TenderAction, type TenderState } from "@/lib/tender";
+import {
+  createInitialState,
+  FIXTURE_EPOCH,
+  reduce,
+  selectMarketView,
+  type TenderAction,
+  type TenderState,
+} from "@/lib/tender";
 
 import { decisionFingerprint, describeMarketChange, joinNames } from "./market-change";
 import { POLICY_FIELDS, draftPolicy, previewEligibility } from "./policy-helpers";
@@ -73,7 +80,11 @@ describe("describeMarketChange", () => {
 
   it("surfaces a pinned provider that fails the policy", () => {
     const { change } = harness();
-    const note = change({ type: "set-routing-mode", marketId: "sf-weather", mode: { kind: "pinned", providerId: "cloudflare" } });
+    const note = change({
+      type: "set-routing-mode",
+      marketId: "sf-weather",
+      mode: { kind: "pinned", providerId: "cloudflare" },
+    });
     expect(note.lines).toContain("Route switched from Together to Cloudflare.");
     expect(note.lines).toContain(
       "Pinned provider Cloudflare fails your policy: P95 640 ms exceeds 400 ms. Requests still go to Cloudflare.",

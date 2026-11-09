@@ -4,7 +4,13 @@ import { BTC_USD, getInitialMarketView, SF_WEATHER, type ProviderConditions } fr
 
 import { roleBadge, roleSummary, scenarioActions, statusTone } from "./conditions-helpers";
 
-const base: ProviderConditions = { bidPrice: 18, p95LatencyMs: 210, dataAgeMs: 6 * 60_000, errorRate: 0.0006, available: true };
+const base: ProviderConditions = {
+  bidPrice: 18,
+  p95LatencyMs: 210,
+  dataAgeMs: 6 * 60_000,
+  errorRate: 0.0006,
+  available: true,
+};
 
 describe("scenarioActions", () => {
   it("builds weather patches within the market's steps", () => {
@@ -17,7 +23,13 @@ describe("scenarioActions", () => {
   });
 
   it("builds BTC patches in milliseconds and dollar cents", () => {
-    const btc: ProviderConditions = { bidPrice: 0.7, p95LatencyMs: 87, dataAgeMs: 220, errorRate: 0.0003, available: false };
+    const btc: ProviderConditions = {
+      bidPrice: 0.7,
+      p95LatencyMs: 87,
+      dataAgeMs: 220,
+      errorRate: 0.0003,
+      available: false,
+    };
     const byId = Object.fromEntries(scenarioActions(BTC_USD, { conditions: btc }).map((s) => [s.id, s]));
     expect(byId["raise-bid"].patch).toEqual({ bidPrice: 1.05 });
     expect(byId["cut-bid"].patch).toEqual({ bidPrice: 0.35 });
@@ -60,8 +72,12 @@ describe("status and role badges", () => {
 
   it("summarizes the default weather providers", () => {
     const view = getInitialMarketView("sf-weather");
-    expect(roleSummary(view.providersById.together, "lowest-cost")).toBe("Serving requests. Ranked 1st for lowest cost.");
-    expect(roleSummary(view.providersById.deepinfra, "lowest-cost")).toBe("Standby. Qualifies and ranks 2nd for lowest cost.");
+    expect(roleSummary(view.providersById.together, "lowest-cost")).toBe(
+      "Serving requests. Ranked 1st for lowest cost.",
+    );
+    expect(roleSummary(view.providersById.deepinfra, "lowest-cost")).toBe(
+      "Standby. Qualifies and ranks 2nd for lowest cost.",
+    );
     expect(roleSummary(view.providersById.cloudflare, "lowest-cost")).toBe("Excluded: P95 640 ms exceeds 400 ms.");
     expect(roleSummary(view.providersById.nebius, "lowest-cost")).toBe("Excluded: Provider is not responding.");
   });

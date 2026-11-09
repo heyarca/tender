@@ -187,7 +187,10 @@ function PolicyForm({
               value={mode.kind}
               onValueChange={(next) =>
                 apply(() =>
-                  setRoutingMode(marketId, next === "auto" ? { kind: "auto" } : { kind: "pinned", providerId: fallbackPin }),
+                  setRoutingMode(
+                    marketId,
+                    next === "auto" ? { kind: "auto" } : { kind: "pinned", providerId: fallbackPin },
+                  ),
                 )
               }
               aria-labelledby={`policy-${marketId}-mode`}
@@ -221,12 +224,22 @@ function PolicyForm({
               <div className="flex flex-wrap gap-2 pl-5.5">
                 {view.decision.actions.map((action) =>
                   action.kind === "switch-to-recommended" ? (
-                    <Button key={action.kind} size="sm" variant="outline" onClick={() => apply(() => switchToRecommended(marketId))}>
+                    <Button
+                      key={action.kind}
+                      size="sm"
+                      variant="outline"
+                      onClick={() => apply(() => switchToRecommended(marketId))}
+                    >
                       <Pin aria-hidden="true" />
                       {action.label}
                     </Button>
                   ) : (
-                    <Button key={action.kind} size="sm" variant="outline" onClick={() => apply(() => setRoutingMode(marketId, { kind: "auto" }))}>
+                    <Button
+                      key={action.kind}
+                      size="sm"
+                      variant="outline"
+                      onClick={() => apply(() => setRoutingMode(marketId, { kind: "auto" }))}
+                    >
                       {action.label}
                     </Button>
                   ),
@@ -267,7 +280,9 @@ function DecisionSummary({
           <span className="min-w-0">{title}</span>
         </p>
         <Badge tone={preview.qualifiedIds.size ? "neutral" : "negative"} className="ml-auto tabular-nums">
-          {previewing ? `${preview.qualifiedIds.size} of ${total} would qualify` : `${preview.qualifiedIds.size} of ${total} qualify`}
+          {previewing
+            ? `${preview.qualifiedIds.size} of ${total} would qualify`
+            : `${preview.qualifiedIds.size} of ${total} qualify`}
         </Badge>
       </div>
       <p className="text-caption leading-snug text-muted-foreground">{decision.summary}</p>

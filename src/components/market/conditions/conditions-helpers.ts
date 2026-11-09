@@ -101,13 +101,21 @@ function scaledBid(definition: MarketDefinition, bid: number, factor: number): n
   return engineOf(spec, clampDisplay(spec, snapped));
 }
 
-function addedValue(definition: MarketDefinition, key: "p95LatencyMs" | "dataAgeMs", value: number, delta: number): number {
+function addedValue(
+  definition: MarketDefinition,
+  key: "p95LatencyMs" | "dataAgeMs",
+  value: number,
+  delta: number,
+): number {
   const spec = definition.conditionInputs[key];
   return engineOf(spec, displayOf(spec, value) + delta / spec.factor);
 }
 
-const patchIfChanged = <K extends keyof ConditionsPatch>(key: K, next: NonNullable<ConditionsPatch[K]>, current: ConditionsPatch[K]) =>
-  next === current ? null : ({ [key]: next } as ConditionsPatch);
+const patchIfChanged = <K extends keyof ConditionsPatch>(
+  key: K,
+  next: NonNullable<ConditionsPatch[K]>,
+  current: ConditionsPatch[K],
+) => (next === current ? null : ({ [key]: next } as ConditionsPatch));
 
 /**
  * One-click scenarios for the selected provider, labeled as product actions.
@@ -131,12 +139,20 @@ export function scenarioActions(definition: MarketDefinition, row: Pick<Provider
     {
       id: "add-latency",
       label: `Add ${format.latency(latency)} latency`,
-      patch: patchIfChanged("p95LatencyMs", addedValue(definition, "p95LatencyMs", conditions.p95LatencyMs, latency), conditions.p95LatencyMs),
+      patch: patchIfChanged(
+        "p95LatencyMs",
+        addedValue(definition, "p95LatencyMs", conditions.p95LatencyMs, latency),
+        conditions.p95LatencyMs,
+      ),
     },
     {
       id: "delay-data",
       label: `Delay data ${format.dataAge(delay)}`,
-      patch: patchIfChanged("dataAgeMs", addedValue(definition, "dataAgeMs", conditions.dataAgeMs, delay), conditions.dataAgeMs),
+      patch: patchIfChanged(
+        "dataAgeMs",
+        addedValue(definition, "dataAgeMs", conditions.dataAgeMs, delay),
+        conditions.dataAgeMs,
+      ),
     },
     {
       id: "availability",
