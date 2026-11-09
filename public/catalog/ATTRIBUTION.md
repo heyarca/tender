@@ -19,3 +19,9 @@ These assets are derived from free Unsplash photos. Source pages are retained fo
 - Source page: https://unsplash.com/photos/aerial-view-of-a-busy-port-with-colorful-shipping-containers-b4lmjXJi9e4
 - Direct image: https://images.unsplash.com/photo-1782398138711-72c37bce4b38?auto=format&fit=crop&q=60&crop=entropy&cs=srgb&fm=jpg&ixid=NHwxMjA3fDA&ixlib=rb-4.1.0
 - License: [Unsplash License](https://unsplash.com/license)
+
+## `web-search`
+- Photographer: Mediamodifier
+- Source page: https://unsplash.com/photos/black-magnifying-glass-on-white-paper-yx17UuZw1Ck
+- Direct image: https://images.unsplash.com/photo-1626148749358-5b3b3f45b41a?auto=format&fit=crop&q=60&crop=entropy&cs=srgb&fm=jpg&ixid=NHwxMjA3fDA&ixlib=rb-4.1.0
+- License: [Unsplash License](https://unsplash.com/license)

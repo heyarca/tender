@@ -20,4 +20,9 @@ export const CATALOG_IMAGE_PATHS: Record<string, CatalogImagePath> = {
     jpg: "/catalog/freight-sha-lax.jpg",
     alt: "Aerial view of shipping containers at a cargo port.",
   },
+  "web-search": {
+    avif: "/catalog/web-search.avif",
+    jpg: "/catalog/web-search.jpg",
+    alt: "Magnifying glass on a blank white surface.",
+  },
 };
