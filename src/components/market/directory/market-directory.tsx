@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/table";
 import { TopNav } from "@/components/shell/top-nav";
 import { PageContainer } from "@/components/shell/page-container";
-import { AgentInstallBanner } from "./agent-install-banner";
 import { cn } from "@/lib/utils";
 import { format, MARKET_IDS, type MarketId, type ProviderRow } from "@/lib/tender";
 import { useMarketView } from "@/lib/tender/client";
@@ -28,6 +27,12 @@ import { useMarketView } from "@/lib/tender/client";
 /** Hard-coded: "cloud" markets are Weather, everything else is Crypto prices. */
 function categoryFor(icon: "cloud" | "bitcoin"): "Weather" | "Crypto prices" {
   return icon === "cloud" ? "Weather" : "Crypto prices";
+}
+
+/** Decorative square thumbnails, cycled by market order so new markets pick one up automatically. */
+const THUMBNAILS = ["/markets/thumb-1.jpg", "/markets/thumb-2.jpg", "/markets/thumb-3.jpg", "/markets/thumb-4.jpg", "/markets/thumb-5.jpg"];
+function thumbnailFor(index: number): string {
+  return THUMBNAILS[index % THUMBNAILS.length];
 }
 
 interface DirectoryRow {
@@ -51,6 +56,7 @@ interface DirectoryRow {
   successRate: number | null;
   mode: "auto" | "pinned";
   logos: { name: string; logo?: string }[];
+  thumbnail: string;
 }
 
 function qualified(providers: readonly ProviderRow[]): ProviderRow[] {
@@ -63,7 +69,7 @@ function useDirectoryRows(): DirectoryRow[] {
   const views = MARKET_IDS.map((id) => useMarketView(id));
   return useMemo(
     () =>
-      views.map((view) => {
+      views.map((view, index) => {
         const q = qualified(view.providers);
         const active = view.metrics.activeProviderId ? view.providersById[view.metrics.activeProviderId] : null;
         return {
@@ -87,6 +93,7 @@ function useDirectoryRows(): DirectoryRow[] {
           successRate: view.metrics.successRate,
           mode: view.policy.mode.kind,
           logos: view.providers.slice(0, 5).map((p) => ({ name: p.identity.name, logo: p.identity.logo })),
+          thumbnail: thumbnailFor(index),
         } satisfies DirectoryRow;
       }),
     [views],
@@ -180,7 +187,6 @@ export function MarketDirectory() {
         onSearch={() => searchRef.current?.focus()}
       />
       <PageContainer>
-        <AgentInstallBanner />
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-title font-semibold text-foreground">Markets</h1>
@@ -353,8 +359,16 @@ function MarketCard({ row }: { row: DirectoryRow }) {
   return (
     <Link
       href={`/markets/${row.id}`}
-      className="group block rounded-lg border border-border bg-card p-4 no-underline transition-colors hover:border-primary-strong/40 hover:bg-card-hover"
+      className="group flex items-start gap-4 rounded-lg border border-border bg-card p-4 no-underline transition-colors hover:border-primary-strong/40 hover:bg-card-hover"
     >
+      <img
+        src={row.thumbnail}
+        alt=""
+        width={64}
+        height={64}
+        className="size-16 shrink-0 rounded-md border border-border object-cover"
+      />
+      <div className="min-w-0 flex-1">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
           <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-border bg-background text-muted-foreground">
@@ -389,6 +403,7 @@ function MarketCard({ row }: { row: DirectoryRow }) {
             <ProviderLogo key={`${l.name}-${i}`} src={l.logo} name={l.name} size={20} className="ring-2 ring-card" />
           ))}
         </div>
+      </div>
       </div>
     </Link>
   );
