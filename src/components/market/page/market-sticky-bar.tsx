@@ -1,6 +1,6 @@
 "use client";
 
-import { Play } from "lucide-react";
+import { Play, SquareTerminal } from "lucide-react";
 import { StickyBar, StickyBarActions, StickyBarTitle } from "@/components/shell/sticky-bar";
 import { StatusDot } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,7 +42,7 @@ export function ActiveProviderChip({ view, className }: { view: MarketView; clas
 }
 
 /** Compact bar under the TopNav once the title scrolls away: market, active provider, Run request. */
-export function MarketStickyBar({ view, onRun }: { view: MarketView; onRun: () => void }) {
+export function MarketStickyBar({ view, onRun, onOpenApi }: { view: MarketView; onRun: () => void; onOpenApi: () => void }) {
   const { definition } = view;
   return (
     <StickyBar sentinelId={MARKET_TITLE_ID} aria-label={`${definition.name} summary`}>
@@ -51,7 +51,11 @@ export function MarketStickyBar({ view, onRun }: { view: MarketView; onRun: () =
         <ActiveProviderChip view={view} className="max-w-40 sm:max-w-none" />
       </div>
       <StickyBarActions>
-        <Button variant="primary" size="sm" onClick={onRun}>
+        <Button variant="outline" className="gap-2 px-4 max-sm:hidden" onClick={onOpenApi}>
+          <SquareTerminal aria-hidden />
+          API
+        </Button>
+        <Button variant="primary" className="gap-2 px-4 max-sm:px-2.5" onClick={onRun}>
           <Play aria-hidden />
           <span className="max-sm:sr-only">Run request</span>
         </Button>
