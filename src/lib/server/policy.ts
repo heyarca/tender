@@ -1,3 +1,4 @@
+import { PREFERENCES } from "@/lib/tender";
 import { ApiError } from "./http";
 
 /** Wire inputs remain separate from the engine's policy units and field names. */
@@ -7,7 +8,7 @@ export const POLICY_PARAMETERS = [
   { query: "max_data_age_ms", header: "Tender-Max-Data-Age-Ms", field: "maxDataAgeMs", max: Number.MAX_SAFE_INTEGER, description: "Maximum provider data age in milliseconds" },
   { query: "min_success_rate", header: "Tender-Min-Success-Rate", field: "minSuccessRate", max: 1, description: "Minimum success rate as a fraction from 0 to 1, not a percentage" },
 ] as const;
-export const PREFERENCES = ["lowest-cost", "lowest-latency", "freshest-data"] as const;
+export { PREFERENCES };
 export interface PolicyOverrides {
   maxPrice?: number; maxP95LatencyMs?: number; maxDataAgeMs?: number; minSuccessRate?: number;
   preference?: typeof PREFERENCES[number];
