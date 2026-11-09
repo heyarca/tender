@@ -27,8 +27,9 @@ describe("USDC quotes", () => {
     expect(() => getPayee("__proto__")).toThrow();
     expect(() => getPayee("unknown")).toThrow();
   });
-  it("has 16 distinct public addresses", () => {
-    expect(new Set(Object.values(PAYEES)).size).toBe(16);
+  it("has one distinct public address per provider", () => {
+    expect(new Set(Object.values(PAYEES)).size).toBe(Object.keys(PAYEES).length);
+    expect(Object.keys(PAYEES)).toHaveLength(29);
     expect(Object.values(PAYEES).every((address) => isAddress(address))).toBe(true);
   });
 });

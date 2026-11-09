@@ -18,6 +18,19 @@ export const PAYEES = {
   "crusoe": "0x30f083246072da847d68B42bD77bceD4ce3dA4d7",
   "gmicloud": "0xEe0d6fEC7177cbCDf2137d75c33D61e8Bf93834e",
   "wafer": "0x183268541bEB9D4B06ed1F7eC3a9B96556C1580E",
+  "huaqiang-desk": "0xc33D002Be4c006cb185E4E6E67e5f37Ca5f0e87E",
+  "futian-parts": "0xa9DD535bFc79e1a6da9093B6e611Fd123F8496D0",
+  "pearl-river": "0x4f8aa72D28E0Ea95Deeb1D5f8667E81dbd1708ab",
+  "seg-broker": "0xAd4D2D8c41Aa89d86ca408e83c8f320E25fFDE84",
+  "bom-scout": "0x9E5331B701cf21DD333600c12f4C8C615256446C",
+  "salar-index": "0xF452cF0A44d34834514a57a7875e8B348aA7449F",
+  "cathode-wire": "0xF115d4BC3335d228e690243dB5305Cc1Ed4F2CFB",
+  "yichun-desk": "0x90836eF4E97655268f7dFb3da1D891B2c836F037",
+  "metal-ledger": "0xA86f88d6eC60d104f2CB4Fc3F2b644972177e201",
+  "harbor-quote": "0xeaA286B19514036cfCBE86008DFFcFEA56d6d812",
+  "lane-signal": "0x65f8986C232815ae5e32ac920d65146B08b57494",
+  "box-index": "0x51cB5D743fe0A128Da97ee25549F84903FC20f65",
+  "pacific-lanes": "0xc63857e60C9a4B9E3BD3cBA057eAE90A8EE0e739",
 } as const satisfies Record<string, Address>;
 
 export type ProviderId = keyof typeof PAYEES;

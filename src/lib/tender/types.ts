@@ -20,7 +20,16 @@ export type WeatherMarketId =
   | "singapore-weather";
 
 /** Price markets (normalized `BtcPayload` result). */
-export type PriceMarketId = "btc-usd" | "eth-usd" | "sol-usd" | "xrp-usd" | "eur-usd" | "gbp-usd";
+export type PriceMarketId =
+  | "btc-usd"
+  | "eth-usd"
+  | "sol-usd"
+  | "xrp-usd"
+  | "eur-usd"
+  | "gbp-usd"
+  | "sz-mlcc"
+  | "lithium-carbonate"
+  | "freight-sha-lax";
 
 export type MarketId = WeatherMarketId | PriceMarketId;
 
@@ -38,7 +47,7 @@ export type MarketTimeZone =
   | "UTC";
 
 /** Icon hint for a market (the UI maps it to an icon). */
-export type MarketIcon = "cloud" | "bitcoin" | "coins" | "euro" | "pound";
+export type MarketIcon = "cloud" | "bitcoin" | "coins" | "euro" | "pound" | "cpu" | "pickaxe" | "ship";
 
 /**
  * Spec for one numeric input (policy control or provider condition).

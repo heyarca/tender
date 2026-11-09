@@ -92,7 +92,10 @@ async function serveSelection(selection: RouteSelection, settlement: SettlementA
     reference_source: input.source, reference_timestamp: input.timestamp,
   };
   if (result.payload.kind === "btc") {
-    return json({ ...common, pair: result.payload.pair, price: result.payload.priceUsd, currency: "USD",
+    const unit = getMarketDefinition(result.marketId).units.value;
+    // Real-world goods come from a sample index; say so in the payload.
+    const indicative = unit !== "USD" ? { unit, indicative: true } : {};
+    return json({ ...common, pair: result.payload.pair, price: result.payload.priceUsd, currency: "USD", ...indicative,
       source_timestamp: new Date(result.payload.sourceTimestamp).toISOString() });
   }
   const w = result.payload;
