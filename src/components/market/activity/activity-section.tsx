@@ -205,7 +205,15 @@ function ActivityFeed({ marketId }: { marketId: MarketId }) {
   );
 }
 
-function ActivityRow({ entry, marketId, timeZone }: { entry: ActivityEntry; marketId: MarketId; timeZone: MarketTimeZone }) {
+function ActivityRow({
+  entry,
+  marketId,
+  timeZone,
+}: {
+  entry: ActivityEntry;
+  marketId: MarketId;
+  timeZone: MarketTimeZone;
+}) {
   const isSwitch = entry.kind === "route-switch";
   const Icon = entry.kind === "auto-run" && !entry.enabled ? Pause : KIND_ICONS[entry.kind];
   const providerId = entryProviderId(entry);
@@ -218,8 +226,10 @@ function ActivityRow({ entry, marketId, timeZone }: { entry: ActivityEntry; mark
         "relative flex gap-3 border-b border-border px-4 py-2.5 last:border-b-0",
         "transition-[opacity,translate] duration-fast ease-smooth-out starting:-translate-y-1 starting:opacity-0 motion-reduce:transition-none",
         isSwitch && "bg-accent-subtle before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-primary",
-        entry.kind === "no-eligible" && "bg-negative-bg/50 before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-negative",
-        entry.kind === "pin-violation" && "before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-negative",
+        entry.kind === "no-eligible" &&
+          "bg-negative-bg/50 before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-negative",
+        entry.kind === "pin-violation" &&
+          "before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-negative",
       )}
     >
       <span
@@ -237,8 +247,10 @@ function ActivityRow({ entry, marketId, timeZone }: { entry: ActivityEntry; mark
             {entry.kind === "route-switch" ? (
               <SwitchTitle entry={entry} marketId={marketId} />
             ) : (
-              <p className="flex min-w-0 items-center gap-2 text-xs text-foreground">
-                {provider ? <ProviderLogo src={provider.logo} name={provider.name} size={16} /> : null}
+              <p className="flex min-w-0 items-start gap-2 text-xs text-foreground">
+                {provider ? (
+                  <ProviderLogo src={provider.logo} name={provider.name} size={16} className="mt-0.5" />
+                ) : null}
                 <span className="min-w-0">{entry.title}</span>
               </p>
             )}

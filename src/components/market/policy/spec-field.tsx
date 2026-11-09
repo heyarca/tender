@@ -49,6 +49,8 @@ export interface SpecFieldProps {
   hint?: React.ReactNode;
   disabled?: boolean;
   className?: string;
+  /** Class for the number field (e.g. a max width next to an action button). */
+  fieldClassName?: string;
 }
 
 /**
@@ -74,6 +76,7 @@ export function SpecField({
   hint,
   disabled,
   className,
+  fieldClassName,
 }: SpecFieldProps) {
   const shown = draft ? draft.value : value;
   const hintId = `${id}-hint`;
@@ -104,7 +107,11 @@ export function SpecField({
         </label>
         <InfoTooltip content={spec.hint} label={`About ${label.toLowerCase()}`} iconSize={12} />
         {modified ? (
-          <span aria-hidden="true" title="Changed from default" className="ml-0.5 size-1.5 shrink-0 rounded-full bg-primary" />
+          <span
+            aria-hidden="true"
+            title="Changed from default"
+            className="ml-0.5 size-1.5 shrink-0 rounded-full bg-primary"
+          />
         ) : null}
         {aside ? <span className="ml-auto truncate pl-2 text-caption text-muted-foreground">{aside}</span> : null}
       </div>
@@ -123,28 +130,34 @@ export function SpecField({
           suffix={spec.unit}
           disabled={disabled}
           aria-describedby={hintId}
-          className="min-w-0 flex-1"
+          className={cn("min-w-0 flex-1", fieldClassName)}
         />
         {action}
       </div>
       {slider ? (
-        <Slider
-          value={shown ?? value}
-          onValueChange={(next) => onDraftChange({ value: next })}
-          onValueCommitted={onCommit ? (next) => commit(next) : undefined}
-          min={spec.min}
-          max={spec.max}
-          step={spec.step}
-          largeStep={spec.step * 10}
-          disabled={disabled}
-          aria-label={label}
-          getAriaValueText={(formatted) => (spec.unit === "%" ? `${formatted}%` : `${spec.prefix ?? ""}${formatted} ${spec.unit}`)}
-          className="mt-1"
-        />
+        <div className="mt-1 px-2">
+          <Slider
+            value={shown ?? value}
+            onValueChange={(next) => onDraftChange({ value: next })}
+            onValueCommitted={onCommit ? (next) => commit(next) : undefined}
+            min={spec.min}
+            max={spec.max}
+            step={spec.step}
+            largeStep={spec.step * 10}
+            disabled={disabled}
+            aria-label={label}
+            getAriaValueText={(formatted) =>
+              spec.unit === "%" ? `${formatted}%` : `${spec.prefix ?? ""}${formatted} ${spec.unit}`
+            }
+          />
+        </div>
       ) : null}
-      <div id={hintId} className={cn("flex min-h-4 items-center gap-1 text-caption text-faint", slider ? "mt-0" : "mt-1.5")}>
-        {hint ?? (
-          modified && onReset ? (
+      <div
+        id={hintId}
+        className={cn("flex min-h-4 items-center gap-1 text-caption text-faint", slider ? "mt-0" : "mt-1.5")}
+      >
+        {hint ??
+          (modified && onReset ? (
             <button
               type="button"
               onClick={onReset}
@@ -161,8 +174,7 @@ export function SpecField({
             </button>
           ) : (
             <span>Default {defaultLabel}</span>
-          )
-        )}
+          ))}
       </div>
     </div>
   );

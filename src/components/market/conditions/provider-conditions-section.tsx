@@ -264,7 +264,7 @@ function ProviderFields({
   };
 
   return (
-    <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
+    <div className="grid grid-cols-2 gap-x-4 gap-y-4">
       <SpecField
         id={`conditions-${marketId}-bidPrice`}
         label="Bid"
@@ -283,10 +283,13 @@ function ProviderFields({
         }
         hint={
           bidChanged ? (
-            <span className="text-warning-text">Not submitted. Current bid {format.price(row.conditions.bidPrice)} /M req.</span>
+            <span className="text-warning-text">
+              Not submitted. Current bid {format.price(row.conditions.bidPrice)} /M req.
+            </span>
           ) : undefined
         }
-        className="sm:col-span-2"
+        className="col-span-2"
+        fieldClassName="sm:max-w-64"
       />
       {NUMERIC_FIELDS.map(({ key, label }) => {
         const spec = specs[key];
@@ -308,7 +311,10 @@ function ProviderFields({
       })}
       <div className="flex min-w-0 flex-col">
         <div className="mb-1.5 flex min-h-5 items-center gap-1">
-          <span id={`conditions-${marketId}-available-label`} className="text-caption font-medium text-muted-foreground">
+          <span
+            id={`conditions-${marketId}-available-label`}
+            className="text-caption font-medium text-muted-foreground"
+          >
             Availability
           </span>
           {row.modifiedFields.includes("available") ? (
