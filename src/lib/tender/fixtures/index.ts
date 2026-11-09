@@ -21,9 +21,11 @@ import { SOL_USD } from "./sol-usd";
 import { XRP_USD } from "./xrp-usd";
 import { EUR_USD } from "./eur-usd";
 import { GBP_USD } from "./gbp-usd";
+import { FREIGHT_SHA_LAX, LITHIUM_CARBONATE, SZ_MLCC } from "./quotes";
 
 export { BTC_USD, BTC_USD_DEFAULT_POLICY, BTC_USD_PROVIDERS } from "./btc-usd";
 export { SF_WEATHER, SF_WEATHER_DEFAULT_POLICY, SF_WEATHER_PROVIDERS } from "./sf-weather";
+export { FREIGHT_SHA_LAX, isQuoteMarketId, LITHIUM_CARBONATE, QUOTE_CONTRACTS, QUOTE_MARKET_IDS, SZ_MLCC } from "./quotes";
 
 /** Market ids in display order. */
 export const MARKET_IDS = [
@@ -33,12 +35,15 @@ export const MARKET_IDS = [
   "seoul-weather",
   "tokyo-weather",
   "singapore-weather",
+  "sz-mlcc",
+  "lithium-carbonate",
+  "freight-sha-lax",
+  "eur-usd",
+  "gbp-usd",
   "btc-usd",
   "eth-usd",
   "sol-usd",
   "xrp-usd",
-  "eur-usd",
-  "gbp-usd",
 ] as const satisfies readonly MarketId[];
 
 /** Market definitions by id. */
@@ -55,6 +60,9 @@ export const MARKETS: Readonly<Record<MarketId, MarketDefinition>> = {
   "xrp-usd": XRP_USD,
   "eur-usd": EUR_USD,
   "gbp-usd": GBP_USD,
+  "sz-mlcc": SZ_MLCC,
+  "lithium-carbonate": LITHIUM_CARBONATE,
+  "freight-sha-lax": FREIGHT_SHA_LAX,
 };
 
 /** Default market for `/`. */

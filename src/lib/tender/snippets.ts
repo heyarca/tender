@@ -2,6 +2,7 @@
  * Code samples and JSON views for the API dialog.
  * Pure string builders; safe on the server.
  */
+import { isQuoteMarketId, QUOTE_CONTRACTS } from "./fixtures/quote-contracts";
 import type { CodeSample, MarketId, RequestResult, RoutingPolicy } from "./types";
 
 interface SnippetMarket {
@@ -31,12 +32,15 @@ function modeValue(policy: RoutingPolicy): string {
  * The policy values are embedded, so the dialog matches the current form.
  */
 export function getApiSnippets(market: SnippetMarket, policy: RoutingPolicy): CodeSample[] {
-  const call =
-    market.id === "sf-weather"
+  const quote = isQuoteMarketId(market.id) ? QUOTE_CONTRACTS[market.id] : null;
+  const call = quote
+    ? { ts: `tender.${quote.namespace}({ ${quote.key}: "${quote.value}" }`, py: `tender.${quote.namespace}(\n    ${quote.key}="${quote.value}",` }
+    : market.id === "sf-weather"
       ? { ts: `tender.weather.current({ location: "san-francisco" }`, py: `tender.weather.current(\n    location="san-francisco",` }
       : { ts: `tender.prices.spot({ pair: "BTC-USD" }`, py: `tender.prices.spot(\n    pair="BTC-USD",` };
-  const read =
-    market.id === "sf-weather"
+  const read = quote
+    ? { ts: "result.data.value", py: 'result.data["value"]' }
+    : market.id === "sf-weather"
       ? { ts: "result.data.temperatureF", py: 'result.data["temperatureF"]' }
       : { ts: "result.data.priceUsd", py: 'result.data["priceUsd"]' };
 
@@ -142,6 +146,13 @@ export function getResponseJson(market: SnippetMarket, result: RequestResult): s
     );
   }
   const p = result.payload;
+  if (p.kind === "quote") {
+    return JSON.stringify(
+      { ...common, data: { symbol: p.symbol, value: p.value, unit: p.unit, changeValue: p.changeValue, sourceTimestamp: iso(p.sourceTimestamp) } },
+      null,
+      2,
+    );
+  }
   return JSON.stringify(
     {
       ...common,

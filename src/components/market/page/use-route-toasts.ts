@@ -2,7 +2,7 @@
 
 import { focusSection } from "@/components/market/market-ui";
 import { toast } from "@/components/ui/toast";
-import { getMarketDefinition, selectMarketViewFromState, type MarketId, type RouteEvent } from "@/lib/tender";
+import { getMarketDefinition, MARKET_IDS, selectMarketViewFromState, type MarketId, type RouteEvent } from "@/lib/tender";
 import { useRouteEvents, useTenderActions, useTenderStore } from "@/lib/tender/client";
 import { routeEventToast, type RouteToastAction } from "./route-toast-copy";
 
@@ -48,6 +48,7 @@ export function useRouteToasts(currentMarketId: MarketId, onViewMarket: (marketI
     });
   };
 
-  useRouteEvents("sf-weather", onEvent);
-  useRouteEvents("btc-usd", onEvent);
+  // MARKET_IDS is a fixed-length constant, so a fixed number of hook calls is safe here.
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  for (const id of MARKET_IDS) useRouteEvents(id, onEvent);
 }

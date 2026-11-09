@@ -253,3 +253,25 @@ export function priceAtFor(marketId: MarketId, at: number, origin: number): numb
 export function pairFor(marketId: MarketId): string {
   return PRICE_MARKETS[marketId]?.pair ?? "BTC-USD";
 }
+
+/** Baselines of the indicative quote markets (USD, in each market's unit). */
+export const QUOTE_BASELINES = {
+  "sz-mlcc": { value: 3.42, volatility: 0.004, seed: 0x5a01 },
+  "lithium-carbonate": { value: 10_480, volatility: 0.002, seed: 0x5a02 },
+  "freight-sha-lax": { value: 2_315, volatility: 0.003, seed: 0x5a03 },
+} as const;
+
+const quoteOctaves = (seed: number) => octaves(seed, [
+  [60, 0.3],
+  [600, 0.6],
+  [3600, 1],
+]);
+const QUOTE_OCTAVES = Object.fromEntries(
+  Object.entries(QUOTE_BASELINES).map(([id, b]) => [id, quoteOctaves(b.seed)]),
+) as Record<keyof typeof QUOTE_BASELINES, Octave[]>;
+
+/** Indicative quote at `at`: the baseline drifting by a small sample walk (not a live feed). */
+export function quoteValueAt(marketId: keyof typeof QUOTE_BASELINES, at: number, origin: number): number {
+  const b = QUOTE_BASELINES[marketId];
+  return b.value * (1 + b.volatility * anchoredNoise((at - origin) / 1000, QUOTE_OCTAVES[marketId]));
+}

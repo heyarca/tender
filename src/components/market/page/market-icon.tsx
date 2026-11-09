@@ -1,4 +1,4 @@
-import { Bitcoin, Cloud, Coins, Euro, PoundSterling, type LucideIcon, type LucideProps } from "lucide-react";
+import { Bitcoin, Cloud, Coins, Cpu, Euro, Pickaxe, PoundSterling, Ship, type LucideIcon, type LucideProps } from "lucide-react";
 import type { MarketIcon as MarketIconKind } from "@/lib/tender";
 import { cn } from "@/lib/utils";
 
@@ -8,6 +8,9 @@ const ICON_TONE: Record<MarketIconKind, string> = {
   coins: "text-tier-priority",
   euro: "text-positive-text",
   pound: "text-tier-flex",
+  cpu: "text-accent-foreground",
+  pickaxe: "text-tier-priority",
+  ship: "text-info",
 };
 
 const ICONS: Record<MarketIconKind, LucideIcon> = {
@@ -16,6 +19,9 @@ const ICONS: Record<MarketIconKind, LucideIcon> = {
   coins: Coins,
   euro: Euro,
   pound: PoundSterling,
+  cpu: Cpu,
+  pickaxe: Pickaxe,
+  ship: Ship,
 };
 
 export interface MarketGlyphProps extends Omit<LucideProps, "ref"> {

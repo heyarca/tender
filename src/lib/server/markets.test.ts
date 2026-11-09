@@ -6,8 +6,8 @@ const context = (market = "btc-usd") => ({ params: Promise.resolve({ market }) }
 describe("market handlers", () => {
   it("lists both markets with all provider counts", async () => {
     const data = await list().json();
-    expect(data.markets.map((m: { id: string }) => m.id)).toEqual(["sf-weather", "btc-usd"]);
-    expect(data.markets.every((m: { provider_count: number }) => m.provider_count === 8)).toBe(true);
+    expect(data.markets.map((m: { id: string }) => m.id)).toEqual(["sf-weather", "btc-usd", "sz-mlcc", "lithium-carbonate", "freight-sha-lax"]);
+    expect(data.markets.map((m: { provider_count: number }) => m.provider_count)).toEqual([8, 8, 5, 4, 4]);
   });
   it("uses shared ranking and exclusions", async () => {
     const response = await detail(request(), context());

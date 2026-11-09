@@ -41,6 +41,7 @@ export function MarketPage({ marketId, onSwitchMarket }: MarketPageProps) {
 
 function MarketPageContent({ marketId, onSwitchMarket }: MarketPageProps) {
   const view = useMarketView(marketId);
+
   const actions = useTenderActions();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [apiOpen, setApiOpen] = useState(false);
@@ -51,6 +52,7 @@ function MarketPageContent({ marketId, onSwitchMarket }: MarketPageProps) {
 
   useRouteToasts(marketId, onSwitchMarket);
   useHotkey("mod+enter", run);
+
 
   return (
     <>

@@ -85,8 +85,12 @@ export function toWeatherReading(served: ServedRequestResult | null): WeatherRea
 
 /** Normalized BTC/USD quote of the newest served request, or `null`. */
 export function toBitcoinQuote(served: ServedRequestResult | null): BitcoinQuote | null {
-  if (!served || served.payload.kind !== "btc") return null;
+  if (!served) return null;
   const p = served.payload;
+  if (p.kind === "quote") {
+    return { pair: `${p.symbol} · ${p.unit}`, price: p.value, change: p.changeValue, sourceTimestamp: p.sourceTimestamp, dataAgeMs: served.dataAgeMs, latencyMs: served.latencyMs };
+  }
+  if (p.kind !== "btc") return null;
   return {
     pair: p.pair.replace("-", "/"),
     price: p.priceUsd,

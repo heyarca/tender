@@ -354,14 +354,14 @@ describe("requests", () => {
     const result = market.requests[0];
     expect(result.status).toBe("ok");
     if (result.status !== "ok" || result.marketId !== "btc-usd") throw new Error("expected a served BTC result");
-    expect(result.requestId).toBe("req_000003");
+    expect(result.requestId).toBe("req_000006");
     expect(result.cost).toBeCloseTo(0.7 / 1e6, 12);
     expect(result.payload.changeUsd).not.toBeNull();
     expect(market.counters).toEqual({ total: 2, served: 2, failed: 0, rejected: 0 });
     expect(market.spend).toBeCloseTo(before.markets[B].spend + 0.7 / 1e6, 12);
-    expect(market.providers.find((p) => p.id === "the-zone-bio")!.latencies.at(-1)!.requestId).toBe("req_000003");
+    expect(market.providers.find((p) => p.id === "the-zone-bio")!.latencies.at(-1)!.requestId).toBe("req_000006");
     expect(market.series.at(-1)!.value).toBe(result.payload.priceUsd);
-    expect(latest(state, B).title).toBe("req_000003 served by THE ZONE BIO");
+    expect(latest(state, B).title).toBe("req_000006 served by THE ZONE BIO");
   });
 
   it("keeps the last 50 requests", () => {
@@ -538,7 +538,7 @@ describe("persistence", () => {
     const state = run(createInitialState(), { type: "set-policy", marketId: W, patch: { maxPrice: 25 }, now: E + 1_000 }, update(W, "together", { bidPrice: 10 }, E + 2_000));
     const parsed = JSON.parse(serializePolicies(state));
     expect(Object.keys(parsed)).toEqual(["version", "policies"]);
-    expect(Object.keys(parsed.policies)).toEqual(["sf-weather", "btc-usd"]);
+    expect(Object.keys(parsed.policies)).toEqual(["sf-weather", "btc-usd", "sz-mlcc", "lithium-carbonate", "freight-sha-lax"]);
     expect(parsed.policies[W]).toEqual({ ...getDefaultPolicy(W), maxPrice: 25 });
     expect(JSON.stringify(parsed)).not.toContain("bidPrice");
     expect(POLICIES_STORAGE_KEY).toBe("tender:v1:policies");

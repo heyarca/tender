@@ -250,7 +250,7 @@ export interface SelectionExecution {
  */
 export function executeSelection(selection: RouteSelection, options: ExecuteSelectionOptions): SelectionExecution {
   const reference =
-    options.reference && (options.reference.kind === "btc") === (selection.marketId === "btc-usd") ? options.reference : null;
+    options.reference && options.reference.kind === signalReference(selection.marketId, 0).kind ? options.reference : null;
   const { result, rng } = sampleRequest({
     marketId: selection.marketId,
     providerId: selection.providerId,
