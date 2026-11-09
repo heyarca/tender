@@ -216,6 +216,21 @@ export function autoRunEntry(enabled: boolean): EntryFields {
 // Routing
 // ---------------------------------------------------------------------------
 
+/** Why rank 1 was selected, as one sentence: "Together is the lowest-priced provider that meets your policy." */
+export function recommendedSummaryText(preference: RoutingPreference, name: string): string {
+  switch (preference) {
+    case "lowest-cost":
+      return `${name} is the lowest-priced provider that meets your policy.`;
+    case "lowest-latency":
+      return `${name} has the lowest P95 latency among providers that meet your policy.`;
+    case "freshest-data":
+      return `${name} has the freshest data among providers that meet your policy.`;
+  }
+}
+
+/** No-eligible copy shared by the decision callout, activity, and server responses. */
+export const NO_ELIGIBLE_TEXT = "No provider meets your policy. Requests are rejected and nothing is sent.";
+
 /** Copy for "B now ranks above A" on the preference's primary key. */
 export function outrankText(
   marketId: MarketId,
@@ -326,7 +341,7 @@ export function noEligibleEntry(
   const details: string[] = [];
   if (triggerText) details.push(`Trigger: ${sentence(triggerText)}`);
   if (fromId) details.push(`${providerName(marketId, fromId)} ${failureText(fromReasons)}.`);
-  details.push("No provider meets your policy. Requests are rejected and nothing is sent.");
+  details.push(NO_ELIGIBLE_TEXT);
   return {
     kind: "no-eligible",
     fromProviderId: fromId,

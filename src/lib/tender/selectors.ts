@@ -2,7 +2,7 @@
  * Derived views. `selectMarketView` is pure and cached per `MarketState`
  * object, so the same state always yields the same view object.
  */
-import { outrankText, pinViolationText, providerName } from "./activity";
+import { NO_ELIGIBLE_TEXT, outrankText, pinViolationText, providerName, recommendedSummaryText } from "./activity";
 import { SWITCH_COOLDOWN_MS } from "./constants";
 import { compareProviders, PREFERENCE_LABELS, preferenceKey, qualificationLines, STATUS_LABELS, statusPriority } from "./evaluate";
 import { getDefaultPolicy, getProviderFixture, MARKETS } from "./fixtures";
@@ -133,12 +133,6 @@ function betterExcludedLines(rows: ProviderRow[], active: ProviderRow, policy: R
     });
 }
 
-const PREFERENCE_SUMMARY: Record<RoutingPolicy["preference"], (name: string) => string> = {
-  "lowest-cost": (name) => `${name} is the lowest-priced provider that meets your policy.`,
-  "lowest-latency": (name) => `${name} has the lowest P95 latency among providers that meet your policy.`,
-  "freshest-data": (name) => `${name} has the freshest data among providers that meet your policy.`,
-};
-
 /** Explanation of the current route (decision callout). */
 export function buildRoutingDecision(market: MarketState, rows: ProviderRow[], evaluation: MarketEvaluation): RoutingDecision {
   const byId = Object.fromEntries(rows.map((r) => [r.id, r])) as Record<ProviderId, ProviderRow>;
@@ -190,7 +184,7 @@ export function buildRoutingDecision(market: MarketState, rows: ProviderRow[], e
       kind: "no-eligible",
       tone: "negative",
       title: "No eligible provider",
-      summary: "No provider meets your policy. Requests are rejected and nothing is sent.",
+      summary: NO_ELIGIBLE_TEXT,
       details: rows.map((row) => `${row.name}: ${row.evaluation.reasons.map((r) => r.message).join("; ")}`),
       activeProviderId: null,
     };
@@ -223,7 +217,7 @@ export function buildRoutingDecision(market: MarketState, rows: ProviderRow[], e
     kind: "routing",
     tone: "positive",
     title: `Routing to ${active.name}`,
-    summary: active.evaluation.rank === 1 ? PREFERENCE_SUMMARY[policy.preference](active.name) : `${active.name} meets your policy.`,
+    summary: active.evaluation.rank === 1 ? recommendedSummaryText(policy.preference, active.name) : `${active.name} meets your policy.`,
     details,
     activeProviderId: activeId,
   };

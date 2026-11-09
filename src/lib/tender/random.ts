@@ -61,3 +61,16 @@ export function hashNormal(seed: number, index: number): number {
   const v = hash01(seed ^ 0x5bd1e995, index * 2 + 1);
   return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
 }
+
+/**
+ * 32-bit FNV-1a hash of a string, for deriving a PRNG seed from a stable key
+ * (e.g. a request id): `createRng(seedFromString("req_000123"))`.
+ */
+export function seedFromString(text: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i += 1) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return h >>> 0;
+}

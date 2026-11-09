@@ -349,6 +349,40 @@ export interface BtcPayload {
   sourceTimestamp: number;
 }
 
+/**
+ * Upstream San Francisco conditions (true values at `at`) injected by server
+ * code. Missing fields fall back to the deterministic signal. Providers report
+ * the reference moved by the signal's drift between `at` and their observation
+ * time, plus their bias.
+ */
+export interface WeatherReference {
+  kind: "weather";
+  /** Time the values describe (ms). Default: the request time. */
+  at?: number;
+  temperatureF?: number;
+  feelsLikeF?: number;
+  /** Condition label ("Overcast"); default derived from cloud cover. */
+  condition?: string;
+  humidityPct?: number;
+  windMph?: number;
+  windDirectionDeg?: number;
+  pressureHpa?: number;
+  visibilityMi?: number;
+  dewPointF?: number;
+  cloudCoverPct?: number;
+}
+
+/** Upstream BTC/USD spot price (true value at `at`) injected by server code. */
+export interface BtcReference {
+  kind: "btc";
+  /** Time the price describes (ms). Default: the request time. */
+  at?: number;
+  priceUsd: number;
+}
+
+/** Reference value of a market: weather conditions or BTC spot price. */
+export type MarketReference = WeatherReference | BtcReference;
+
 interface RequestBase {
   /** `req_000123` (monotonic across markets). */
   requestId: string;
