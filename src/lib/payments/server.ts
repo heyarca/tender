@@ -6,8 +6,20 @@ import { DEFAULT_FACILITATOR_URL, PAYMENT_NETWORK, USDC_ADDRESS } from "./config
 import { validateQuote } from "./quote";
 import type { PaymentQuote, SettlementAmounts, ValidatedPaymentQuote } from "./types";
 
+/** Reuse facilitator discovery while preserving SDK HTTP route validation. */
+class TenderPaymentServer extends x402ResourceServer {
+  private initialization?: Promise<void>;
+  override async initialize(): Promise<void> {
+    this.initialization ??= super.initialize().catch((error: unknown) => {
+      this.initialization = undefined;
+      throw error;
+    });
+    await this.initialization;
+  }
+}
+
 export function createPaymentServer(facilitator?: FacilitatorClient): x402ResourceServer {
-  return new x402ResourceServer(facilitator ?? new HTTPFacilitatorClient({
+  return new TenderPaymentServer(facilitator ?? new HTTPFacilitatorClient({
     url: process.env.TENDER_FACILITATOR_URL || DEFAULT_FACILITATOR_URL,
     timeoutMs: 20_000,
   })).register(PAYMENT_NETWORK, new ExactEvmScheme());
