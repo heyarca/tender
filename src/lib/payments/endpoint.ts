@@ -1,9 +1,10 @@
 import { contractUrl, parsePaidRequestInput, PaidRequestError, performPaidRequest } from "./buyer";
-import { paymentRateLimiter } from "./limits";
+import { paymentRateLimiter, PaymentSafetyError } from "./limits";
 import { getPayerAccount } from "./wallet";
 import type { PaymentMarket } from "./types";
+import type { ContractOptions } from "@/lib/server/handlers";
 
-type ContractHandler = (request: Request, market: PaymentMarket) => Promise<Response>;
+type ContractHandler = (request: Request, market: PaymentMarket, options?: ContractOptions) => Promise<Response>;
 const headers = { "Cache-Control": "private, no-store" };
 
 /** The only transport targets are the two local contract handlers. No Host trust or SSRF. */
@@ -42,12 +43,14 @@ export function createPaidRequestEndpoint(handleContract: ContractHandler) {
       const url = contractUrl("https://tender.internal", input);
       const transport: typeof fetch = async (target, init) => {
         const contractRequest = new Request(target, init);
+        contractRequest.signal.throwIfAborted();
         if (contractRequest.url !== url.href || contractRequest.method !== "GET") throw new Error("Unexpected payment target");
-        return handleContract(contractRequest, input.market);
+        return handleContract(contractRequest, input.market, { conditions: input.conditions });
       };
-      const result = await performPaidRequest(url, transport);
+      const result = await performPaidRequest(url, transport, request.signal);
       return Response.json(result, { headers });
     } catch (error) {
+      if (error instanceof PaymentSafetyError) return Response.json({ error: error.message }, { status: 422, headers });
       if (error instanceof PaidRequestError) return Response.json({ error: error.message, details: error.details }, { status: error.status, headers });
       // Do not expose wallet, signature or transport internals in errors.
       return Response.json({ error: "Payment request failed. Check balances before trying again." }, { status: 502, headers });

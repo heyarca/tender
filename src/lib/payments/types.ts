@@ -1,4 +1,7 @@
 import type { Address } from "viem";
+import type { ConditionsPatch } from "@/lib/tender/types";
+
+export type PaymentConditions = Partial<Record<string, ConditionsPatch>>;
 
 export type PaymentMarket = "sf-weather" | "btc-usd";
 export interface SettlementAmounts {
@@ -23,11 +26,20 @@ export interface PaymentReceipt extends SettlementAmounts {
   payer: string;
   payTo: string;
   providerId: string;
+  providerName: string;
+  latency_ms: number;
+  data_age_ms: number;
   network: "base-sepolia";
   explorerUrl: string;
 }
+export interface PaidResponsePayload {
+  provider: string;
+  latency_ms: number;
+  data_age_ms: number;
+  [key: string]: unknown;
+}
 export interface PaidRequestResult {
-  response: unknown;
+  response: PaidResponsePayload;
   receipt: PaymentReceipt;
 }
 export interface PaymentPolicy {
@@ -41,4 +53,6 @@ export interface PaymentPolicy {
 export interface PaidRequestInput {
   market: PaymentMarket;
   policy?: PaymentPolicy;
+  conditions?: PaymentConditions;
 }
+export type PaidRequestOptions = Omit<PaidRequestInput, "market">;

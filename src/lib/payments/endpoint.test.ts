@@ -8,7 +8,7 @@ import { PAYMENT_NETWORK } from "./config";
 // Publicly known test-only key. Never use for funded wallets.
 const key = `0x${"0".repeat(63)}1` as const;
 const payer = privateKeyToAccount(key).address;
-afterEach(() => vi.unstubAllEnvs());
+afterEach(() => { vi.unstubAllEnvs(); vi.restoreAllMocks(); });
 
 describe("paid endpoint", () => {
   it("executes the actual x402 signed retry locally without trusting Host", async () => {
@@ -18,18 +18,36 @@ describe("paid endpoint", () => {
       verify: vi.fn(async () => ({ isValid: true, payer })),
       settle: vi.fn(async () => ({ success: true, transaction: `0x${"a".repeat(64)}`, network: PAYMENT_NETWORK, payer })),
     };
-    const route = withX402Payment((_request, quote) => Response.json({ provider: quote.providerId }), () => quoteFromBid("parasail", 0.7, "Bitcoin"), createPaymentServer(facilitator));
-    const dispatch = vi.fn((request: Request) => route(request));
+    const route = withX402Payment((_request, quote) => Response.json({ provider: quote.providerId, latency_ms: 80, data_age_ms: 200 }), () => quoteFromBid("parasail", 0.7, "Bitcoin"), createPaymentServer(facilitator));
+    const dispatch = vi.fn<(request: Request, market: string, options?: { conditions?: unknown }) => Promise<Response>>((request) => route(request));
     const endpoint = createPaidRequestEndpoint(dispatch);
-    const response = await endpoint(new Request("https://evil.test/api/payments/demo-request", { method: "POST", headers: { "Content-Type": "application/json", Host: "evil.test" }, body: JSON.stringify({ market: "btc-usd" }) }));
+    const response = await endpoint(new Request("https://evil.test/api/payments/demo-request", { method: "POST", headers: { "Content-Type": "application/json", Host: "evil.test" }, body: JSON.stringify({ market: "btc-usd", conditions: { parasail: { bidPrice: 0.7 } } }) }));
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ response: { provider: "parasail" }, receipt: { txHash: `0x${"a".repeat(64)}`, payer, providerId: "parasail", price_usd: 0.0000007, settled_atomic: "1", amountAtomic: "1", network: "base-sepolia" } });
     expect(dispatch).toHaveBeenCalledTimes(2);
+    expect(dispatch.mock.calls.every(([, , options]) => options?.conditions && JSON.stringify(options.conditions) === JSON.stringify({ parasail: { bidPrice: 0.7 } }))).toBe(true);
     expect(dispatch.mock.calls.every(([request]) => new URL(request.url).origin === "https://tender.internal")).toBe(true);
     expect(dispatch.mock.calls[1][0].headers.get("PAYMENT-SIGNATURE")).toBeTruthy();
     expect(facilitator.verify).toHaveBeenCalledOnce();
     expect(facilitator.settle).toHaveBeenCalledOnce();
     expect(facilitator.getSupported).toHaveBeenCalledOnce();
+  });
+  it("rejects bids above the spend cap with a clear error before signing", async () => {
+    vi.stubEnv("TENDER_DEMO_PAYER_PRIVATE_KEY", key);
+    const verify = vi.fn();
+    const settle = vi.fn();
+    const server = createPaymentServer({ getSupported: async () => ({ kinds: [{ x402Version: 2, scheme: "exact", network: PAYMENT_NETWORK }], extensions: [], signers: {} }), verify, settle });
+    const handler = vi.fn(() => Response.json({}));
+    const route = withX402Payment(handler, () => quoteFromBid("together", 101, "Weather"), server);
+    const dispatch = vi.fn((request: Request) => route(request));
+    const endpoint = createPaidRequestEndpoint(dispatch);
+    const response = await endpoint(new Request("https://tender.test/pay", { method: "POST", headers: { "Content-Type": "application/json" }, body: '{"market":"sf-weather"}' }));
+    expect(response.status).toBe(422);
+    expect((await response.json()).error).toContain("100 atomic");
+    expect(dispatch).toHaveBeenCalledOnce();
+    expect(verify).not.toHaveBeenCalled();
+    expect(settle).not.toHaveBeenCalled();
+    expect(handler).not.toHaveBeenCalled();
   });
   it("rejects invalid input, content types, and oversized bodies before dispatch", async () => {
     const dispatch = vi.fn();
@@ -38,6 +56,15 @@ describe("paid endpoint", () => {
       const response = await endpoint(new Request("https://tender.test/api/payments/demo-request", { method: "POST", headers: { "Content-Type": type }, body }));
       expect(response.status).toBe(status);
     }
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+  it("never dispatches or signs after an already-aborted payment deadline", async () => {
+    vi.stubEnv("TENDER_DEMO_PAYER_PRIVATE_KEY", key);
+    vi.spyOn(AbortSignal, "timeout").mockReturnValue(AbortSignal.abort());
+    const dispatch = vi.fn();
+    const endpoint = createPaidRequestEndpoint(dispatch);
+    const response = await endpoint(new Request("https://tender.test/pay", { method: "POST", headers: { "Content-Type": "application/json" }, body: '{"market":"btc-usd"}' }));
+    expect(response.status).toBe(502);
     expect(dispatch).not.toHaveBeenCalled();
   });
   it("returns 503 when payer is absent", async () => {

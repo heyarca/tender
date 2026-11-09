@@ -62,10 +62,14 @@ export function withX402Payment<T extends PaymentQuote>(
   paymentServer?: x402ResourceServer,
 ): (request: Request) => Promise<Response> {
   return async (request) => {
+    request.signal.throwIfAborted();
     const selected = validateQuote(await quote(request));
     const resourceServer = paymentServer ?? (server ??= createPaymentServer());
     const paidHandler = withX402(async () => {
+      request.signal.throwIfAborted();
       const response = await handler(request, selected);
+      // Stop before settlement when cancellation arrived during provider work.
+      request.signal.throwIfAborted();
       return new NextResponse(response.body, { status: response.status, headers: response.headers });
     }, paymentRouteConfig(selected), resourceServer);
     // Next 16 Cache Components wraps Request in a proxy. Passing that proxy to
@@ -73,6 +77,7 @@ export function withX402Payment<T extends PaymentQuote>(
     const sdkRequest = new NextRequest(request.url, {
       method: request.method,
       headers: new Headers(request.headers),
+      signal: request.signal,
       ...(request.method === "GET" || request.method === "HEAD" ? {} : { body: await request.clone().arrayBuffer() }),
     });
     const response = await paidHandler(sdkRequest);
