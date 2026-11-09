@@ -54,7 +54,13 @@ export function createPaidRequestEndpoint(handleContract: ContractHandler) {
       };
       return performPaidRequest(url, transport, signal, onProgress);
     };
-    if (request.headers.get("Accept")?.split(",").some((part) => part.trim().split(";")[0] === "application/x-ndjson")) {
+    const acceptsStream = request.headers.get("Accept")?.split(",").some((part) => {
+      const [mediaType, ...parameters] = part.trim().split(";");
+      const qualityParameter = parameters.find((parameter) => parameter.trim().toLowerCase().startsWith("q="));
+      const quality = qualityParameter ? Number(qualityParameter.split("=")[1]) : 1;
+      return mediaType.trim().toLowerCase() === "application/x-ndjson" && Number.isFinite(quality) && quality > 0 && quality <= 1;
+    });
+    if (acceptsStream) {
       const cancelled = new AbortController();
       const signal = AbortSignal.any([request.signal, cancelled.signal]);
       const encoder = new TextEncoder();
