@@ -3,6 +3,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
 import { DEFAULT_RPC_URL, USDC_ADDRESS, USDC_DECIMALS } from "./config";
 import { PAYEES } from "./payees";
+import type { BalanceEntry, BalancesResponse } from "./types";
 
 export function getPayerAccount() {
   const key = process.env.TENDER_DEMO_PAYER_PRIVATE_KEY;
@@ -12,16 +13,11 @@ export function getPayerAccount() {
 
 export const BALANCE_CACHE_MS = 5_000;
 export const BALANCE_DEADLINE_MS = 7_500;
+/** How long a last good snapshot may be served as stale after a failed fresh read. */
+export const BALANCE_STALE_MS = 60_000;
 const BALANCE_ATTEMPT_TIMEOUT_MS = 3_500;
 
-type Balance = { id: string; address: Address; amountAtomic: string; amountUsd: string };
-export interface BalanceSnapshot {
-  network: "base-sepolia";
-  asset: "USDC";
-  tokenAddress: typeof USDC_ADDRESS;
-  payer: Balance | null;
-  payees: Balance[];
-}
+export type BalanceSnapshot = BalancesResponse;
 
 async function loadBalances(rpcUrl: string, entries: [string, Address][]): Promise<BalanceSnapshot> {
   const controller = new AbortController();
@@ -54,7 +50,7 @@ async function loadBalances(rpcUrl: string, entries: [string, Address][]): Promi
         });
         controller.signal.throwIfAborted();
         if (amounts.length !== entries.length) throw new Error("Incomplete balance batch");
-        const balances = entries.map(([id, address], index) => {
+        const balances = entries.map(([id, address], index): BalanceEntry => {
           const amount = amounts[index];
           if (typeof amount !== "bigint" || amount < BigInt(0)) throw new Error("Invalid USDC balance");
           return { id, address, amountAtomic: amount.toString(), amountUsd: formatUnits(amount, USDC_DECIMALS) };
@@ -73,25 +69,51 @@ async function loadBalances(rpcUrl: string, entries: [string, Address][]): Promi
   } finally { clearTimeout(timer); }
 }
 
+/** Balance reader: calling it may start an RPC read; `peek()` serves only cached or in-flight work. */
+export interface BalanceReader {
+  (): Promise<BalanceSnapshot>;
+  /** Snapshot promise when one exists without new RPC traffic: a fresh cache hit or an in-flight join. */
+  peek(): Promise<BalanceSnapshot> | undefined;
+  /** Most recent successful snapshot for the current RPC identity, regardless of cache expiry. */
+  lastGood(): { at: number; value: BalanceSnapshot } | undefined;
+}
+
 /** Per-instance success cache and keyed in-flight coalescing; failures are never cached. */
-export function createBalanceReader() {
+export function createBalanceReader(): BalanceReader {
   let cache: { key: string; expiresAt: number; value: BalanceSnapshot } | undefined;
+  let lastGood: { key: string; at: number; value: BalanceSnapshot } | undefined;
   const inFlight = new Map<string, Promise<BalanceSnapshot>>();
-  return function read(): Promise<BalanceSnapshot> {
+  const identity = () => {
     const rpcUrl = process.env.TENDER_RPC_URL || DEFAULT_RPC_URL;
     const payer = process.env.TENDER_DEMO_PAYER_PRIVATE_KEY ? getPayerAccount().address : null;
-    const key = JSON.stringify([rpcUrl, payer]);
+    return { rpcUrl, payer, key: JSON.stringify([rpcUrl, payer]) };
+  };
+  const read = (): Promise<BalanceSnapshot> => {
+    const { rpcUrl, payer, key } = identity();
     if (cache?.key === key && Date.now() < cache.expiresAt) return Promise.resolve(cache.value);
     const pending = inFlight.get(key);
     if (pending) return pending;
     const entries: [string, Address][] = [...(payer ? [["payer", payer] as [string, Address]] : []), ...Object.entries(PAYEES)];
     const request = loadBalances(rpcUrl, entries).then((value) => {
-      cache = { key, value, expiresAt: Date.now() + BALANCE_CACHE_MS };
+      const at = Date.now();
+      cache = { key, value, expiresAt: at + BALANCE_CACHE_MS };
+      lastGood = { key, at, value };
       return value;
     }).finally(() => { inFlight.delete(key); });
     inFlight.set(key, request);
     return request;
   };
+  return Object.assign(read, {
+    peek: (): Promise<BalanceSnapshot> | undefined => {
+      const { key } = identity();
+      if (cache?.key === key && Date.now() < cache.expiresAt) return Promise.resolve(cache.value);
+      return inFlight.get(key);
+    },
+    lastGood: (): { at: number; value: BalanceSnapshot } | undefined => {
+      const { key } = identity();
+      return lastGood?.key === key ? { at: lastGood.at, value: lastGood.value } : undefined;
+    },
+  });
 }
 
 export const readBalances = createBalanceReader();
