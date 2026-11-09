@@ -186,6 +186,24 @@ interface ParsedCombo {
 
 const KEY_ALIASES: Record<string, string> = { esc: "escape", return: "enter", space: " ", spacebar: " " };
 
+/**
+ * Physical `event.code` names for symbol keys, mirroring the letter/digit fallback:
+ * Shifted characters never match by `key` (Shift+/ sends key="?"), and non-Latin
+ * layouts keep working because the physical key does not move.
+ */
+const CODE_ALIASES: Record<string, string> = {
+  "/": "Slash",
+  "\\": "Backslash",
+  "[": "BracketLeft",
+  "]": "BracketRight",
+  "'": "Quote",
+  ";": "Semicolon",
+  ",": "Comma",
+  ".": "Period",
+  "-": "Minus",
+  "=": "Equal",
+};
+
 export function parseHotkey(combo: string): ParsedCombo {
   const parts = combo
     .toLowerCase()
@@ -209,7 +227,7 @@ function keyMatches(event: KeyboardEvent, key: string) {
   // Match the physical key so shortcuts work with non-Latin layouts and IMEs.
   if (/^[a-z]$/.test(key)) return event.code === `Key${key.toUpperCase()}`;
   if (/^[0-9]$/.test(key)) return event.code === `Digit${key}`;
-  return false;
+  return CODE_ALIASES[key] !== undefined && event.code === CODE_ALIASES[key];
 }
 
 /** True when the keyboard event matches a combo such as `"mod+k"`, `"shift+/"`, or `"escape"`. */

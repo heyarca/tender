@@ -186,6 +186,26 @@ describe("hotkeys", () => {
     expect(matchesHotkey(new KeyboardEvent("keydown", { key: "Escape" }), "esc")).toBe(true);
   });
 
+  it("matches symbol keys by their physical code, including shifted characters", () => {
+    // Shifted symbol keys never match by `key` (Shift+/ sends key="?"), so the physical code decides.
+    expect(matchesHotkey(new KeyboardEvent("keydown", { key: "?", shiftKey: true, code: "Slash" }), "shift+/")).toBe(true);
+    expect(matchesHotkey(new KeyboardEvent("keydown", { key: "/", code: "Slash" }), "shift+/")).toBe(false);
+    // A different physical key never matches, shifted or not.
+    expect(matchesHotkey(new KeyboardEvent("keydown", { key: "1", shiftKey: true, code: "Digit1" }), "shift+/")).toBe(false);
+    expect(matchesHotkey(new KeyboardEvent("keydown", { key: "1", code: "Digit1" }), "/")).toBe(false);
+    expect(matchesHotkey(new KeyboardEvent("keydown", { key: ".", code: "Period" }), ".")).toBe(true);
+    expect(matchesHotkey(new KeyboardEvent("keydown", { key: ",", code: "Comma" }), ",")).toBe(true);
+    expect(matchesHotkey(new KeyboardEvent("keydown", { key: "-", code: "Minus" }), "-")).toBe(true);
+    expect(matchesHotkey(new KeyboardEvent("keydown", { key: "=", code: "Equal" }), "=")).toBe(true);
+    expect(matchesHotkey(new KeyboardEvent("keydown", { key: "'", code: "Quote" }), "'")).toBe(true);
+    expect(matchesHotkey(new KeyboardEvent("keydown", { key: ";", code: "Semicolon" }), ";")).toBe(true);
+    expect(matchesHotkey(new KeyboardEvent("keydown", { key: "[", code: "BracketLeft" }), "[")).toBe(true);
+    expect(matchesHotkey(new KeyboardEvent("keydown", { key: "]", code: "BracketRight" }), "]")).toBe(true);
+    expect(matchesHotkey(new KeyboardEvent("keydown", { key: "\\", code: "Backslash" }), "\\")).toBe(true);
+    // Unknown symbols without an alias stay dead instead of matching every event.
+    expect(matchesHotkey(new KeyboardEvent("keydown", { key: "!", code: "Digit1" }), "shift+!")).toBe(false);
+  });
+
   function HotkeyProbe({ onHit }: { onHit: () => void }) {
     useHotkey(["mod+k", "/"], onHit);
     return <input aria-label="Query" />;
