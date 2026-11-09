@@ -14,10 +14,12 @@ import {
 import { useMemo, type ReactNode } from "react";
 import { CommandPalette, type CommandPaletteGroup } from "@/components/shell/command-palette";
 import { focusSection, MARKET_SECTIONS, useSelectedProvider } from "@/components/market/market-ui";
-import { format, MARKET_IDS, MARKETS, PREFERENCE_LABELS, type MarketId, type MarketView, type RoutingPreference } from "@/lib/tender";
+import { CATEGORIES, getGroup, listMarkets } from "@/lib/registry";
+import { format, isMarketId, PREFERENCE_LABELS, type MarketId, type MarketView, type RoutingPreference } from "@/lib/tender";
 import type { TenderActions } from "@/lib/tender/client";
 import { afterDialogClose } from "./after-dialog-close";
-import { MarketGlyph } from "./market-icon";
+import { marketIdentifier } from "../market-registry";
+import { MarketGlyph, marketIconName } from "./market-icon";
 import { SECTION_ICONS } from "./market-sidebar";
 
 const PREFERENCE_ICONS: Record<RoutingPreference, ReactNode> = {
@@ -34,25 +36,51 @@ export interface PaletteContext {
   onSelectProvider: (providerId: string) => void;
 }
 
-/** Palette groups for a market: markets, sections, actions, and providers (with logos). */
+/**
+ * Markets grouped by category (registry order), with the current market's category first.
+ * Static registry data only: no store subscriptions.
+ */
+export function marketPaletteGroups(marketId: MarketId, onSwitchMarket: (marketId: MarketId) => void): CommandPaletteGroup[] {
+  const groups = CATEGORIES.map((category) => ({
+    categoryId: category.id,
+    heading: category.label,
+    items: listMarkets({ categoryId: category.id }).flatMap((market) => {
+      const id = market.id;
+      if (!isMarketId(id)) return [];
+      const identifier = marketIdentifier(market);
+      return [
+        {
+          id: `market:${id}`,
+          label: market.name,
+          description: id === marketId ? `${identifier} · Current` : identifier,
+          icon: <MarketGlyph icon={marketIconName(id)} tinted={false} />,
+          keywords: [market.shortName, category.label, getGroup(category.groupId)?.label ?? ""],
+          onSelect: () => onSwitchMarket(id),
+        },
+      ];
+    }),
+  })).filter((group) => group.items.length > 0);
+  const current = groups.findIndex((group) => group.items.some((item) => item.id === `market:${marketId}`));
+  const ordered = current > 0 ? [groups[current], ...groups.slice(0, current), ...groups.slice(current + 1)] : groups;
+  return ordered.map(({ heading, items }) => ({ heading, items }));
+}
+
+/** Palette groups for a market: the current category, sections, providers, actions, then every other category. */
 export function buildPaletteGroups({ view, actions, onSwitchMarket, onOpenApi, onSelectProvider }: PaletteContext): CommandPaletteGroup[] {
+  const [currentCategory, ...otherCategories] = marketPaletteGroups(view.id, onSwitchMarket);
+  return [
+    ...(currentCategory ? [currentCategory] : []),
+    ...pageGroups({ view, actions, onSwitchMarket, onOpenApi, onSelectProvider }),
+    ...otherCategories,
+  ];
+}
+
+/** Sections, providers, and actions of the market on screen. */
+export function pageGroups({ view, actions, onOpenApi, onSelectProvider }: PaletteContext): CommandPaletteGroup[] {
   const marketId = view.id;
   const pinned = view.policy.mode.kind === "pinned";
-  // cmdk ranks items inside a group but keeps the group order, so groups are ordered for the
-  // common queries (market, section, provider name), and descriptions stay short to avoid
-  // fuzzy matches against long text.
+  // cmdk ranks items inside a group; the palette orders groups by their best match while searching.
   return [
-    {
-      heading: "Markets",
-      items: MARKET_IDS.map((id) => ({
-        id: `market:${id}`,
-        label: MARKETS[id].name,
-        description: id === marketId ? `${MARKETS[id].identifier} · Current` : MARKETS[id].identifier,
-        icon: <MarketGlyph icon={MARKETS[id].icon} tinted={false} />,
-        keywords: [MARKETS[id].shortName],
-        onSelect: () => onSwitchMarket(id),
-      })),
-    },
     {
       heading: "On this page",
       items: MARKET_SECTIONS.map((section) => {
@@ -151,9 +179,10 @@ export interface MarketCommandPaletteProps {
 /** ⌘K palette of the market page. Choosing a provider opens it in Provider conditions. */
 export function MarketCommandPalette({ open, onOpenChange, view, actions, onSwitchMarket, onOpenApi }: MarketCommandPaletteProps) {
   const [, selectProvider] = useSelectedProvider(view.id);
-  const groups = useMemo(
+  const marketGroups = useMemo(() => marketPaletteGroups(view.id, onSwitchMarket), [view.id, onSwitchMarket]);
+  const sectionGroups = useMemo(
     () =>
-      buildPaletteGroups({
+      pageGroups({
         view,
         actions,
         onSwitchMarket,
@@ -165,5 +194,9 @@ export function MarketCommandPalette({ open, onOpenChange, view, actions, onSwit
       }),
     [view, actions, onSwitchMarket, onOpenApi, selectProvider],
   );
+  const groups = useMemo(() => {
+    const [currentCategory, ...otherCategories] = marketGroups;
+    return [...(currentCategory ? [currentCategory] : []), ...sectionGroups, ...otherCategories];
+  }, [marketGroups, sectionGroups]);
   return <CommandPalette open={open} onOpenChange={onOpenChange} groups={groups} />;
 }
