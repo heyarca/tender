@@ -19,10 +19,10 @@ import {
 import { AUTO_RUN_INTERVAL_MS, CLOCK_TICK_MS, FIXTURE_EPOCH, SERIES_SEED_POINTS } from "./constants";
 import { pushActivity, type StepContext } from "./context";
 import { evaluateProvider } from "./evaluate";
-import { getDefaultPolicy, getProviderFixture, MARKET_IDS, MARKETS } from "./fixtures";
+import { getDefaultPolicy, getProviderFixture, isQuoteMarketId, MARKET_IDS, MARKETS } from "./fixtures";
 import { appendSample, exactSample, monitorMarket, seedHistory } from "./monitor";
 import { createRng } from "./random";
-import { btcProviderPrice, runRequest, weatherPayload } from "./requests";
+import { btcProviderPrice, quoteProviderValue, runRequest, weatherPayload } from "./requests";
 import { evaluateMarketState, isPendingDue, reconcileRoute, type ReconcileCause } from "./router";
 import { sanitizeConditionsPatch, sanitizePolicy, sanitizePolicyPatch } from "./sanitize";
 import type {
@@ -71,8 +71,20 @@ export type TenderAction =
 
 /** How long the initial route has been active at the epoch. */
 const INITIAL_ROUTE_AGE_MS = 47 * 60_000;
-const SEEDS: Record<MarketId, number> = { "sf-weather": 0x5f3759df, "btc-usd": 0x1b873593 };
-const SERIES_STEP_MS: Record<MarketId, number> = { "sf-weather": 60_000, "btc-usd": 3_000 };
+const SEEDS: Record<MarketId, number> = {
+  "sf-weather": 0x5f3759df,
+  "btc-usd": 0x1b873593,
+  "sz-mlcc": 0x2c1b3c6d,
+  "lithium-carbonate": 0x297a2d39,
+  "freight-sha-lax": 0x6b43a9b5,
+};
+const SERIES_STEP_MS: Record<MarketId, number> = {
+  "sf-weather": 60_000,
+  "btc-usd": 3_000,
+  "sz-mlcc": 60_000,
+  "lithium-carbonate": 60_000,
+  "freight-sha-lax": 60_000,
+};
 
 export interface InitialStateOptions {
   /** Start time (default `FIXTURE_EPOCH`). */
@@ -90,7 +102,9 @@ function seedSeries(marketId: MarketId, providerId: ProviderId | null, condition
     const value =
       marketId === "btc-usd"
         ? btcProviderPrice(at - age, origin, bias)
-        : weatherPayload(at - age, origin, bias).temperatureF;
+        : isQuoteMarketId(marketId)
+          ? quoteProviderValue(marketId, at - age, origin, bias)
+          : weatherPayload(at - age, origin, bias).temperatureF;
     return { at, value, providerId, requestId: null };
   });
 }
@@ -381,6 +395,9 @@ function shiftMarket(market: MarketState, delta: number): MarketState {
       if (r.status !== "ok") return { ...r, requestedAt: r.requestedAt + delta };
       if (r.marketId === "sf-weather") {
         return { ...r, requestedAt: r.requestedAt + delta, payload: { ...r.payload, observedAt: r.payload.observedAt + delta } };
+      }
+      if (r.marketId !== "btc-usd") {
+        return { ...r, requestedAt: r.requestedAt + delta, payload: { ...r.payload, sourceTimestamp: r.payload.sourceTimestamp + delta } };
       }
       return {
         ...r,

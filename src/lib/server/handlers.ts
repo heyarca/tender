@@ -1,9 +1,10 @@
 import { randomUUID } from "node:crypto";
-import { executeSelection, getMarketDefinition, seedFromString, selectRoute, sanitizeConditionsPatch, type ConditionsPatch, type ProviderId, type ProviderConditions, type MarketId, type MarketReference, type RouteSelection } from "@/lib/tender";
+import { executeSelection, getMarketDefinition, signalReference, seedFromString, selectRoute, sanitizeConditionsPatch, type ConditionsPatch, type ProviderId, type ProviderConditions, type MarketId, type MarketReference, type RouteSelection } from "@/lib/tender";
 import { quoteFromBid, withX402Payment, type SettlementAmounts } from "@/lib/payments/server";
 import { ApiError, errorResponse, json } from "./http";
 import { requestPolicy } from "./markets";
 import { getPriceReference, getWeatherReference } from "./reference";
+import { isQuoteMarketId, QUOTE_CONTRACTS } from "@/lib/tender/fixtures";
 
 /** Trusted in-process inputs only. Public contract routes never parse these from HTTP. */
 export interface ContractOptions {
@@ -25,8 +26,9 @@ function conditionOverrides(marketId: MarketId, patches: ContractOptions["condit
 function validateContract(request: Request, marketId: MarketId) {
   if (request.method !== "GET") throw new ApiError(405, "method_not_allowed", "Use GET for this contract");
   const query = new URL(request.url).searchParams;
-  const key = marketId === "sf-weather" ? "location" : "pair";
-  const expected = marketId === "sf-weather" ? "san-francisco" : "BTC-USD";
+  const quote = isQuoteMarketId(marketId) ? QUOTE_CONTRACTS[marketId] : null;
+  const key = quote ? quote.key : marketId === "sf-weather" ? "location" : "pair";
+  const expected = quote ? quote.value : marketId === "sf-weather" ? "san-francisco" : "BTC-USD";
   if (query.getAll(key).length > 1 || (query.has(key) && query.get(key) !== expected)) {
     throw new ApiError(400, "unsupported_input", `Supported ${key}: ${expected}`);
   }
@@ -39,6 +41,11 @@ function routingHeaders(selection: RouteSelection) {
   };
 }
 async function referenceFor(marketId: MarketId): Promise<{ reference: MarketReference; source: string; timestamp: string }> {
+  if (isQuoteMarketId(marketId)) {
+    // No licensed upstream feed: quotes come from Tender's sample index, and the response says so.
+    const now = Date.now();
+    return { source: "sample-index", timestamp: new Date(now).toISOString(), reference: signalReference(marketId, now) };
+  }
   if (marketId === "btc-usd") {
     const input = await getPriceReference();
     return { source: input.source, timestamp: input.timestamp, reference: { kind: "btc", at: Date.parse(input.timestamp), priceUsd: input.value } };
@@ -68,6 +75,11 @@ async function serveSelection(selection: RouteSelection, settlement: SettlementA
     policy_violation: selection.policyViolation, policy_violations: selection.violations.map((r) => r.message),
     reference_source: input.source, reference_timestamp: input.timestamp,
   };
+  if (result.payload.kind === "quote") {
+    const p = result.payload;
+    return json({ ...common, symbol: p.symbol, price: p.value, unit: p.unit, currency: "USD", indicative: true,
+      source_timestamp: new Date(p.sourceTimestamp).toISOString() });
+  }
   if (result.marketId === "btc-usd") {
     return json({ ...common, pair: result.payload.pair, price: result.payload.priceUsd, currency: "USD",
       source_timestamp: new Date(result.payload.sourceTimestamp).toISOString() });

@@ -2,7 +2,7 @@
  * Records and balance snapshots of the "Pay with USDC" section: shapes and
  * validation of untrusted JSON (localStorage, the balances endpoint).
  */
-import type { MarketId } from "@/lib/tender";
+import { MARKET_IDS, type MarketId } from "@/lib/tender";
 import type { PaymentReceipt } from "@/lib/payments/types";
 
 /** One settled paid request, as shown in the receipt card and the table. */
@@ -36,7 +36,7 @@ export interface BalancesSnapshot {
 const HASH = /^0x[0-9a-fA-F]{64}$/;
 const ADDRESS = /^0x[0-9a-fA-F]{40}$/;
 const DIGITS = /^\d+$/;
-const MARKETS: readonly MarketId[] = ["sf-weather", "btc-usd"];
+const MARKETS: readonly MarketId[] = MARKET_IDS;
 
 function record(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;

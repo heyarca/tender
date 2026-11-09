@@ -264,6 +264,9 @@ function finite(value: unknown): value is number {
 /** One line for a paid response: "61°F Overcast" or "$75,230.75". */
 export function summarizePayload(marketId: MarketId, payload: Record<string, unknown> | null | undefined): string | null {
   if (!payload) return null;
+  if (typeof payload.unit === "string" && finite(payload.price)) {
+    return `${new Intl.NumberFormat("en-US", { maximumFractionDigits: payload.price < 100 ? 4 : 2 }).format(payload.price)} ${payload.unit}`;
+  }
   if (marketId === "btc-usd") {
     if (!finite(payload.price)) return null;
     const abs = Math.abs(payload.price);

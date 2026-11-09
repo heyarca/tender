@@ -3,7 +3,7 @@ import type { ConditionsPatch } from "@/lib/tender/types";
 
 export type PaymentConditions = Partial<Record<string, ConditionsPatch>>;
 
-export type PaymentMarket = "sf-weather" | "btc-usd";
+export type PaymentMarket = import("@/lib/tender/types").MarketId;
 export interface SettlementAmounts {
   price_usd: number;
   settled_usd: number;

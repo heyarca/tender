@@ -1,6 +1,6 @@
 "use client";
 
-import { Bitcoin, Cloud, LayoutGrid, Search, Table2, X } from "lucide-react";
+import { Bitcoin, Cloud, Cpu, LayoutGrid, Pickaxe, Search, Ship, Table2, X } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -21,12 +21,19 @@ import {
 import { TopNav } from "@/components/shell/top-nav";
 import { PageContainer } from "@/components/shell/page-container";
 import { cn } from "@/lib/utils";
-import { format, MARKET_IDS, type MarketId, type ProviderRow } from "@/lib/tender";
+import { format, MARKET_IDS, type MarketIcon, type MarketId, type ProviderRow } from "@/lib/tender";
 import { useMarketView } from "@/lib/tender/client";
 
-/** Hard-coded: "cloud" markets are Weather, everything else is Crypto prices. */
-function categoryFor(icon: "cloud" | "bitcoin"): "Weather" | "Crypto prices" {
-  return icon === "cloud" ? "Weather" : "Crypto prices";
+type Category = "Weather" | "Crypto prices" | "Components" | "Commodities" | "Logistics";
+const CATEGORY_BY_ICON: Record<MarketIcon, Category> = {
+  cloud: "Weather",
+  bitcoin: "Crypto prices",
+  cpu: "Components",
+  pickaxe: "Commodities",
+  ship: "Logistics",
+};
+function categoryFor(icon: MarketIcon): Category {
+  return CATEGORY_BY_ICON[icon];
 }
 
 /** Decorative square thumbnails, cycled by market order so new markets pick one up automatically. */
@@ -41,8 +48,8 @@ interface DirectoryRow {
   identifier: string;
   contract: string;
   description: string;
-  category: "Weather" | "Crypto prices";
-  icon: "cloud" | "bitcoin";
+  category: Category;
+  icon: MarketIcon;
   priceUnit: string;
   providerCount: number;
   qualifiedCount: number;
@@ -134,6 +141,9 @@ const FRESHNESS_BUCKETS = [
 const CATEGORY_ICON: Record<DirectoryRow["category"], React.ReactNode> = {
   Weather: <Cloud className="size-4" />,
   "Crypto prices": <Bitcoin className="size-4" />,
+  Components: <Cpu className="size-4" />,
+  Commodities: <Pickaxe className="size-4" />,
+  Logistics: <Ship className="size-4" />,
 };
 
 export function MarketDirectory() {

@@ -43,6 +43,9 @@ function MarketPageContent({ marketId, onSwitchMarket }: MarketPageProps) {
   const view = useMarketView(marketId);
   const weather = useMarketView("sf-weather");
   const bitcoin = useMarketView("btc-usd");
+  const mlcc = useMarketView("sz-mlcc");
+  const lithium = useMarketView("lithium-carbonate");
+  const freight = useMarketView("freight-sha-lax");
   const actions = useTenderActions();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [apiOpen, setApiOpen] = useState(false);
@@ -58,8 +61,11 @@ function MarketPageContent({ marketId, onSwitchMarket }: MarketPageProps) {
     () => ({
       "sf-weather": weather.route.activeProvider?.identity ?? null,
       "btc-usd": bitcoin.route.activeProvider?.identity ?? null,
+      "sz-mlcc": mlcc.route.activeProvider?.identity ?? null,
+      "lithium-carbonate": lithium.route.activeProvider?.identity ?? null,
+      "freight-sha-lax": freight.route.activeProvider?.identity ?? null,
     }),
-    [weather.route.activeProvider, bitcoin.route.activeProvider],
+    [weather.route.activeProvider, bitcoin.route.activeProvider, mlcc.route.activeProvider, lithium.route.activeProvider, freight.route.activeProvider],
   );
 
   return (

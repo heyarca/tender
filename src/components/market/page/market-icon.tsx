@@ -1,11 +1,15 @@
-import { Bitcoin, Cloud, type LucideProps } from "lucide-react";
+import { Bitcoin, Cloud, Cpu, Pickaxe, Ship, type LucideProps } from "lucide-react";
 import type { MarketIcon as MarketIconKind } from "@/lib/tender";
 import { cn } from "@/lib/utils";
 
 const ICON_TONE: Record<MarketIconKind, string> = {
   cloud: "text-info",
   bitcoin: "text-tier-ultrafast",
+  cpu: "text-accent-foreground",
+  pickaxe: "text-tier-priority",
+  ship: "text-info",
 };
+const ICONS = { cloud: Cloud, bitcoin: Bitcoin, cpu: Cpu, pickaxe: Pickaxe, ship: Ship } as const;
 
 export interface MarketGlyphProps extends Omit<LucideProps, "ref"> {
   icon: MarketIconKind;
@@ -15,7 +19,7 @@ export interface MarketGlyphProps extends Omit<LucideProps, "ref"> {
 
 /** Lucide icon of a market: a cloud for weather, the bitcoin sign for BTC/USD. */
 export function MarketGlyph({ icon, tinted = true, className, ...props }: MarketGlyphProps) {
-  const Icon = icon === "cloud" ? Cloud : Bitcoin;
+  const Icon = ICONS[icon];
   return <Icon aria-hidden className={cn(tinted && ICON_TONE[icon], className)} strokeWidth={2} {...props} />;
 }
 
