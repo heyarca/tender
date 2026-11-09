@@ -25,12 +25,13 @@ import { MarketGlyph } from "@/components/market/page/market-icon";
 import { format, MARKET_IDS, type MarketIcon, type MarketId, type ProviderRow } from "@/lib/tender";
 import { useMarketView } from "@/lib/tender/client";
 
-type Category = "Weather" | "Crypto prices" | "Currencies";
+type Category = "Weather" | "Crypto prices" | "Currencies" | "Real-world goods";
 
 /** Hard-coded: cloud is Weather, euro and pound are Currencies, everything else is Crypto prices. */
 function categoryFor(icon: MarketIcon): Category {
   if (icon === "cloud") return "Weather";
   if (icon === "euro" || icon === "pound") return "Currencies";
+  if (icon === "cpu" || icon === "pickaxe" || icon === "ship") return "Real-world goods";
   return "Crypto prices";
 }
 

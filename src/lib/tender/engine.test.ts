@@ -354,14 +354,16 @@ describe("requests", () => {
     const result = market.requests[0];
     expect(result.status).toBe("ok");
     if (result.status !== "ok" || result.marketId !== "btc-usd") throw new Error("expected a served BTC result");
-    expect(result.requestId).toBe("req_000013");
+    // One seed request per market, then this one.
+    const id = `req_${String(MARKET_IDS.length + 1).padStart(6, "0")}`;
+    expect(result.requestId).toBe(id);
     expect(result.cost).toBeCloseTo(0.7 / 1e6, 12);
     expect(result.payload.changeUsd).not.toBeNull();
     expect(market.counters).toEqual({ total: 2, served: 2, failed: 0, rejected: 0 });
     expect(market.spend).toBeCloseTo(before.markets[B].spend + 0.7 / 1e6, 12);
-    expect(market.providers.find((p) => p.id === "the-zone-bio")!.latencies.at(-1)!.requestId).toBe("req_000013");
+    expect(market.providers.find((p) => p.id === "the-zone-bio")!.latencies.at(-1)!.requestId).toBe(id);
     expect(market.series.at(-1)!.value).toBe(result.payload.priceUsd);
-    expect(latest(state, B).title).toBe("req_000013 served by THE ZONE BIO");
+    expect(latest(state, B).title).toBe(`${id} served by THE ZONE BIO`);
   });
 
   it("keeps the last 50 requests", () => {

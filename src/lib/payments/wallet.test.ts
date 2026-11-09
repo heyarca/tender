@@ -7,7 +7,7 @@ import { USDC_ADDRESS } from "./config";
 
 const { multicall } = vi.hoisted(() => ({ multicall: vi.fn() }));
 vi.mock("viem", async (original) => ({ ...await original<typeof import("viem")>(), createPublicClient: vi.fn(() => ({ multicall })), http: vi.fn(() => ({})) }));
-const amounts = () => Array.from({ length: 17 }, (_, index) => BigInt(index * 1_000_000));
+const amounts = () => Array.from({ length: Object.keys(PAYEES).length + 1 }, (_, index) => BigInt(index * 1_000_000));
 beforeEach(() => {
   vi.stubEnv("TENDER_DEMO_PAYER_PRIVATE_KEY", `0x${"0".repeat(63)}1`);
   vi.stubEnv("TENDER_RPC_URL", "https://rpc.tender.test");
@@ -17,7 +17,7 @@ beforeEach(() => {
 afterEach(() => { vi.useRealTimers(); vi.unstubAllEnvs(); });
 
 describe("USDC balance batch", () => {
-  it("uses one non-chunked Multicall3 call for the payer and all 16 payees", async () => {
+  it("uses one non-chunked Multicall3 call for the payer and all payees", async () => {
     const result = await createBalanceReader()();
     expect(createPublicClient).toHaveBeenCalledWith(expect.objectContaining({ chain: baseSepolia }));
     expect(baseSepolia.contracts.multicall3.address.toLowerCase()).toBe("0xca11bde05977b3631167028862be2a173976ca11");
@@ -25,7 +25,7 @@ describe("USDC balance batch", () => {
     expect(multicall).toHaveBeenCalledOnce();
     const batch = multicall.mock.calls[0][0];
     expect(batch).toMatchObject({ allowFailure: false, batchSize: 0 });
-    expect(batch.contracts).toHaveLength(17);
+    expect(batch.contracts).toHaveLength(Object.keys(PAYEES).length + 1);
     expect(batch.contracts.every((contract: { address: string; abi: unknown; functionName: string }) => contract.address === USDC_ADDRESS && contract.abi === erc20Abi && contract.functionName === "balanceOf")).toBe(true);
     expect(batch.contracts.slice(1).map((contract: { args: string[] }) => contract.args[0])).toEqual(Object.values(PAYEES));
     expect(result.payer?.amountAtomic).toBe("0");
@@ -36,8 +36,8 @@ describe("USDC balance batch", () => {
     multicall.mockResolvedValue(amounts().slice(1));
     const result = await createBalanceReader()();
     expect(result.payer).toBeNull();
-    expect(result.payees).toHaveLength(16);
-    expect(multicall.mock.calls[0][0].contracts).toHaveLength(16);
+    expect(result.payees).toHaveLength(Object.keys(PAYEES).length);
+    expect(multicall.mock.calls[0][0].contracts).toHaveLength(Object.keys(PAYEES).length);
   });
   it("retries the complete batch exactly once and does not cache failures", async () => {
     const read = createBalanceReader();
