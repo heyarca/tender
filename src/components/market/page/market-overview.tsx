@@ -44,7 +44,7 @@ function ResultCard({ view }: { view: MarketView }) {
       <CardHeader className="mb-2 items-baseline">
         <div className="flex min-w-0 items-baseline gap-2">
           <CardTitle className="shrink-0">Latest result</CardTitle>
-          <CardDescription className="mt-0 truncate">
+          <CardDescription className="mt-0 truncate max-sm:hidden">
             {definition.priceDefinition ?? "Observation age is data freshness, not request latency."}
           </CardDescription>
         </div>
@@ -171,14 +171,21 @@ function MetricCards({ view }: { view: MarketView }) {
     <>
       <StatCard
         label="Request price"
-        action={bid !== null ? <Limit>{format.requestCost(bid)}/req</Limit> : null}
+        {...limitProps(
+          bid !== null ? (
+            <>
+              {format.requestCost(bid)}
+              <span className="sr-only"> per request</span>
+            </>
+          ) : null,
+        )}
         value={bid !== null ? format.price(bid) : "–"}
         unit={bid !== null ? "/M req" : undefined}
         tone={bid !== null && bid > policy.maxPrice ? "warning" : "default"}
       />
       <StatCard
         label="P95 latency"
-        action={<Limit>Max {format.latency(policy.maxP95LatencyMs)}</Limit>}
+        {...limitProps(<>Max {format.latency(policy.maxP95LatencyMs)}</>)}
         value={latencyValue}
         unit={latencyUnit || undefined}
         tone={latency !== null && latency > policy.maxP95LatencyMs ? "warning" : "default"}
@@ -194,14 +201,14 @@ function MetricCards({ view }: { view: MarketView }) {
             />
           </span>
         }
-        action={<Limit>Max {format.dataAge(policy.maxDataAgeMs)}</Limit>}
+        {...limitProps(<>Max {format.dataAge(policy.maxDataAgeMs)}</>)}
         value={ageValue}
         unit={ageUnit || undefined}
         tone={age !== null && age > policy.maxDataAgeMs ? "warning" : "default"}
       />
       <StatCard
         label="Success rate"
-        action={<Limit>Min {format.percent(policy.minSuccessRate)}</Limit>}
+        {...limitProps(<>Min {format.percent(policy.minSuccessRate)}</>)}
         value={success !== null ? format.percent(success) : "–"}
         tone={success !== null && success < policy.minSuccessRate ? "warning" : "default"}
       />
@@ -209,9 +216,16 @@ function MetricCards({ view }: { view: MarketView }) {
   );
 }
 
-/** Policy limit in the top-right corner of a stat card. */
-function Limit({ children }: { children: ReactNode }) {
-  return <span className="text-caption text-faint tabular-nums">{children}</span>;
+/**
+ * A policy limit (or the per-request cost) beside the label from `sm`, and on its own line under
+ * the value on phones, where the label row has no room for it.
+ */
+function limitProps(content: ReactNode): { action?: ReactNode; sub?: ReactNode } {
+  if (content === null) return {};
+  return {
+    action: <span className="text-caption text-faint tabular-nums max-sm:hidden">{content}</span>,
+    sub: <span className="tabular-nums sm:hidden">{content}</span>,
+  };
 }
 
 /**
