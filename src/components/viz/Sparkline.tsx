@@ -15,7 +15,7 @@ export interface SparklineProps {
   width?: number;
   /** Height in px. Default 24. */
   height?: number;
-  /** Line color: active (grape), neutral, muted, warning, or negative. Default neutral. */
+  /** Line color: active (olive), neutral, muted, warning, or negative. Default neutral. */
   tone?: SparklineTone;
   /** Policy limit drawn as a dashed line. A limit far outside the data shows as a small edge marker. */
   limit?: number | null;

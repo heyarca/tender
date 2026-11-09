@@ -14,7 +14,10 @@ export interface TenderMarkProps extends Omit<React.SVGProps<SVGSVGElement>, "ch
   title?: string | null;
 }
 
-/** The Tender mark in grape (`text-primary`). Size it with `size-*` classes; `size-5` by default. */
+/**
+ * The Tender mark: an ink glyph on a lime tile, readable on light and dark
+ * surfaces. Size it with `size-*` classes; `size-5` by default.
+ */
 export function TenderMark({ title = "Tender", className, ...props }: TenderMarkProps) {
   const labelled = title !== null;
   return (
@@ -26,11 +29,14 @@ export function TenderMark({ title = "Tender", className, ...props }: TenderMark
       aria-label={labelled ? title : undefined}
       aria-hidden={labelled ? undefined : true}
       focusable="false"
-      className={cn("size-5 shrink-0 text-primary", className)}
+      className={cn("size-5 shrink-0", className)}
       {...props}
     >
-      <path d={TENDER_MARK_BARS} stroke="currentColor" strokeWidth={4} strokeLinecap="round" />
-      <circle {...TENDER_MARK_DOT} fill="currentColor" />
+      <rect width="20" height="20" rx="5" fill="var(--primary)" />
+      <g transform="translate(3.2 3.2) scale(0.68)">
+        <path d={TENDER_MARK_BARS} stroke="var(--primary-foreground)" strokeWidth={4} strokeLinecap="round" />
+        <circle {...TENDER_MARK_DOT} fill="var(--primary-foreground)" />
+      </g>
     </svg>
   );
 }

@@ -34,7 +34,7 @@ export interface SpecFieldProps {
   onCommit?: (display: number) => void;
   /** Called on Enter when `onCommit` is omitted. */
   onSubmit?: () => void;
-  /** Field differs from its default: shows a grape dot and a reset link. */
+  /** Field differs from its default: shows a olive dot and a reset link. */
   modified: boolean;
   /** Default value with unit, e.g. "400 ms". */
   defaultLabel: string;

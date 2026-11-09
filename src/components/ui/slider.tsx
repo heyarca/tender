@@ -27,7 +27,7 @@ export interface SliderProps {
   className?: string;
 }
 
-/** Thin 4px track, grape range, white bordered 16px thumb. */
+/** Thin 4px track, lime range, white bordered 16px thumb. */
 export function Slider({
   value,
   onValueChange,
@@ -77,8 +77,8 @@ export function Slider({
             className={cn(
               "size-4 cursor-grab rounded-full border border-input bg-background shadow-sm select-none",
               "transition-[box-shadow,border-color] duration-quick data-dragging:cursor-grabbing",
-              "has-[:focus-visible]:border-primary has-[:focus-visible]:shadow-[0_0_0_3px_var(--color-accent)]",
-              "data-dragging:border-primary",
+              "has-[:focus-visible]:border-primary-strong has-[:focus-visible]:shadow-[0_0_0_3px_var(--color-accent)]",
+              "data-dragging:border-primary-strong",
             )}
           />
         </BaseSlider.Track>

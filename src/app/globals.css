@@ -1,7 +1,8 @@
 @import "tailwindcss";
 
 /*
- * Tender design tokens — mirrors OpenRouter's light design system
+ * Tender design tokens — OpenRouter's light design system with the Tender brand
+ * (PP Mori, lime #C8FF00 fills with ink text, olive #4A6000 accents)
  * (see docs/DESIGN.md). Light theme only.
  */
 
@@ -11,7 +12,8 @@
   /* Brand */
   --ink: #03080a;
   --cloud: #fcfcfe;
-  --grape: #7624f4;
+  --lime: #c8ff00;
+  --olive: #4a6000;
 
   /* Surfaces & text */
   --background: #fcfcfe;
@@ -30,15 +32,21 @@
   --card-hover: #03080a05;
   --selected-bg: #03080a08;
 
-  /* Primary (grape) */
-  --primary: #7624f4;
-  --primary-foreground: #fcfcfe;
-  --accent: #7624f414;
-  --accent-foreground: #7624f4;
-  --accent-subtle: #7624f408;
-  --accent-border: #7624f420;
-  --accent-hover: #7624f4e0;
-  --ring: #7624f4;
+  /* Primary (Tender lime). Lime is a fill only, always with ink text.
+     Accent text, icons, strokes, and focus rings on light surfaces use olive
+     (--primary-strong): lime text on white is unreadable (1.18:1). */
+  --primary: #c8ff00;
+  --primary-foreground: #03080a;
+  --primary-hover: #b8f000;
+  --primary-active: #a8dd00;
+  --primary-border: #a6d600;
+  --primary-strong: #4a6000;
+  --accent: #c8ff0040;
+  --accent-foreground: #4a6000;
+  --accent-subtle: #c8ff001f;
+  --accent-border: #a6d600;
+  --accent-hover: #b8f000;
+  --ring: #4a6000;
   --focus-border: #03080a4d;
 
   /* Semantic */
@@ -85,8 +93,8 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-jakarta), "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system,
-    BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-sans: var(--font-pp-mori), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
 
@@ -107,6 +115,10 @@
   --color-selected: var(--selected-bg);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-active: var(--primary-active);
+  --color-primary-border: var(--primary-border);
+  --color-primary-strong: var(--primary-strong);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent-subtle: var(--accent-subtle);
@@ -181,7 +193,7 @@
   --text-heading: 16px;
   --text-heading--line-height: 1.35;
 
-  --font-weight-normal: 450;
+  --font-weight-normal: 400;
 
   --radius-sm: 4px;
   --radius-md: 6px;
@@ -220,7 +232,7 @@
     background: var(--background);
     color: var(--foreground);
     font-family: var(--font-sans);
-    font-weight: 450;
+    font-weight: 400;
     font-variant-numeric: tabular-nums;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -240,6 +252,6 @@
   }
 
   ::selection {
-    background: #7624f42e;
+    background: #c8ff0066;
   }
 }
