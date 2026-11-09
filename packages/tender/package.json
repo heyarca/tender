@@ -1,0 +1,48 @@
+{
+  "name": "@heyarca/tender",
+  "version": "0.1.0",
+  "description": "Let your agent buy API access on Tender, the execution market where providers compete on price, latency, freshness, and reliability.",
+  "type": "module",
+  "bin": {
+    "tender": "bin/tender.js"
+  },
+  "main": "index.js",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    }
+  },
+  "files": [
+    "bin",
+    "index.js",
+    "index.d.ts",
+    "AGENT.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "tender",
+    "api",
+    "marketplace",
+    "x402",
+    "usdc",
+    "agents",
+    "routing"
+  ],
+  "homepage": "https://tender.heyarca.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/heyarca/tender.git",
+    "directory": "packages/tender"
+  },
+  "license": "MIT",
+  "author": "Arca Labs",
+  "publishConfig": {
+    "access": "public"
+  }
+}
