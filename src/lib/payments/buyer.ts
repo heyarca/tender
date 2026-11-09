@@ -75,7 +75,9 @@ export async function performPaidRequest(url: URL, transport: typeof fetch = fet
       signedEmitted = true;
       onProgress?.({ type: "signed" });
     }
-    const result = await transport(input, init);
+    // Keep the authoritative deadline/cancellation signal across SDK Request
+    // clones instead of relying on their weakly retained abort followers.
+    const result = await transport(input, { ...init, signal });
     const requiredHeader = result.headers.get("PAYMENT-REQUIRED");
     if (result.status === 402 && requiredHeader) {
       const required = decodePaymentRequiredHeader(requiredHeader);
