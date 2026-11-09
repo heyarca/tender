@@ -39,6 +39,7 @@ export const landingStyles = {
   headerInner: "tenderLanding_headerInner",
   hero: "tenderLanding_hero",
   heroActions: "tenderLanding_heroActions",
+  heroHowLink: "tenderLanding_heroHowLink",
   heroCard: "tenderLanding_heroCard",
   heroCardHead: "tenderLanding_heroCardHead",
   heroCardHeading: "tenderLanding_heroCardHeading",

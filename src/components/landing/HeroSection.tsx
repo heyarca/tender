@@ -103,10 +103,10 @@ export function HeroSection() {
           <ButtonLink href="/demo" variant="secondary" size="lg" fluid icon={<ArrowUpRight size={20} />}>
             Watch video
           </ButtonLink>
-          <ButtonLink href="#how-it-works" variant="secondary" size="lg" fluid icon={<ArrowDown size={20} />}>
-            See how it works
-          </ButtonLink>
         </div>
+        <a href="#how-it-works" className={styles.heroHowLink}>
+          See how it works <ArrowDown size={16} aria-hidden />
+        </a>
       </div>
       <div className={`${styles.container} ${styles.heroMediaWrap}`}>
         <HeroMedia />
