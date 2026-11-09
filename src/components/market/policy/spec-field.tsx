@@ -34,7 +34,7 @@ export interface SpecFieldProps {
   onCommit?: (display: number) => void;
   /** Called on Enter when `onCommit` is omitted. */
   onSubmit?: () => void;
-  /** Field differs from its default: shows a olive dot and a reset link. */
+  /** Field differs from its default: shows an olive dot and a reset link. */
   modified: boolean;
   /** Default value with unit, e.g. "400 ms". */
   defaultLabel: string;
@@ -110,7 +110,7 @@ export function SpecField({
           <span
             aria-hidden="true"
             title="Changed from default"
-            className="ml-0.5 size-1.5 shrink-0 rounded-full bg-primary"
+            className="ml-0.5 size-1.5 shrink-0 rounded-full bg-primary-strong"
           />
         ) : null}
         {aside ? <span className="ml-auto truncate pl-2 text-caption text-muted-foreground">{aside}</span> : null}

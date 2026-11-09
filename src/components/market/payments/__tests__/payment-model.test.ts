@@ -15,7 +15,6 @@ import {
   shortHash,
   summarizePayload,
   txUrl,
-  usdcToAtomic,
 } from "../payment-model";
 
 /** A view whose providers carry edited conditions (what the console store produces). */
@@ -56,14 +55,6 @@ describe("USDC formatting", () => {
     expect(formatUsdcAtomic(BigInt(19_999_820))).toBe("19.999820");
     expect(formatUsdcAtomic("1234567890000")).toBe("1,234,567.890000");
     expect(formatUsdcAtomic("not a number")).toBe("—");
-  });
-
-  it("parses decimal USDC strings to atomic units", () => {
-    expect(usdcToAtomic("19.99982")).toBe(BigInt(19_999_820));
-    expect(usdcToAtomic("0")).toBe(BigInt(0));
-    expect(usdcToAtomic("0.000001")).toBe(BigInt(1));
-    expect(usdcToAtomic("1.0000001")).toBeNull();
-    expect(usdcToAtomic("-1")).toBeNull();
   });
 
   it("labels atomic units", () => {

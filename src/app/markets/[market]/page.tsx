@@ -1,7 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
 import { getMarketDefinition, isMarketId, MARKET_IDS } from "@/lib/tender";
+
+/**
+ * This segment renders no UI (the market page lives in the shared `/markets` layout and
+ * switches in place), so it may block on `params`. Awaiting them outside `<Suspense>` lets an
+ * unknown market answer with a real 404 status instead of a streamed not-found page.
+ */
+export const instant = false;
 
 export function generateStaticParams() {
   return MARKET_IDS.map((market) => ({ market }));
@@ -14,17 +20,12 @@ export async function generateMetadata({ params }: PageProps<"/markets/[market]"
   return { title: definition.name, description: definition.description };
 }
 
-/** Unknown market ids render the not-found page. The market UI itself lives in `../layout.tsx`. */
-async function MarketGuard({ params }: Pick<PageProps<"/markets/[market]">, "params">) {
+/**
+ * Validates the market id: unknown ids render the not-found page with a 404 status.
+ * The market UI itself lives in `../layout.tsx`.
+ */
+export default async function MarketRoute({ params }: PageProps<"/markets/[market]">) {
   const { market } = await params;
   if (!isMarketId(market)) notFound();
   return null;
-}
-
-export default function MarketRoute({ params }: PageProps<"/markets/[market]">) {
-  return (
-    <Suspense fallback={null}>
-      <MarketGuard params={params} />
-    </Suspense>
-  );
 }

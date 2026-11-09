@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Section } from "@/components/ui/section";
+import { Skeleton } from "@/components/ui/skeleton";
 import { InfoTooltip } from "@/components/ui/tooltip";
 import { usePaidRequest } from "@/lib/payments/client";
 import { format, getMarketDefinition, type MarketId, PREFERENCE_LABELS } from "@/lib/tender";
@@ -23,7 +24,6 @@ import {
   ROUNDING_NOTE,
   shortAddress,
   summarizePayload,
-  usdcToAtomic,
   type PaymentQuoteView,
 } from "./payment-model";
 import { payeeBalance } from "./payment-records";
@@ -37,10 +37,16 @@ import { ReceiptsTable } from "./receipts-table";
 const sectionLinkClass =
   "cursor-pointer rounded-sm text-accent-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
 
+/** Rows of the receipts table before "Show all". */
+const TABLE_PREVIEW_ROWS = 5;
+
 /** Balances older than this are read again when the section mounts. */
 const BALANCES_STALE_MS = 30_000;
-/** Second balance read after a payment, for RPC nodes that lag a block behind. */
-const BALANCES_RECHECK_MS = 4_000;
+/**
+ * Second balance read after a payment, for RPC nodes that lag a block behind.
+ * Longer than the balances endpoint's 5 s cache so it is a fresh read.
+ */
+const BALANCES_RECHECK_MS = 6_000;
 
 interface Attempt {
   marketId: MarketId;
@@ -111,6 +117,7 @@ export function PaymentsSection({ marketId }: MarketSectionProps) {
   const { run, pending, error, failure, stage } = usePaidRequest(marketId);
   const payments = usePaymentsState();
   const [attempt, setAttempt] = useState<Attempt | null>(null);
+  const [showAll, setShowAll] = useState(false);
   const starting = useRef(false);
 
   const quote = useMemo(() => buildPaymentQuote(view), [view]);
@@ -122,7 +129,7 @@ export function PaymentsSection({ marketId }: MarketSectionProps) {
   const payer = balances?.payer ?? null;
   const payee = payeeBalance(balances, quote.providerId);
   const payerMissing = payments.balancesStatus === "ready" && balances !== null && payer === null;
-  const payerAtomic = payer ? usdcToAtomic(payer.amountUsd) ?? BigInt(payer.amountAtomic) : null;
+  const payerAtomic = payer ? BigInt(payer.amountAtomic) : null;
   const insufficient =
     payerAtomic !== null && quote.amounts !== null && payerAtomic < BigInt(quote.amounts.settledAtomic);
 
@@ -275,7 +282,11 @@ export function PaymentsSection({ marketId }: MarketSectionProps) {
                 <span>USDC</span>
               </>
             ) : (
-              <span>{payments.balancesStatus === "error" ? "balance unavailable" : payerMissing ? "not configured" : "loading…"}</span>
+              payments.balancesStatus === "error" || payerMissing ? (
+                <span>{payerMissing ? "not configured" : "balance unavailable"}</span>
+              ) : (
+                <Skeleton className="h-3.5 w-40" />
+              )
             )}
             <Button
               variant="ghost"
@@ -323,7 +334,7 @@ export function PaymentsSection({ marketId }: MarketSectionProps) {
                 icon={<Receipt aria-hidden="true" />}
                 title="No paid requests yet"
                 description={`Run a paid request to settle ${definition.shortName} in USDC and see its receipt and transaction.`}
-                className="py-8"
+                className="py-7"
               />
             </div>
           )}
@@ -332,7 +343,16 @@ export function PaymentsSection({ marketId }: MarketSectionProps) {
         {records.length > 0 ? (
           <div>
             <SubHeading>Recent paid requests</SubHeading>
-            <ReceiptsTable records={records} marketId={marketId} timeZone={definition.timeZone} />
+            <ReceiptsTable
+              records={showAll ? records : records.slice(0, TABLE_PREVIEW_ROWS)}
+              marketId={marketId}
+              timeZone={definition.timeZone}
+            />
+            {records.length > TABLE_PREVIEW_ROWS ? (
+              <Button variant="ghost" size="sm" className="mt-2" onClick={() => setShowAll((value) => !value)} aria-expanded={showAll}>
+                {showAll ? "Show fewer" : `Show all ${records.length}`}
+              </Button>
+            ) : null}
           </div>
         ) : null}
       </div>
