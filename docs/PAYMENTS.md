@@ -55,13 +55,20 @@ The note is present whenever rounding applies. The requirement description also 
 `maxPrice` (USD/M), `maxP95LatencyMs`, `maxDataAgeMs`, `minSuccessRate` (0–1),
 `preference` (`lowest-cost`, `lowest-latency`, `freshest-data`), and
 `mode` (`{"kind":"auto"}` or `{"kind":"pinned","providerId":"together"}`).
-Unknown fields and invalid values are rejected before any signature.
+Optional `conditions` contains up to 16 provider-id keys, each with a partial patch of
+`bidPrice`, `p95LatencyMs`, `dataAgeMs`, `errorRate` (0–1), and `available`.
+Only providers in the requested market are allowed. Unknown fields and invalid types are rejected before any signature; finite numeric values are clamped with the same engine sanitizer as the console.
+The snapshot is passed to the contract handler in-process for both the challenge and signed retry. Public contract query parameters/headers cannot inject provider conditions.
+
+For example, `{ "market": "sf-weather", "conditions": { "together": { "bidPrice": 45 } } }` routes the paid request to DeepInfra under the default policy and pays DeepInfra's address.
+A selected bid above `$100 /M` exceeds the wallet's `100`-atomic cap and returns a clear 422 error before signing.
 
 The server-owned payer uses `@x402/fetch`. Its fetch transport dispatches directly to the same contract handler in-process, including the 402 challenge and signed retry. It does not trust incoming Host/forwarded-host headers and does not make an HTTP self-call. Vercel deployment protection cannot block that internal transport.
 
 The response is `{ response, receipt }`. `receipt` includes:
 `txHash`, `amountUsd` (settled amount), `amountAtomic`, `asset: "USDC"`, `payer`, `payTo`,
-`providerId`, `network: "base-sepolia"`, `explorerUrl`, plus the exact/settled fields above.
+`providerId`, `providerName`, `latency_ms`, `data_age_ms`, `network: "base-sepolia"`, `explorerUrl`, plus the exact/settled fields above.
+`response` contains the normalized contract payload, including `provider`, `latency_ms` and `data_age_ms`.
 No success receipt is invented when the facilitator fails.
 
 ### `GET /api/payments/balances`
@@ -124,6 +131,7 @@ No environment variable switches payment behavior or enables a mainnet network.
 ```sh
 curl -i http://localhost:3106/api/v1/prices/spot
 bun run payments:smoke http://localhost:3106 btc-usd
+bun scripts/payments/inspect.ts <txHash>
 bun run typecheck
 bun run lint
 bun run test
@@ -149,6 +157,6 @@ Protected preview smoke can call `/api/payments/demo-request` via `vercel curl` 
 - `quoteFromBid(providerId, bidPerMillion, description): ValidatedPaymentQuote` in `quote.ts` / `server.ts`.
 - `withX402Payment<T extends PaymentQuote>(handler, quote, paymentServer?): (request: Request) => Promise<Response>` in `server.ts`. The quote callback runs once; the handler receives the same enriched quote and any routing context carried in `T`.
 - `performPaidRequest(url, transport?): Promise<PaidRequestResult>` in `buyer.ts`.
-- `usePaidRequest(market)` in `client.ts` returns `{ run(policy?), receipts, pending, error }`. Receipt history is capped at 50; concurrent clicks do not duplicate payments.
+- `usePaidRequest(market)` in `client.ts` returns `{ run({ policy?, conditions? }), receipts, pending, error }` (legacy `run(policy)` is also accepted). Receipt history is capped at 50; concurrent clicks do not duplicate payments.
 
 Tests cover bid conversion, rounding disclosure, quote validation, payee lookup, real SDK 402 encoding with a test facilitator, settlement only after success, rate limits, spend caps and policy validation.
