@@ -56,6 +56,25 @@ export interface PaidRequestInput {
   conditions?: PaymentConditions;
 }
 export type PaidRequestOptions = Omit<PaidRequestInput, "market">;
+export interface BalanceEntry {
+  /** "payer" or a provider id. */
+  id: string;
+  address: Address;
+  amountAtomic: string;
+  amountUsd: string;
+}
+/** Response of `GET /api/payments/balances`: a fresh snapshot, or a stale one after a failed fresh read. */
+export interface BalancesResponse {
+  network: "base-sepolia";
+  asset: "USDC";
+  tokenAddress: Address;
+  payer: BalanceEntry | null;
+  payees: BalanceEntry[];
+  /** True only when a failed fresh read forced this last good snapshot to be served. */
+  stale?: boolean;
+  /** ISO time of the RPC read that produced this snapshot. */
+  as_of?: string;
+}
 
 export interface PaidRequestFailure {
   status: number;

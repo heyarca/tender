@@ -22,7 +22,7 @@ export function Checkbox({ className, onCheckedChange, indeterminate, ...props }
       className={cn(
         "flex size-4 shrink-0 cursor-pointer items-center justify-center rounded-sm border border-foreground/25 bg-input-bg text-primary-foreground transition-colors duration-quick",
         "hover:border-foreground/40 data-checked:border-primary-border data-checked:bg-primary data-indeterminate:border-primary-border data-indeterminate:bg-primary",
-        "focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_var(--color-accent)]",
+        "focus-visible:outline-none focus-visible:shadow-focus",
         "data-disabled:cursor-not-allowed data-disabled:opacity-50",
         className,
       )}

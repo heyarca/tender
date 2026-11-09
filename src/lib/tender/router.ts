@@ -95,13 +95,18 @@ function reconcileAuto(market: MarketState, ctx: StepContext, cause: ReconcileCa
   // 4. No eligible provider.
   if (recommendedId === null) {
     if (activeId === null) {
-      return route.pending ? { ...market, route: { ...route, pending: null } } : market;
+      if (!route.pending) return market;
+      return pushActivity(
+        ctx,
+        { ...market, route: { ...route, pending: null } },
+        switchCancelledEntry(market.id, route.pending.providerId, null),
+      );
     }
     const reasons = evaluation.byId[activeId]?.reasons ?? [];
     return pushActivity(
       ctx,
       { ...market, route: { ...route, activeProviderId: null, since: ctx.now, lastSwitchAt: ctx.now, pending: null } },
-      noEligibleEntry(market.id, activeId, reasons, operatorText),
+      noEligibleEntry(market.id, activeId, reasons, operatorText, route.pending?.providerId ?? null),
     );
   }
 
@@ -167,7 +172,14 @@ function reconcilePinned(
 ): MarketState {
   const pinned = evaluation.byId[pinnedId];
   if (!pinned) return market;
-  if (market.route.pending) market = { ...market, route: { ...market.route, pending: null } };
+  if (market.route.pending) {
+    const { providerId } = market.route.pending;
+    market = pushActivity(
+      ctx,
+      { ...market, route: { ...market.route, pending: null } },
+      switchCancelledEntry(market.id, providerId, null),
+    );
+  }
 
   if (market.route.activeProviderId !== pinnedId) {
     const trigger: RouteTrigger = cause.kind === "operator" ? cause.trigger : "mode-change";

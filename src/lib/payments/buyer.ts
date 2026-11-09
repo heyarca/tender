@@ -1,6 +1,7 @@
 import { wrapFetchWithPayment, x402Client, decodePaymentResponseHeader } from "@x402/fetch";
 import { ExactEvmScheme } from "@x402/evm/exact/client";
 import { decodePaymentRequiredHeader } from "@x402/core/http";
+import { PREFERENCES } from "@/lib/tender";
 import { MARKETS } from "@/lib/tender/fixtures";
 import { parsePaymentConditions } from "./conditions";
 import type { PaymentRequirements } from "@x402/core/types";
@@ -25,7 +26,7 @@ export function parsePaidRequestInput(value: unknown): PaidRequestInput {
     const value = policy[key];
     if (value !== undefined && (typeof value !== "number" || !Number.isFinite(value) || value < 0 || (key === "minSuccessRate" && value > 1))) throw new Error(`Invalid policy ${key}`);
   }
-  if (policy.preference !== undefined && !["lowest-cost", "lowest-latency", "freshest-data"].includes(String(policy.preference))) throw new Error("Invalid policy preference");
+  if (policy.preference !== undefined && !(PREFERENCES as readonly string[]).includes(String(policy.preference))) throw new Error("Invalid policy preference");
   if (policy.mode !== undefined) {
     const mode = policy.mode as Record<string, unknown>;
     if (!mode || typeof mode !== "object" || Array.isArray(mode) || !["auto", "pinned"].includes(String(mode.kind)) || Object.keys(mode).some((key) => !["kind", "providerId"].includes(key)) || (mode.kind === "pinned" && (typeof mode.providerId !== "string" || !/^[a-z-]{1,40}$/.test(mode.providerId)))) throw new Error("Invalid routing mode");

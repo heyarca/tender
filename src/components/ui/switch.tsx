@@ -34,7 +34,7 @@ export function Switch({ size = "sm", className, onCheckedChange, ...props }: Sw
       className={cn(
         "inline-flex shrink-0 cursor-pointer items-center rounded-full bg-foreground/15 p-0.5 transition-colors duration-quick",
         "hover:bg-foreground/20 data-checked:bg-primary data-checked:hover:bg-primary-hover data-checked:shadow-[inset_0_0_0_1px_var(--primary-border)]",
-        "focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_var(--color-accent)]",
+        "focus-visible:outline-none focus-visible:shadow-focus",
         "data-disabled:cursor-not-allowed data-disabled:opacity-50",
         rootSize[size],
         className,
