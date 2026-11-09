@@ -31,9 +31,12 @@ const nextConfig: NextConfig = {
   },
   turbopack: {
     rules: {
+      // Tailwind for plain stylesheets only. The glob matches by file name, so
+      // without this exclusion it would also swallow *.module.css and re-type
+      // it as plain CSS, dropping the exported class-name mapping.
       "*.css": {
         loaders: ["@tailwindcss/turbopack"],
-        as: "*.css",
+        condition: { not: { path: "**/*.module.css" } },
       },
     },
   },
