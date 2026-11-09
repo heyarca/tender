@@ -13,10 +13,13 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 Read `docs/SPEC.md` (behavior + engine contract) and `docs/DESIGN.md` (OpenRouter-aligned design system) before coding.
 
-## Commands (pnpm only)
+## Commands (bun only)
 
-- `pnpm dev -p <port>` — dev server (use the port you were assigned; never 3000).
-- `pnpm typecheck` · `pnpm lint` · `pnpm test` · `pnpm build` · `pnpm verify` (all four).
+- `bun install` (lockfile: `bun.lock`; never add another lockfile).
+- `bun run dev -p <port>` — dev server (use the port you were assigned; never 3000).
+- `bun run typecheck` · `bun run lint` · `bun run test` · `bun run build` · `bun run verify` (all four).
+- Never run `bun test`: it starts bun's built-in runner instead of the Vitest `test` script.
+- `bun add <pkg>` / `bun add -d <pkg>`; `bunx <bin>`; TypeScript scripts run directly with `bun <file>.ts`.
 - Do not add dependencies without the orchestrator's approval. Already installed: `@base-ui/react`,
   `lucide-react`, `clsx`, `tailwind-merge`, `class-variance-authority`, `zustand`, `motion`, `cmdk`,
   `vitest`, `jsdom`, `@testing-library/react`.

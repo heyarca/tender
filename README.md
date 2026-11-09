@@ -9,9 +9,9 @@ markets: **San Francisco Weather** and **Bitcoin Price**. Data comes from local 
 deterministic state transitions.
 
 ```bash
-pnpm install
-pnpm dev        # http://localhost:3000
-pnpm verify     # typecheck, lint, tests, production build
+bun install
+bun run dev       # http://localhost:3000
+bun run verify    # typecheck, lint, tests, production build
 ```
 
 - Product and engine spec: [`docs/SPEC.md`](docs/SPEC.md)

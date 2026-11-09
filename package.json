@@ -10,7 +10,7 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm build"
+    "verify": "bun run typecheck && bun run lint && bun run test && bun run build"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
@@ -39,5 +39,5 @@
     "typescript": "^5",
     "vitest": "^5.1.0"
   },
-  "packageManager": "pnpm@9.15.9"
+  "packageManager": "bun@1.4.0"
 }

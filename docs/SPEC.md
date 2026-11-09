@@ -286,4 +286,4 @@ public/providers/                provider logos
 - [ ] Switching markets preserves each market's state.
 - [ ] Reset conditions / Restore provider / Reset policy work.
 - [ ] No banned words, no dead controls, no hydration warnings, no console errors.
-- [ ] `pnpm verify` passes (typecheck, lint, tests, build).
+- [ ] `bun run verify` passes (typecheck, lint, tests, build).
