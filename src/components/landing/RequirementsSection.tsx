@@ -9,7 +9,7 @@ import { ProviderLogo } from "@/components/ui/provider-logo";
 import { type MarketId } from "@/lib/tender";
 
 /** A short, representative set for this illustration — the live switcher has many more markets. */
-const LANDING_DEMO_MARKET_IDS: readonly MarketId[] = ["btc-usd", "sf-weather", "eth-usd", "sz-mlcc"];
+const LANDING_DEMO_MARKET_IDS: readonly MarketId[] = ["btc-usd", "sf-weather"];
 import { useMarketView, usePendingSwitch } from "@/lib/tender/client";
 import { useLandingMarket } from "./LandingProductProviders";
 import { SectionHeader } from "./SectionHeader";

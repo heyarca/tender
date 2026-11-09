@@ -12,7 +12,7 @@ import { ProviderLogo } from "@/components/ui/provider-logo";
 import { fromDisplayValue, type ConditionsPatch, type MarketId, type MarketView, type NumericInputSpec } from "@/lib/tender";
 
 /** A short, representative set for this illustration — the live switcher has many more markets. */
-const LANDING_DEMO_MARKET_IDS: readonly MarketId[] = ["btc-usd", "sf-weather", "eth-usd", "sz-mlcc"];
+const LANDING_DEMO_MARKET_IDS: readonly MarketId[] = ["btc-usd", "sf-weather"];
 import { useMarketView, usePendingSwitch, useTenderActions } from "@/lib/tender/client";
 import { Button } from "./LandingButton";
 import { useLandingMarket } from "./LandingProductProviders";
