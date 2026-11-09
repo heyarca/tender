@@ -61,8 +61,14 @@ export async function performPaidRequest(url: URL, transport: typeof fetch = fet
   const paidFetch = wrapFetchWithPayment(transport, client);
   const response = await paidFetch(url, { headers: { Accept: "application/json" }, redirect: "error", cache: "no-store", signal: AbortSignal.timeout(75_000) });
   const body: unknown = await response.json();
-  if (!response.ok) throw new PaidRequestError("Paid request did not complete; inspect the response before trying again", response.status, body);
   const header = response.headers.get("PAYMENT-RESPONSE");
+  if (!response.ok) {
+    const failed = header ? decodePaymentResponseHeader(header) : undefined;
+    throw new PaidRequestError("Paid request did not complete; inspect the response before trying again", response.status, {
+      response: body,
+      ...(failed ? { settlement: { success: failed.success, errorReason: failed.errorReason, txHash: failed.transaction, network: failed.network } } : {}),
+    });
+  }
   if (!header || !selected) throw new PaidRequestError("No settlement receipt returned", 502);
   const settlement = decodePaymentResponseHeader(header);
   if (!settlement.success || settlement.network !== PAYMENT_NETWORK || !/^0x[0-9a-fA-F]{64}$/.test(settlement.transaction) || settlement.payer?.toLowerCase() !== account.address.toLowerCase()) throw new PaidRequestError("Invalid settlement receipt", 502);

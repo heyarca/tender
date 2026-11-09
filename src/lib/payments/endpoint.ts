@@ -10,7 +10,7 @@ const headers = { "Cache-Control": "private, no-store" };
 export function createPaidRequestEndpoint(handleContract: ContractHandler) {
   return async (request: Request): Promise<Response> => {
     if (request.method !== "POST") return Response.json({ error: "Use POST" }, { status: 405, headers });
-    if (!request.headers.get("content-type")?.split(";")[0].trim().toLowerCase().endsWith("application/json")) {
+    if (request.headers.get("content-type")?.split(";")[0].trim().toLowerCase() !== "application/json") {
       return Response.json({ error: "Send application/json" }, { status: 415, headers });
     }
     let input;

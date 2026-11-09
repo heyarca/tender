@@ -13,7 +13,8 @@ No mainnet network or wildcard is registered.
 5. The facilitator verifies the authorization. The selected handler runs. For a successful response, the facilitator submits the transfer.
 6. `PAYMENT-RESPONSE` contains the settlement result, transaction hash, network and payer. Failed handlers are not settled.
 
-The default public facilitator is `https://x402.org/facilitator`. Its `/supported` endpoint was checked on 2026-11-09 and advertised v2 `exact` on `eip155:84532`.
+The default public facilitator is `https://facilitator.payai.network`. Its `/supported` endpoint advertises v2 `exact` on `eip155:84532`.
+The original `https://x402.org/facilitator` also advertised support on 2026-11-09, but its signer balance was below the transfer gas upper bound and settlement failed while the identical local chain call succeeded. Tender uses PayAI's funded public facilitator instead. The endpoint remains configurable through `TENDER_FACILITATOR_URL`.
 EIP-3009 uses an off-chain signature. The facilitator broadcasts and pays gas; the payer needs USDC, not ETH or an approval transaction.
 
 Selection is stateless per API request. The console's switch cooldown and pinned-mode notifications are UI behavior. A retry is a new HTTP request and re-evaluates the same policy; a changed quote cannot spend an authorization for another payee or amount.
@@ -108,7 +109,7 @@ No ETH faucet is required for the payer. Do not send real USDC or mainnet assets
 | Name | Purpose | Default |
 | --- | --- | --- |
 | `TENDER_DEMO_PAYER_PRIVATE_KEY` | Secret server-side testnet payer key | Required for paid requests |
-| `TENDER_FACILITATOR_URL` | x402 facilitator endpoint | `https://x402.org/facilitator` |
+| `TENDER_FACILITATOR_URL` | x402 facilitator endpoint | `https://facilitator.payai.network` |
 | `TENDER_RPC_URL` | Base Sepolia RPC endpoint | `https://sepolia.base.org` |
 | `VERCEL_AUTOMATION_BYPASS_SECRET` | Optional CLI smoke HTTP access through preview protection | None |
 
