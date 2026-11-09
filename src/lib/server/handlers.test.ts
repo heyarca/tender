@@ -144,11 +144,13 @@ describe("paid contract handlers", () => {
     const response = await handleContract(req("prices/spot"), "btc-usd", { conditions: { unknown: { bidPrice: 0.1 }, parasail: null as unknown as ConditionsPatch } });
     expect(response.headers.get("Tender-Provider")).toBe("parasail");
   });
-  it("rejects zero-price selected bids clearly before payment", async () => {
+  it("clamps a zero bid to the market minimum so every paid request has a positive price", async () => {
     const response = await handleContract(req("prices/spot"), "btc-usd", { conditions: { parasail: { bidPrice: 0 } } });
-    expect(response.status).toBe(400);
-    expect((await response.json()).error.code).toBe("unsupported_bid");
-    expect(payments.calls).toHaveLength(0);
+    const data = await response.json();
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Tender-Provider")).toBe("parasail");
+    expect(data.price_usd).toBe(0.05 / 1e6);
+    expect(data.settled_atomic).toBe("1");
   });
   it("never reads condition changes from public query parameters or headers", async () => {
     const encoded = encodeURIComponent(JSON.stringify({ parasail: { available: false, bidPrice: 20 } }));

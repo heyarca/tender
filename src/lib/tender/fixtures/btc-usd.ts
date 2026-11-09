@@ -161,7 +161,7 @@ export const BTC_USD: MarketDefinition = {
       label: "Bid",
       prefix: "$",
       unit: "/M req",
-      min: 0,
+      min: 0.05,
       max: 20,
       step: 0.05,
       decimals: 2,

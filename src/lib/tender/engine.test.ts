@@ -460,7 +460,7 @@ describe("reset and restore", () => {
 
   it("clamps edits to the input ranges", () => {
     const state = run(createInitialState(), update(W, "together", { bidPrice: -5, errorRate: 3 }, E + 1_000));
-    expect(state.markets[W].providers[0].conditions).toMatchObject({ bidPrice: 0, errorRate: 0.2 });
+    expect(state.markets[W].providers[0].conditions).toMatchObject({ bidPrice: 0.5, errorRate: 0.2 });
   });
 });
 

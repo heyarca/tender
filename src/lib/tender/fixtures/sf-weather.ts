@@ -176,7 +176,7 @@ export const SF_WEATHER: MarketDefinition = {
       label: "Bid",
       prefix: "$",
       unit: "/M req",
-      min: 0,
+      min: 0.5,
       max: 200,
       step: 0.5,
       decimals: 2,
