@@ -94,7 +94,11 @@ export function policyChips(
   const inputs = definition.policyInputs;
   const modified = new Set(view.modifiedPolicyFields);
   const pinned = policy.mode.kind === "pinned" ? view.providersById[policy.mode.providerId] : undefined;
-  const age = policyInputText(inputs.maxDataAgeMs, policy.maxDataAgeMs);
+  // Long limits in a millisecond-input market read better as a duration ("3 min", not "200,000 ms").
+  const age =
+    inputs.maxDataAgeMs.unit === "ms" && policy.maxDataAgeMs >= 10_000
+      ? format.dataAge(policy.maxDataAgeMs)
+      : policyInputText(inputs.maxDataAgeMs, policy.maxDataAgeMs);
   const success = policyInputText(inputs.minSuccessRate, policy.minSuccessRate);
   return [
     {
