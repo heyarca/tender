@@ -23,7 +23,7 @@ import { PageContainer } from "@/components/shell/page-container";
 import { cn } from "@/lib/utils";
 import { MarketGlyph } from "@/components/market/page/market-icon";
 import { format, MARKET_IDS, type MarketIcon, type MarketId, type ProviderRow } from "@/lib/tender";
-import { CATALOG_IMAGE_PATHS, CATALOG_MARKETS, type CatalogImagePath } from "@/lib/catalog";
+import { CATALOG_IMAGE_PATHS, CATALOG_MARKETS, DEMO_CATALOG_CATEGORIES, type CatalogImagePath } from "@/lib/catalog";
 import { useMarketView } from "@/lib/tender/client";
 
 type Category = string;
@@ -115,7 +115,7 @@ function useDirectoryRows(): DirectoryRow[] {
         identifier: market.identifier,
         contract: market.contract,
         description: market.description,
-        category: market.category,
+        category: CATALOG_CATEGORY_LABELS.get(market.category) ?? market.category,
         icon: "coins" as MarketIcon,
         priceUnit: "/M req",
         providerCount: providers.length,
