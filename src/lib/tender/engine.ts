@@ -16,13 +16,13 @@ import {
   providerRestoredEntry,
   routeEstablishedEntry,
 } from "./activity";
-import { AUTO_RUN_INTERVAL_MS, CLOCK_TICK_MS, FIXTURE_EPOCH, SERIES_SEED_POINTS } from "./constants";
+import { AUTO_RUN_INTERVAL_MS, CLOCK_TICK_MS, FIXTURE_EPOCH, MONITOR_INTERVAL_MS, SERIES_SEED_POINTS } from "./constants";
 import { pushActivity, type StepContext } from "./context";
 import { evaluateProvider } from "./evaluate";
-import { getDefaultPolicy, getProviderFixture, MARKET_IDS, MARKETS } from "./fixtures";
-import { appendSample, exactSample, monitorMarket, seedHistory } from "./monitor";
-import { createRng } from "./random";
-import { btcProviderPrice, runRequest, weatherPayload } from "./requests";
+import { getDefaultPolicy, getProviderFixture, MARKET_IDS, MARKETS } from "./markets";
+import { appendSample, catchUpMarket, exactSample, monitorMarket, seedHistory } from "./monitor";
+import { createRng, seedFromString } from "./random";
+import { btcProviderPrice, fieldsPayload, payloadKindOf, runRequest, seriesValueOf, shiftFieldsPayload, weatherPayload } from "./requests";
 import { evaluateMarketState, isPendingDue, reconcileRoute, type ReconcileCause } from "./router";
 import { sanitizeConditionsPatch, sanitizePolicy, sanitizePolicyPatch } from "./sanitize";
 import type {
@@ -51,8 +51,13 @@ export type TenderAction =
   | { type: "rebase"; now: number }
   /** 1 s clock tick: advances `now`, executes due pending switches and auto-run. */
   | { type: "tick"; now: number }
-  /** 5 s monitor tick: one sample per provider, then re-evaluate. */
-  | { type: "monitor"; now: number }
+  /**
+   * 5 s monitor tick: one sample per provider, then re-evaluate. With `marketIds`, only those
+   * markets (plus markets on auto-run) are sampled; other markets keep their state until woken.
+   */
+  | { type: "monitor"; now: number; marketIds?: readonly MarketId[] }
+  /** A market came into view: fill its monitor history up to `now` (bounded) and re-evaluate. */
+  | { type: "wake"; marketId: MarketId; now: number }
   | { type: "run-request"; marketId: MarketId; now: number }
   | { type: "set-auto-run"; marketId: MarketId; enabled: boolean; now: number }
   | { type: "set-policy"; marketId: MarketId; patch: PolicyPatch; now: number }
@@ -72,7 +77,8 @@ export type TenderAction =
 
 /** How long the initial route has been active at the epoch. */
 const INITIAL_ROUTE_AGE_MS = 47 * 60_000;
-const SEEDS: Record<MarketId, number> = {
+/** PRNG seeds of the markets that ran before the registry (kept so their outputs stay identical). */
+const LEGACY_SEEDS: Readonly<Record<MarketId, number>> = {
   "sf-weather": 0x5f3759df,
   "ny-weather": 0x2545f491,
   "london-weather": 0x27d4eb2f,
@@ -84,22 +90,21 @@ const SEEDS: Record<MarketId, number> = {
   "sol-usd": 0x7f4a7c15,
   "xrp-usd": 0x6a09e667,
   "eur-usd": 0xbb67ae85,
-  "gbp-usd": 0x3c6ef372, "sz-mlcc": 0x2c1b3c6d, "lithium-carbonate": 0x297a2d39, "freight-sha-lax": 0x6b43a9b5,
+  "gbp-usd": 0x3c6ef372,
+  "sz-mlcc": 0x2c1b3c6d,
+  "lithium-carbonate": 0x297a2d39,
+  "freight-sha-lax": 0x6b43a9b5,
 };
-const SERIES_STEP_MS: Record<MarketId, number> = {
-  "sf-weather": 60_000,
-  "ny-weather": 60_000,
-  "london-weather": 60_000,
-  "seoul-weather": 60_000,
-  "tokyo-weather": 60_000,
-  "singapore-weather": 60_000,
-  "btc-usd": 3_000,
-  "eth-usd": 3_000,
-  "sol-usd": 3_000,
-  "xrp-usd": 3_000,
-  "eur-usd": 3_000,
-  "gbp-usd": 3_000, "sz-mlcc": 60_000, "lithium-carbonate": 60_000, "freight-sha-lax": 60_000,
-};
+
+/** PRNG seed of a market: the legacy seed, else a stable hash of the id. */
+export function marketSeed(marketId: MarketId): number {
+  return LEGACY_SEEDS[marketId] ?? seedFromString(`market:${marketId}`);
+}
+
+/** Spacing of the seeded chart points: 1 min for minute-unit markets, else 3 s. */
+export function seriesStepMs(marketId: MarketId): number {
+  return MARKETS[marketId]?.units.dataAge === "min" ? 60_000 : 3_000;
+}
 
 export interface InitialStateOptions {
   /** Start time (default `FIXTURE_EPOCH`). */
@@ -109,22 +114,28 @@ export interface InitialStateOptions {
 }
 
 function seedSeries(marketId: MarketId, providerId: ProviderId | null, conditions: ProviderConditions | null, end: number, origin: number): SeriesPoint[] {
+  const kind = payloadKindOf(marketId);
+  if (kind === "fields" && !MARKETS[marketId].seriesField) return [];
   const bias = providerId ? (getProviderFixture(marketId, providerId)?.bias ?? 0) : 0;
   const age = conditions?.dataAgeMs ?? 0;
-  const step = SERIES_STEP_MS[marketId];
-  return Array.from({ length: SERIES_SEED_POINTS }, (_, index) => {
+  const step = seriesStepMs(marketId);
+  const points: SeriesPoint[] = [];
+  for (let index = 0; index < SERIES_SEED_POINTS; index += 1) {
     const at = end - (SERIES_SEED_POINTS - index) * step;
-    const value =
-      MARKETS[marketId].units.dataAge === "ms"
-        ? btcProviderPrice(at - age, origin, bias, undefined, undefined, marketId)
-        : weatherPayload(at - age, origin, bias, undefined, undefined, marketId).temperatureF;
-    return { at, value, providerId, requestId: null };
-  });
+    let value: number | null;
+    if (kind === "btc") value = btcProviderPrice(at - age, origin, bias, undefined, undefined, marketId);
+    else if (kind === "weather") value = weatherPayload(at - age, origin, bias, undefined, undefined, marketId).temperatureF;
+    else {
+      value = seriesValueOf(marketId, fieldsPayload(marketId, at - age, origin, bias));
+    }
+    if (value !== null) points.push({ at, value, providerId, requestId: null });
+  }
+  return points;
 }
 
 function createMarketState(marketId: MarketId, epoch: number, seed: number, ctx: StepContext): MarketState {
   const definition = MARKETS[marketId];
-  const rng = createRng((SEEDS[marketId] ^ seed) >>> 0);
+  const rng = createRng((marketSeed(marketId) ^ seed) >>> 0);
   const providers = definition.providers.map((fixture) => ({
     id: fixture.id,
     conditions: { ...fixture.defaults },
@@ -193,10 +204,10 @@ function contextOf(state: TenderState, now: number, notify = true): StepContext 
 
 function commit(state: TenderState, ctx: StepContext, markets: Partial<Record<MarketId, MarketState>>): TenderState {
   let changed = false;
-  const nextMarkets = { ...state.markets };
-  for (const id of MARKET_IDS) {
-    const market = markets[id];
-    if (market && market !== state.markets[id]) {
+  let nextMarkets = state.markets;
+  for (const [id, market] of Object.entries(markets)) {
+    if (market && market !== state.markets[id] && state.markets[id]) {
+      if (!changed) nextMarkets = { ...state.markets };
       nextMarkets[id] = market;
       changed = true;
     }
@@ -206,7 +217,7 @@ function commit(state: TenderState, ctx: StepContext, markets: Partial<Record<Ma
   return {
     ...state,
     now,
-    markets: changed ? nextMarkets : state.markets,
+    markets: nextMarkets,
     nextActivitySeq: ctx.activitySeq,
     nextRequestSeq: ctx.requestSeq,
   };
@@ -406,6 +417,9 @@ function shiftMarket(market: MarketState, delta: number): MarketState {
     })),
     requests: market.requests.map((r): RequestResult => {
       if (r.status !== "ok") return { ...r, requestedAt: r.requestedAt + delta };
+      if (r.payload.kind === "fields") {
+        return { ...r, requestedAt: r.requestedAt + delta, payload: shiftFieldsPayload(r.payload, delta, market.id) } as RequestResult;
+      }
       if (r.payload.kind === "weather") {
         return { ...r, requestedAt: r.requestedAt + delta, payload: { ...r.payload, observedAt: r.payload.observedAt + delta } } as RequestResult;
       }
@@ -441,6 +455,8 @@ function tick(state: TenderState, now: number): TenderState {
   const markets: Partial<Record<MarketId, MarketState>> = {};
   for (const id of MARKET_IDS) {
     let market = state.markets[id];
+    // Cheap checks only: idle markets (no pending switch, no auto-run) do no work per tick.
+    if (!market || (!market.route.pending && !market.autoRun)) continue;
     if (isPendingDue(market, now)) market = reconcileRoute(market, ctx, { kind: "tick" });
     // Half-tick tolerance so timer jitter never skips a beat.
     if (market.autoRun && market.nextAutoRunAt !== null && now >= market.nextAutoRunAt - CLOCK_TICK_MS / 2) {
@@ -453,16 +469,29 @@ function tick(state: TenderState, now: number): TenderState {
   return commit(state, ctx, markets);
 }
 
-function monitor(state: TenderState, now: number): TenderState {
+function monitor(state: TenderState, now: number, marketIds?: readonly MarketId[]): TenderState {
   const ctx = contextOf(state, now);
   const markets: Partial<Record<MarketId, MarketState>> = {};
+  const ids = marketIds ? new Set(marketIds) : null;
   for (const id of MARKET_IDS) {
     const market = state.markets[id];
+    if (!market || (ids && !ids.has(id) && !market.autoRun)) continue;
     const rng = createRng(market.rng);
-    const sampled = monitorMarket(market, rng, now);
+    // A market that sat idle first catches up its history, then takes this tick's sample.
+    const sampled = monitorMarket(catchUpMarket(market, rng, now - MONITOR_INTERVAL_MS), rng, now);
     markets[id] = reconcileRoute({ ...sampled, rng: rng.state }, ctx, { kind: "monitor" });
   }
   return commit(state, ctx, markets);
+}
+
+function wake(state: TenderState, marketId: MarketId, now: number): TenderState {
+  const market = state.markets[marketId];
+  if (!market) return state;
+  const rng = createRng(market.rng);
+  const caughtUp = catchUpMarket(market, rng, now);
+  if (caughtUp === market) return state;
+  const ctx = contextOf(state, now);
+  return commit(state, ctx, { [marketId]: reconcileRoute({ ...caughtUp, rng: rng.state }, ctx, { kind: "monitor" }) });
 }
 
 /** Pure reducer. Returns the same object when an action changes nothing. */
@@ -473,7 +502,9 @@ export function reduce(state: TenderState, action: TenderAction): TenderState {
     case "tick":
       return tick(state, action.now);
     case "monitor":
-      return monitor(state, action.now);
+      return monitor(state, action.now, action.marketIds);
+    case "wake":
+      return wake(state, action.marketId, action.now);
     case "run-request":
       return updateMarket(state, action.marketId, action.now, (m, ctx) => runRequest(m, ctx));
     case "set-auto-run":
@@ -497,7 +528,7 @@ export function reduce(state: TenderState, action: TenderAction): TenderState {
       const ctx = contextOf(state, action.now, false);
       const markets: Partial<Record<MarketId, MarketState>> = {};
       for (const id of MARKET_IDS) {
-        if (action.policies[id] !== undefined) markets[id] = hydrateMarket(state.markets[id], ctx, action.policies[id]);
+        if (action.policies[id] !== undefined && state.markets[id]) markets[id] = hydrateMarket(state.markets[id], ctx, action.policies[id]);
       }
       return { ...commit(state, ctx, markets), policiesHydrated: true };
     }

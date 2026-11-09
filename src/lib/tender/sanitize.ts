@@ -3,7 +3,7 @@
  * the market's input ranges (in engine units); invalid fields are dropped.
  */
 import { PREFERENCES } from "./evaluate";
-import { getDefaultPolicy, MARKETS } from "./fixtures";
+import { getDefaultPolicy, MARKETS } from "./markets";
 import type {
   ConditionsPatch,
   MarketId,

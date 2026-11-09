@@ -1,5 +1,7 @@
 import {
+  dataDelayStepMs,
   format,
+  latencyStepMs,
   type ConditionsPatch,
   type MarketDefinition,
   type ProviderRow,
@@ -89,37 +91,6 @@ export interface Scenario {
   patch: ConditionsPatch | null;
 }
 
-/** Latency added by "Add … latency" (ms), per market. */
-export const LATENCY_STEP_MS: Record<MarketDefinition["id"], number> = {
-  "sf-weather": 300,
-  "ny-weather": 300,
-  "london-weather": 300,
-  "seoul-weather": 300,
-  "tokyo-weather": 300,
-  "singapore-weather": 300,
-  "btc-usd": 100,
-  "eth-usd": 100,
-  "sol-usd": 100,
-  "xrp-usd": 100,
-  "eur-usd": 100,
-  "gbp-usd": 100, "sz-mlcc": 100, "lithium-carbonate": 100, "freight-sha-lax": 100,
-};
-/** Data delay added by "Delay data" (ms), per market. */
-export const DATA_DELAY_MS: Record<MarketDefinition["id"], number> = {
-  "sf-weather": 15 * 60_000,
-  "ny-weather": 15 * 60_000,
-  "london-weather": 15 * 60_000,
-  "seoul-weather": 15 * 60_000,
-  "tokyo-weather": 15 * 60_000,
-  "singapore-weather": 15 * 60_000,
-  "btc-usd": 1_000,
-  "eth-usd": 1_000,
-  "sol-usd": 1_000,
-  "xrp-usd": 1_000,
-  "eur-usd": 1_000,
-  "gbp-usd": 1_000, "sz-mlcc": 30 * 60_000, "lithium-carbonate": 15 * 60_000, "freight-sha-lax": 60 * 60_000,
-};
-
 function scaledBid(definition: MarketDefinition, bid: number, factor: number): number {
   const spec = definition.conditionInputs.bidPrice;
   const display = displayOf(spec, bid) * factor;
@@ -149,8 +120,8 @@ const patchIfChanged = <K extends keyof ConditionsPatch>(
  */
 export function scenarioActions(definition: MarketDefinition, row: Pick<ProviderRow, "conditions">): Scenario[] {
   const { conditions } = row;
-  const latency = LATENCY_STEP_MS[definition.id];
-  const delay = DATA_DELAY_MS[definition.id];
+  const latency = latencyStepMs(definition.id);
+  const delay = dataDelayStepMs(definition.id);
   return [
     {
       id: "raise-bid",

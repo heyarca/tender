@@ -1,7 +1,12 @@
-import { handleContract } from "@/lib/server/handlers";
+import { handleContractPath } from "@/lib/server/handlers";
 import { preflight, methodNotAllowed, methodNotAllowedHead } from "@/lib/server/http";
 // Cache Components uses the default Node.js runtime; segment runtime overrides are unsupported.
-export function GET(request: Request) { return handleContract(request, "sz-mlcc"); }
+
+/** Every registry contract: `/api/v1/{namespace}/{action}`, e.g. `/api/v1/weather/current?location=seoul`. */
+export async function GET(request: Request, context: { params: Promise<{ namespace: string; action: string }> }) {
+  const { namespace, action } = await context.params;
+  return handleContractPath(request, namespace, action);
+}
 const notAllowed = () => methodNotAllowed("Use GET for this contract");
 export const HEAD = methodNotAllowedHead;
 export const POST = notAllowed;

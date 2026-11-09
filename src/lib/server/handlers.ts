@@ -1,5 +1,19 @@
 import { randomUUID } from "node:crypto";
-import { executeSelection, getMarketDefinition, MARKET_IDS, signalReference, seedFromString, selectRoute, sanitizeConditionsPatch, type ConditionsPatch, type ProviderId, type ProviderConditions, type MarketId, type MarketReference, type RouteSelection } from "@/lib/tender";
+import { getContract, getMarketSpec, listMarkets as listRegistryMarkets, readField, type ContractSpec, type MarketSpec } from "@/lib/registry";
+import {
+  executeSelection,
+  getMarketDefinition,
+  resultData,
+  sanitizeConditionsPatch,
+  seedFromString,
+  selectRoute,
+  type ConditionsPatch,
+  type MarketId,
+  type MarketReference,
+  type ProviderConditions,
+  type ProviderId,
+  type RouteSelection,
+} from "@/lib/tender";
 import { quoteFromBid, withX402Payment, type SettlementAmounts } from "@/lib/payments/server";
 import { ApiError, errorResponse, json } from "./http";
 import { requestPolicy } from "./markets";
@@ -22,34 +36,87 @@ function conditionOverrides(marketId: MarketId, patches: ContractOptions["condit
   return conditions;
 }
 
-/** Query argument of a market's contract: weather markets take `location`, price markets take `pair`. */
-export function contractInput(marketId: MarketId): { key: "location" | "pair"; value: string } {
-  const definition = getMarketDefinition(marketId);
-  const slug = definition.identifier.split("/")[1] ?? "";
-  return definition.units.dataAge === "min" ? { key: "location", value: slug } : { key: "pair", value: slug.toUpperCase() };
+/** Older contract paths that now serve a registry contract. */
+const CONTRACT_ALIASES: Readonly<Record<string, string>> = {
+  "components.spot": "components.price",
+};
+
+/** Registry contract for a `{namespace}.{action}` path, following aliases. */
+export function contractForPath(namespace: string, action: string): ContractSpec | undefined {
+  const id = `${namespace}.${action}`;
+  return getContract(CONTRACT_ALIASES[id] ?? id);
 }
 
-/** Market served by `/weather/current` or `/prices/spot` for the given argument; `null` when unsupported. */
-export function marketForContract(kind: "weather" | "price", value: string | null): MarketId | null {
-  const fallback: MarketId = kind === "weather" ? "sf-weather" : "btc-usd";
-  if (value === null) return fallback;
-  const wanted = value.toLowerCase();
-  for (const id of MARKET_IDS) {
-    const def = getMarketDefinition(id);
-    if ((def.units.dataAge === "min") !== (kind === "weather")) continue;
-    if (contractInput(id).value.toLowerCase() === wanted) return id;
+const sameValue = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
+
+/** Markets that implement a contract, in registry order. */
+export function contractMarkets(contractId: string): MarketSpec[] {
+  return listRegistryMarkets().filter((market) => market.contractId === contractId);
+}
+
+/** Market a contract serves when the request names no params: its live-anchored market, else the first one. */
+function defaultMarket(contractId: string): MarketSpec | undefined {
+  const markets = contractMarkets(contractId);
+  return markets.find((market) => market.source === "upstream") ?? markets[0];
+}
+
+const paramText = (market: MarketSpec) =>
+  Object.entries(market.params).map(([key, value]) => `${key}=${value}`).join("&") || market.id;
+
+/**
+ * Resolve the market of a contract request from its query: an explicit `market` id, the market whose
+ * params match every given contract param (case-insensitive), or the contract's default market when
+ * no contract param is given. Throws a 400 that lists the supported values when nothing matches.
+ */
+export function resolveContractMarket(contract: ContractSpec, query: URLSearchParams): MarketId {
+  const markets = contractMarkets(contract.id);
+  const unsupported = (message: string) => {
+    const supported = markets.map((market) => ({ market: market.id, params: market.params }));
+    return new ContractInputError(`${message}. Supported: ${markets.map(paramText).join(", ")}.`, supported);
+  };
+  const explicit = query.getAll("market");
+  if (explicit.length > 1) throw unsupported("Send one market value");
+  const given: [string, string][] = [];
+  for (const param of contract.params) {
+    const values = query.getAll(param.key);
+    if (values.length > 1) throw unsupported(`Send one ${param.key} value`);
+    if (values.length === 1) given.push([param.key, values[0]]);
   }
-  return null;
+  const matches = (market: MarketSpec) => given.every(([key, value]) => sameValue(market.params[key] ?? "", value));
+  if (explicit.length === 1) {
+    const market = markets.find((candidate) => candidate.id === explicit[0]);
+    if (!market || !matches(market)) throw unsupported(`Unsupported market: ${explicit[0]}`);
+    return market.id;
+  }
+  const market = given.length === 0 ? defaultMarket(contract.id) : markets.find(matches);
+  if (!market) throw unsupported(`Unsupported ${given.map(([key, value]) => `${key}=${value}`).join("&")}`);
+  return market.id;
 }
 
+/** 400 `unsupported_input` that also lists the supported markets and their params. */
+export class ContractInputError extends ApiError {
+  constructor(message: string, public readonly supported: { market: string; params: Readonly<Record<string, string>> }[]) {
+    super(400, "unsupported_input", message);
+  }
+}
+
+/** Every contract param in the query must match the market (case-insensitive); `market`, if given, must name it. */
 function validateContract(request: Request, marketId: MarketId) {
   if (request.method !== "GET") throw new ApiError(405, "method_not_allowed", "Use GET for this contract");
+  const spec = getMarketSpec(marketId);
   const query = new URL(request.url).searchParams;
-  const { key, value } = contractInput(marketId);
-  if (query.getAll(key).length > 1 || (query.has(key) && query.get(key)?.toLowerCase() !== value.toLowerCase())) {
-    throw new ApiError(400, "unsupported_input", `Supported ${key}: ${value}`);
+  const explicit = query.getAll("market");
+  if (explicit.length > 1 || (explicit.length === 1 && explicit[0] !== marketId)) {
+    throw new ApiError(400, "unsupported_input", `Supported market: ${marketId}`);
+  }
+  for (const [key, value] of Object.entries(spec?.params ?? {})) {
+    const values = query.getAll(key);
+    if (values.length > 1 || (values.length === 1 && !sameValue(values[0], value))) {
+      throw new ApiError(400, "unsupported_input", `Supported ${key}: ${value}`);
+    }
   }
 }
+
 function routingHeaders(selection: RouteSelection) {
   return {
     "Tender-Provider": selection.providerId ?? "",
@@ -57,52 +124,59 @@ function routingHeaders(selection: RouteSelection) {
     "Tender-Policy-Violation": String(selection.policyViolation),
   };
 }
+
+/** Live reference inputs: San Francisco weather (Open-Meteo) and BTC/USD (Coinbase, Kraken). */
 async function referenceFor(marketId: MarketId): Promise<{ reference: MarketReference | undefined; source: string; timestamp: string }> {
-  // Live upstream reference data only exists for San Francisco and BTC/USD; every other market serves the deterministic signal.
-  if (marketId !== "sf-weather" && marketId !== "btc-usd") {
-    return { source: "signal", timestamp: new Date().toISOString(), reference: undefined };
-  }
   if (marketId === "btc-usd") {
     const input = await getPriceReference();
     return { source: input.source, timestamp: input.timestamp, reference: { kind: "btc", at: Date.parse(input.timestamp), priceUsd: input.value } };
   }
-  const input = await getWeatherReference();
-  const w = input.value;
-  return { source: input.source, timestamp: input.timestamp, reference: {
-    kind: "weather", at: Date.parse(input.timestamp), temperatureF: w.temperature_f, feelsLikeF: w.feels_like_f,
-    condition: w.condition, humidityPct: w.humidity_percent, windMph: w.wind_mph,
-    windDirectionDeg: w.wind_direction_degrees, pressureHpa: w.pressure_hpa,
-    visibilityMi: w.visibility_mi, dewPointF: w.dew_point_f, cloudCoverPct: w.cloud_cover_percent,
-  } };
+  if (marketId === "sf-weather") {
+    const input = await getWeatherReference();
+    const w = input.value;
+    return { source: input.source, timestamp: input.timestamp, reference: {
+      kind: "weather", at: Date.parse(input.timestamp), temperatureF: w.temperature_f, feelsLikeF: w.feels_like_f,
+      condition: w.condition, humidityPct: w.humidity_percent, windMph: w.wind_mph,
+      windDirectionDeg: w.wind_direction_degrees, pressureHpa: w.pressure_hpa,
+      visibilityMi: w.visibility_mi, dewPointF: w.dew_point_f, cloudCoverPct: w.cloud_cover_percent,
+    } };
+  }
+  return { source: "signal", timestamp: new Date().toISOString(), reference: undefined };
 }
+
+/** Required contract fields missing from a result (empty when the result matches the schema). */
+export function missingFields(contractId: string, data: Readonly<Record<string, unknown>>): string[] {
+  const contract = getContract(contractId);
+  return (contract?.output ?? []).filter((field) => !field.optional && readField(data, field.key) === undefined).map((field) => field.key);
+}
+
 async function serveSelection(selection: RouteSelection, settlement: SettlementAmounts): Promise<Response> {
-  const input = await referenceFor(selection.marketId);
+  const marketId = selection.marketId;
+  const contractId = getMarketDefinition(marketId).contractId;
+  const input = await referenceFor(marketId);
   const requestId = `req_${randomUUID()}`;
   const { result } = executeSelection(selection, { now: Date.now(), seed: seedFromString(requestId), requestId, reference: input.reference });
+  const violations = { policy_violation: selection.policyViolation, policy_violations: selection.violations.map((r) => r.message) };
   if (result.status === "rejected") return json({ error: { code: "no_eligible_provider", message: result.reason }, request_id: requestId }, 409);
-  if (result.status === "failed") return json({ error: { code: "provider_error", message: result.error.message },
-    provider: result.providerId, request_id: requestId, latency_ms: result.latencyMs,
-    policy_violation: selection.policyViolation, policy_violations: selection.violations.map((r) => r.message),
-  }, result.error.code);
-  const common = {
-    provider: result.providerId, latency_ms: result.latencyMs, data_age_ms: result.dataAgeMs, request_id: result.requestId,
+  if (result.status === "failed") {
+    return json({ error: { code: "provider_error", message: result.error.message }, provider: result.providerId, request_id: requestId,
+      latency_ms: result.latencyMs, ...violations }, result.error.code);
+  }
+  const data = resultData(result);
+  // A result that misses required contract fields counts as a failed request (no settlement).
+  if (missingFields(contractId, data).length > 0) {
+    return json({ error: { code: "provider_error", message: "Provider returned an incomplete result" }, provider: result.providerId,
+      request_id: requestId, latency_ms: result.latencyMs, ...violations }, 502);
+  }
+  return json({
+    request_id: result.requestId, market: marketId, contract: contractId, provider: result.providerId,
+    latency_ms: result.latencyMs, data_age_ms: result.dataAgeMs,
     price_usd: settlement.price_usd, settled_usd: settlement.settled_usd, settled_atomic: settlement.settled_atomic,
     ...(settlement.settlement_note ? { settlement_note: settlement.settlement_note } : {}),
-    policy_violation: selection.policyViolation, policy_violations: selection.violations.map((r) => r.message),
+    ...violations,
     reference_source: input.source, reference_timestamp: input.timestamp,
-  };
-  if (result.payload.kind === "btc") {
-    const unit = getMarketDefinition(result.marketId).units.value;
-    // Real-world goods come from a sample index; say so in the payload.
-    const indicative = unit !== "USD" ? { unit, indicative: true } : {};
-    return json({ ...common, pair: result.payload.pair, price: result.payload.priceUsd, currency: "USD", ...indicative,
-      source_timestamp: new Date(result.payload.sourceTimestamp).toISOString() });
-  }
-  const w = result.payload;
-  return json({ ...common, location: w.location, observed_at: new Date(w.observedAt).toISOString(),
-    temperature_f: w.temperatureF, feels_like_f: w.feelsLikeF, condition: w.condition, humidity_percent: w.humidityPct,
-    wind_mph: w.windMph, wind_direction_degrees: w.windDirectionDeg, wind_direction: w.windDirection,
-    pressure_hpa: w.pressureHpa, visibility_mi: w.visibilityMi, dew_point_f: w.dewPointF, cloud_cover_percent: w.cloudCoverPct });
+    data,
+  });
 }
 
 /** One frozen selection binds x402 quote, recipient, and response; safe for direct buyer dispatch. */
@@ -152,4 +226,22 @@ export async function handleContract(request: Request, marketId: MarketId, optio
   const expose = response.headers.get("Access-Control-Expose-Headers");
   response.headers.set("Access-Control-Expose-Headers", [expose, "Tender-Route-Reason", "Tender-Policy-Violation"].filter(Boolean).join(", "));
   return response;
+}
+
+/** `GET /api/v1/{namespace}/{action}`: resolve the market from the contract and query, then serve it. */
+export async function handleContractPath(request: Request, namespace: string, action: string): Promise<Response> {
+  const contract = contractForPath(namespace, action);
+  if (!contract) {
+    return json({ error: { code: "contract_not_found", message: "Unknown contract. See /api/v1/contracts for every contract." } }, 404);
+  }
+  let marketId: MarketId;
+  try {
+    marketId = resolveContractMarket(contract, new URL(request.url).searchParams);
+  } catch (error) {
+    if (error instanceof ContractInputError) {
+      return json({ error: { code: error.code, message: error.message }, contract: contract.id, supported: error.supported }, 400);
+    }
+    return errorResponse(error);
+  }
+  return handleContract(request, marketId);
 }

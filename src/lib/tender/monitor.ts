@@ -57,3 +57,23 @@ export function monitorMarket(market: MarketState, rng: Rng, now: number): Marke
     providers: market.providers.map((provider) => appendSample(provider, sampleConditions(rng, provider.conditions, now))),
   };
 }
+
+/**
+ * Fill the monitor history of a market that sat idle: one sample per missed interval up to `now`
+ * (at most `HISTORY_LIMIT`). Returns the same market when its history is current.
+ * Advances the market PRNG through `rng`.
+ */
+export function catchUpMarket(market: MarketState, rng: Rng, now: number): MarketState {
+  let last = -Infinity;
+  for (const provider of market.providers) last = Math.max(last, provider.history[provider.history.length - 1]?.at ?? -Infinity);
+  if (!Number.isFinite(last) || now - last < 2 * MONITOR_INTERVAL_MS) return market;
+  const count = Math.min(HISTORY_LIMIT, Math.floor((now - last) / MONITOR_INTERVAL_MS));
+  const times = Array.from({ length: count }, (_, index) => now - (count - 1 - index) * MONITOR_INTERVAL_MS);
+  return {
+    ...market,
+    providers: market.providers.map((provider) => ({
+      ...provider,
+      history: [...provider.history, ...times.map((at) => sampleConditions(rng, provider.conditions, at))].slice(-HISTORY_LIMIT),
+    })),
+  };
+}

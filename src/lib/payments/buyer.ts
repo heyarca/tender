@@ -1,8 +1,8 @@
 import { wrapFetchWithPayment, x402Client, decodePaymentResponseHeader } from "@x402/fetch";
 import { ExactEvmScheme } from "@x402/evm/exact/client";
 import { decodePaymentRequiredHeader } from "@x402/core/http";
-import { PREFERENCES } from "@/lib/tender";
-import { isMarketId, MARKETS } from "@/lib/tender/fixtures";
+import { contractUrl as registryContractUrl, getMarketSpec, getProvider } from "@/lib/registry";
+import { isMarketId, PREFERENCES } from "@/lib/tender";
 import { parsePaymentConditions } from "./conditions";
 import type { PaymentRequirements } from "@x402/core/types";
 import { EXPLORER_URL, PAYMENT_NETWORK, USDC_ADDRESS } from "./config";
@@ -34,9 +34,14 @@ export function parsePaidRequestInput(value: unknown): PaidRequestInput {
   return { market: body.market, policy: policy as PaymentPolicy, ...(conditions ? { conditions } : {}) };
 }
 
-/** Caller controls the base URL, never derive it from an incoming Host header. */
+/**
+ * The market's contract URL (`/api/v1/{namespace}/{action}?{params}`) plus the policy as query
+ * parameters. Caller controls the base URL, never derive it from an incoming Host header.
+ */
 export function contractUrl(baseUrl: string, input: PaidRequestInput): URL {
-  const url = new URL(MARKETS[input.market].units.dataAge === "min" ? "/api/v1/weather/current" : "/api/v1/prices/spot", baseUrl);
+  const spec = getMarketSpec(input.market);
+  if (!spec) throw new Error("Unknown market");
+  const url = new URL(registryContractUrl(spec), baseUrl);
   const names = { maxPrice: "max_price", maxP95LatencyMs: "max_p95_ms", maxDataAgeMs: "max_data_age_ms", minSuccessRate: "min_success_rate", preference: "preference" } as const;
   for (const [key, name] of Object.entries(names)) {
     const value = input.policy?.[key as keyof typeof names];
@@ -116,7 +121,7 @@ export async function performPaidRequest(url: URL, transport: typeof fetch = fet
   const amounts = settlementAmounts(Number(selected.extra.price_usd));
   const payload = body as PaidResponsePayload;
   if (!payload || typeof payload !== "object" || payload.provider !== providerId || typeof payload.latency_ms !== "number" || typeof payload.data_age_ms !== "number") throw new PaidRequestError("Invalid paid response payload", 502, { txHash: settlement.transaction });
-  const provider = Object.values(MARKETS).flatMap((market) => market.providers).find((provider) => provider.id === providerId);
+  const provider = getProvider(providerId);
   return {
     response: payload,
     receipt: {

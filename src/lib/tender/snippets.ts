@@ -1,15 +1,20 @@
 /**
- * Code samples and JSON views for the API dialog.
+ * Code samples and JSON views for the API dialog, in the HTTP API's response shape.
  * Pure string builders; safe on the server.
  */
-import type { CodeSample, MarketId, RequestResult, RoutingPolicy } from "./types";
+import { contractPath, getContract, getMarketSpec, readField, sampleFor } from "@/lib/registry";
+import type { CodeSample, MarketId, ProviderFixture, RequestResult, RoutingPolicy, ServedRequestResult } from "./types";
 
+/** Market reference for snippets. Everything else comes from the registry. */
 interface SnippetMarket {
   id: MarketId;
-  identifier: string;
-  /** "min" for a weather-style market, "ms" for a price-style market. Required by `getApiSnippets`. */
+  /** Unused; kept for callers that pass a definition. */
+  identifier?: string;
+  /** Unused; kept for callers that pass a definition. */
   dataAgeUnit?: "min" | "ms";
 }
+
+const BASE_URL = "https://tender.heyarca.app";
 
 function tsNumber(value: number): string {
   if (Number.isInteger(value) && Math.abs(value) >= 10_000) {
@@ -18,65 +23,64 @@ function tsNumber(value: number): string {
   return String(Number(value.toFixed(6)));
 }
 
-function ageComment(ms: number): string {
-  if (ms >= 60_000 && ms % 60_000 === 0) return ` // ${ms / 60_000} min`;
-  if (ms >= 1000 && ms % 1000 === 0) return ` // ${ms / 1000} s`;
+function ageComment(ms: number, marker: "//" | "#"): string {
+  if (ms >= 60_000 && ms % 60_000 === 0) return `  ${marker} ${ms / 60_000} min`;
+  if (ms >= 1000 && ms % 1000 === 0) return `  ${marker} ${ms / 1000} s`;
   return "";
 }
 
-function modeValue(policy: RoutingPolicy): string {
-  return policy.mode.kind === "auto" ? "auto" : `pinned:${policy.mode.providerId}`;
-}
+/** JS/TS property access for a dotted key: `home.score` → `.home.score`. */
+const tsPath = (key: string) => key.split(".").map((part) => (/^[A-Za-z_$][\w$]*$/.test(part) ? `.${part}` : `[${JSON.stringify(part)}]`)).join("");
+/** Python dict access for a dotted key: `home.score` → `["home"]["score"]`. */
+const pyPath = (key: string) => key.split(".").map((part) => `[${JSON.stringify(part)}]`).join("");
 
 /**
- * TypeScript and Python SDK samples that request the market with the given policy.
+ * TypeScript (SDK) and Python (HTTP) samples that request the market with the given policy.
  * The policy values are embedded, so the dialog matches the current form.
  */
 export function getApiSnippets(market: SnippetMarket, policy: RoutingPolicy): CodeSample[] {
-  const slug = market.identifier.split("/")[1] ?? "";
-  const isWeather = market.dataAgeUnit === "min";
-  const call = isWeather
-    ? { ts: `tender.weather.current({ location: "${slug}" }`, py: `tender.weather.current(\n    location="${slug}",` }
-    : { ts: `tender.prices.spot({ pair: "${slug.toUpperCase()}" }`, py: `tender.prices.spot(\n    pair="${slug.toUpperCase()}",` };
-  const read = isWeather
-    ? { ts: "result.data.temperatureF", py: 'result.data["temperatureF"]' }
-    : { ts: "result.data.priceUsd", py: 'result.data["priceUsd"]' };
+  const spec = getMarketSpec(market.id);
+  const contract = spec ? getContract(spec.contractId) : undefined;
+  const primary = contract?.output.find((field) => field.primary)?.key ?? "";
+  const pin = policy.mode.kind === "pinned" ? policy.mode.providerId : null;
 
-  const typescript = `import { Tender } from "@tender/sdk";
+  const typescript = `import { createTender } from "@heyarca/tender";
 
-const tender = new Tender({ apiKey: process.env.TENDER_API_KEY });
+// Pass an x402-aware fetch (for example from @x402/fetch) to pay per request in USDC.
+const tender = createTender({ fetch: x402Fetch });
 
-const result = await ${call.ts}, {
-  policy: {
-    maxPrice: ${tsNumber(policy.maxPrice)}, // USD per 1M requests
-    maxP95LatencyMs: ${tsNumber(policy.maxP95LatencyMs)},
-    maxDataAgeMs: ${tsNumber(policy.maxDataAgeMs)},${ageComment(policy.maxDataAgeMs)}
-    minSuccessRate: ${tsNumber(policy.minSuccessRate)},
-    preference: "${policy.preference}",
-    mode: "${modeValue(policy)}",
-  },
+const result = await tender.request("${market.id}", {
+  maxPrice: ${tsNumber(policy.maxPrice)}, // USD per 1M requests
+  maxP95LatencyMs: ${tsNumber(policy.maxP95LatencyMs)},
+  maxDataAgeMs: ${tsNumber(policy.maxDataAgeMs)},${ageComment(policy.maxDataAgeMs, "//").trimEnd().replace(/^ {2}/, " ")}
+  minSuccessRate: ${tsNumber(policy.minSuccessRate)},
+  preference: "${policy.preference}",${pin ? `\n  pin: "${pin}",` : ""}
 });
 
-console.log(result.servedBy, ${read.ts});
+console.log(result.provider, result.data${primary ? tsPath(primary) : ""});
 `;
 
-  const python = `import os
-from tender import Tender
+  const params = Object.entries(spec?.params ?? {}).map(([key, value]) => `        "${key}": ${JSON.stringify(value)},`);
+  const python = `import requests
 
-tender = Tender(api_key=os.environ["TENDER_API_KEY"])
-
-result = ${call.py}
-    policy={
-        "max_price": ${tsNumber(policy.maxPrice)},  # USD per 1M requests
-        "max_p95_latency_ms": ${tsNumber(policy.maxP95LatencyMs)},
-        "max_data_age_ms": ${tsNumber(policy.maxDataAgeMs)},
-        "min_success_rate": ${tsNumber(policy.minSuccessRate)},
-        "preference": "${policy.preference}",
-        "mode": "${modeValue(policy)}",
+# The first call returns 402 with the x402 payment requirements (price, provider, payee).
+# Pay with an x402 client and retry with the PAYMENT-SIGNATURE header.
+response = requests.get(
+    "${BASE_URL}${contractPath(spec?.contractId ?? "")}",
+    params={
+${[...params,
+    `        "max_price": ${tsNumber(policy.maxPrice)},  # USD per 1M requests`,
+    `        "max_p95_ms": ${tsNumber(policy.maxP95LatencyMs)},`,
+    `        "max_data_age_ms": ${policy.maxDataAgeMs},${ageComment(policy.maxDataAgeMs, "#")}`,
+    `        "min_success_rate": ${tsNumber(policy.minSuccessRate)},`,
+    `        "preference": "${policy.preference}",`,
+    ...(pin ? [`        "pin": "${pin}",`] : []),
+  ].join("\n")}
     },
 )
 
-print(result.served_by, ${read.py})
+result = response.json()
+print(response.headers.get("Tender-Provider"), result.get("data", {})${primary ? pyPath(primary).replace(/^\[("[^"]+")\]/, ".get($1)") : ""})
 `;
 
   return [
@@ -86,73 +90,85 @@ print(result.served_by, ${read.py})
 }
 
 const iso = (ms: number) => new Date(ms).toISOString();
-const round = (value: number, decimals: number) => Number(value.toFixed(decimals));
+
+/** Contract-shaped `data` of a served result (timestamps as ISO strings). */
+export function resultData(result: ServedRequestResult): Record<string, unknown> {
+  const p = result.payload;
+  if (p.kind === "fields") return p.values;
+  if (p.kind === "btc") {
+    return {
+      pair: p.pair,
+      priceUsd: p.priceUsd,
+      ...(p.changeUsd !== null ? { changeUsd: p.changeUsd } : {}),
+      sourceTimestamp: iso(p.sourceTimestamp),
+    };
+  }
+  return {
+    location: p.location,
+    observedAt: iso(p.observedAt),
+    temperatureF: p.temperatureF,
+    feelsLikeF: p.feelsLikeF,
+    condition: p.condition,
+    humidityPct: p.humidityPct,
+    windMph: p.windMph,
+    windDirectionDeg: p.windDirectionDeg,
+    windDirection: p.windDirection,
+    pressureHpa: p.pressureHpa,
+    visibilityMi: p.visibilityMi,
+    dewPointF: p.dewPointF,
+    cloudCoverPct: p.cloudCoverPct,
+  };
+}
+
+/** Value of a dotted field in a served result's data (`readField` over `resultData`). */
+export function resultField(result: ServedRequestResult, key: string): unknown {
+  return readField(resultData(result), key);
+}
 
 /** JSON body the API returns for a request result (pretty-printed). */
 export function getResponseJson(market: SnippetMarket, result: RequestResult): string {
-  const base = { id: result.requestId, market: market.identifier, requestedAt: iso(result.requestedAt) };
+  const spec = getMarketSpec(market.id);
+  const base = { request_id: result.requestId, market: market.id, contract: spec?.contractId ?? null };
   if (result.status === "rejected") {
-    return JSON.stringify(
-      { ...base, status: "rejected", error: { code: "no_eligible_provider", message: "No eligible provider" } },
-      null,
-      2,
-    );
+    return JSON.stringify({ error: { code: "no_eligible_provider", message: "No eligible provider" }, ...base }, null, 2);
   }
   if (result.status === "failed") {
     return JSON.stringify(
-      {
-        ...base,
-        status: "failed",
-        servedBy: result.providerId,
-        latencyMs: result.latencyMs,
-        error: { code: result.error.code, message: result.error.message },
-      },
+      { error: { code: "provider_error", message: result.error.message }, ...base, provider: result.providerId, latency_ms: result.latencyMs },
       null,
       2,
     );
   }
-  const common = {
-    ...base,
-    status: "ok",
-    servedBy: result.providerId,
-    latencyMs: result.latencyMs,
-    dataAgeMs: result.dataAgeMs,
-    costUsd: round(result.cost, 10),
-  };
-  if (result.payload.kind === "weather") {
-    const p = result.payload;
-    return JSON.stringify(
-      {
-        ...common,
-        data: {
-          location: p.location,
-          observedAt: iso(p.observedAt),
-          temperatureF: p.temperatureF,
-          feelsLikeF: p.feelsLikeF,
-          condition: p.condition,
-          humidityPct: p.humidityPct,
-          windMph: p.windMph,
-          windDirectionDeg: p.windDirectionDeg,
-          pressureHpa: p.pressureHpa,
-          visibilityMi: p.visibilityMi,
-          dewPointF: p.dewPointF,
-          cloudCoverPct: p.cloudCoverPct,
-        },
-      },
-      null,
-      2,
-    );
-  }
-  const p = result.payload;
   return JSON.stringify(
     {
-      ...common,
-      data: {
-        pair: p.pair,
-        priceUsd: p.priceUsd,
-        changeUsd: p.changeUsd,
-        sourceTimestamp: iso(p.sourceTimestamp),
-      },
+      ...base,
+      provider: result.providerId,
+      latency_ms: result.latencyMs,
+      data_age_ms: result.dataAgeMs,
+      price_usd: Number(result.cost.toFixed(12)),
+      requested_at: iso(result.requestedAt),
+      data: resultData(result),
+    },
+    null,
+    2,
+  );
+}
+
+/** Example response of a market before any request ran, from the registry sample. */
+export function sampleResponseJson(marketId: MarketId, provider: ProviderFixture | undefined): string {
+  const spec = getMarketSpec(marketId);
+  const data = spec ? sampleFor(spec) : {};
+  return JSON.stringify(
+    {
+      request_id: "req_000001",
+      market: marketId,
+      contract: spec?.contractId ?? null,
+      provider: provider?.id ?? null,
+      latency_ms: provider ? Math.round(provider.defaults.p95LatencyMs * 0.6) : 0,
+      data_age_ms: provider?.defaults.dataAgeMs ?? 0,
+      price_usd: provider ? provider.defaults.bidPrice / 1e6 : 0,
+      requested_at: "2026-11-09T18:30:00.000Z",
+      data,
     },
     null,
     2,

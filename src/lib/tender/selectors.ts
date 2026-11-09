@@ -5,7 +5,7 @@
 import { NO_ELIGIBLE_TEXT, outrankText, pinViolationText, providerName, recommendedSummaryText } from "./activity";
 import { SWITCH_COOLDOWN_MS } from "./constants";
 import { compareProviders, PREFERENCE_LABELS, preferenceKey, qualificationLines, STATUS_LABELS, statusPriority } from "./evaluate";
-import { getDefaultPolicy, getProviderFixture, MARKETS } from "./fixtures";
+import { getDefaultPolicy, getProviderFixture, MARKETS } from "./markets";
 import * as format from "./format";
 import { evaluateMarketState } from "./router";
 import type {

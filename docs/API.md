@@ -19,19 +19,57 @@ they are same-origin console surfaces.
 
 ## Endpoints
 
+Everything comes from the registry (`src/lib/registry`, see [DATA-MODEL.md](./DATA-MODEL.md)):
+groups › categories › markets, and the contract each market implements.
+
 | Method | Path | Result |
 | --- | --- | --- |
-| GET | `/markets` | Both markets, contracts, units, default policies, provider counts |
-| GET | `/markets/{market}` | Provider identities, bids, performance, qualification, ranking, route |
-| GET | `/weather/current?location=san-francisco` | San Francisco weather; x402 payment required |
-| GET | `/prices/spot?pair=BTC-USD` | BTC/USD spot price; x402 payment required |
-| GET | `/openapi.json` | OpenAPI document |
+| GET | `/markets` | Every market: group, category, contract call, contract id/path/URL, params, image, units, default policy, provider count |
+| GET | `/markets/{market}` | The above plus provider identities, bids, performance, qualification, ranking, route |
+| GET | `/categories` | Groups with their categories and market counts |
+| GET | `/contracts` | Every contract: params, output fields, JSON Schema of the result, implementing markets |
+| GET | `/{namespace}/{action}?{params}` | One contract call, e.g. `/weather/current?location=seoul`; x402 payment required |
+| GET | `/openapi.json` | OpenAPI document, one path per contract |
 
-Market ids are `sf-weather` and `btc-usd`. Only the listed location and pair are supported.
-Omitting either contract argument uses that endpoint's default. Other values return HTTP 400.
-Unknown markets return HTTP 404. Discovery and OpenAPI do not require payment.
-Every `/api/v1` endpoint accepts GET only; other methods return HTTP 405 with an
+A contract request resolves its market from the contract and the query:
+
+- `market={id}` selects a market explicitly (it must implement the contract).
+- Otherwise the market whose params match every given contract param (case-insensitive) serves it,
+  e.g. `/translation/text?source=en&target=ko` → `translate-en-ko`.
+- With no contract param, the contract's default market serves it (`/weather/current` →
+  `sf-weather`, `/prices/spot` → `btc-usd`, else the first market in registry order).
+- No match returns HTTP 400 `unsupported_input` with `supported`: every market of the contract and its params.
+
+`/components/spot` is kept as an alias of `/components/price`. Unknown contracts return HTTP 404
+`contract_not_found`; unknown markets return HTTP 404 `market_not_found`. Discovery and OpenAPI do not
+require payment. Every `/api/v1` endpoint accepts GET only; other methods return HTTP 405 with an
 `Allow: GET` header and an `{"error":{"code":"method_not_allowed"}}` body.
+
+### Contract response
+
+```json
+{
+  "request_id": "req_…",
+  "market": "translate-en-ko",
+  "contract": "translation.text",
+  "provider": "the-zone-bio",
+  "latency_ms": 212,
+  "data_age_ms": 98120,
+  "price_usd": 0.00000144,
+  "settled_usd": 0.000002,
+  "settled_atomic": "2",
+  "settlement_note": "Rounded up to the USDC minimum unit (0.000001)",
+  "policy_violation": false,
+  "policy_violations": [],
+  "reference_source": "signal",
+  "reference_timestamp": "2026-11-09T18:30:00.000Z",
+  "data": { "translation": "…", "sourceLanguage": "en", "targetLanguage": "ko", "characters": 38 }
+}
+```
+
+`data` follows the contract's `output` schema (camelCase keys, nested objects for dotted keys,
+timestamps as ISO 8601). A provider result that misses a required field counts as a failed request
+(HTTP 502 `provider_error`, no settlement).
 
 ## Routing policy
 
@@ -117,14 +155,16 @@ to connect to Open-Meteo, Coinbase, or Kraken.
 - Provider payloads use the shared engine's age-dependent values and small per-provider biases,
   anchored to the reference input. Provider latency and data age are sampled by the same engine.
   `latency_ms` is the provider model's latency, not measured end-to-end HTTP response time.
-- `observed_at` (weather) / `source_timestamp` (price) and `data_age_ms` describe the provider
-  model. `reference_timestamp` preserves the actual input timestamp, including the fixed
+- `data.observedAt` (weather) / `data.sourceTimestamp` (spot prices) / `data.asOf` and `data.updatedAt`
+  (other contracts) and `data_age_ms` describe the provider model. `reference_timestamp` preserves the actual input timestamp, including the fixed
   fixture timestamp on fallback. `reference_source` records provenance. Provider-model
   freshness must not be interpreted as the freshness of an upstream observation.
 - `request_id` is unique per request; there is no cross-instance monotonic counter.
-- `price` is the BTC quote in USD; `price_usd` is the per-request API fee. Change from a previous
-  request is omitted because this stateless API has no per-caller history. The console computes
-  changes and recent charts client-side.
+- `data.priceUsd` is the BTC quote in USD; `price_usd` is the per-request API fee. Change from a previous
+  request (`data.changeUsd`) is omitted because this stateless API has no per-caller history. The console
+  computes changes and recent charts client-side.
+- Live reference inputs exist for `sf-weather` and `btc-usd`. Every other market serves the market
+  signal of the shared engine (`reference_source: "signal"`), anchored to the registry sample.
 
 ## Curl examples
 
@@ -133,6 +173,8 @@ Set the base URL to a local server or your deployed Tender origin:
 ```sh
 BASE=http://localhost:3105
 curl -sS "$BASE/api/v1/markets"
+curl -sS "$BASE/api/v1/categories"
+curl -sS "$BASE/api/v1/contracts"
 curl -sS "$BASE/api/v1/markets/btc-usd?preference=lowest-latency"
 curl -sS "$BASE/api/v1/markets/sf-weather?max_data_age_ms=120000"
 curl -sS "$BASE/api/v1/markets/btc-usd?pin=novita"
@@ -142,6 +184,11 @@ curl -sS "$BASE/api/v1/openapi.json"
 curl -i "$BASE/api/v1/prices/spot?pair=BTC-USD"
 curl -i "$BASE/api/v1/weather/current?location=san-francisco" \
   -H 'Tender-Max-Price: 30' -H 'Tender-Preference: lowest-latency'
+curl -i "$BASE/api/v1/translation/text?source=en&target=ko"
+curl -i "$BASE/api/v1/speech/transcribe?market=stt-diarized"
+
+# Unsupported params: HTTP 400 with the supported values.
+curl -i "$BASE/api/v1/weather/current?location=paris"
 
 # No provider qualifies; HTTP 409, not a payment challenge.
 curl -i "$BASE/api/v1/prices/spot?pair=BTC-USD&max_price=0"
@@ -160,6 +207,8 @@ vercel -Q ~/.config/tender-vercel curl /api/v1/markets \
 
 ## Server interfaces
 
+- `handleContractPath(request: Request, namespace: string, action: string): Promise<Response>` resolves the
+  contract (with aliases) and the market (`resolveContractMarket`), then calls `handleContract`.
 - `handleContract(request: Request, marketId: MarketId, options?: ContractOptions): Promise<Response>`
   validates inputs, freezes routing, invokes the payment wrapper, and serves the normalized contract.
   `ContractOptions` accepts `conditions?: Partial<Record<ProviderId, ConditionsPatch>>` **in process
@@ -169,6 +218,8 @@ vercel -Q ~/.config/tender-vercel curl /api/v1/markets \
   before payment; paid requests require a positive bid.
 - `readPolicyOverrides(request: Request)` parses wire policy inputs without changing defaults.
 - `marketDetail(request: Request, marketId: MarketId)` builds discovery data with shared evaluation.
+- `listCategories()` / `listContracts()` build the hierarchy and contract discovery from the registry;
+  `outputSchema(contract)` turns a contract's `output` into JSON Schema (also used by OpenAPI).
 - `getWeatherReference()` / `getPriceReference()` return `{value, timestamp, source}`.
 
 No API secrets are required for reference lookups or discovery. Payment-related secrets are

@@ -38,9 +38,17 @@ export function createTender(options = {}) {
 
   return {
     baseUrl,
-    /** Every market: id, name, contract, units, default policy, provider count. */
+    /** Every market: id, name, group, category, contract and its URL, units, default policy, provider count. */
     async markets() {
       return (await json(await doFetch(`${baseUrl}/api/v1/markets`))).markets;
+    },
+    /** Groups and categories with market counts. */
+    async categories() {
+      return (await json(await doFetch(`${baseUrl}/api/v1/categories`))).groups;
+    },
+    /** Contracts: params, output fields, result schema, and the markets that implement each one. */
+    async contracts() {
+      return (await json(await doFetch(`${baseUrl}/api/v1/contracts`))).contracts;
     },
     /** One market's provider bids, performance, and routing decision for a policy. */
     async market(id, policy) {
@@ -48,26 +56,29 @@ export function createTender(options = {}) {
       return json(await doFetch(`${baseUrl}/api/v1/markets/${encodeURIComponent(id)}${query ? `?${query}` : ""}`));
     },
     /**
-     * Call a market's contract endpoint. Without an x402-aware fetch this returns the 402 payment
-     * requirements (price, provider, payee) instead of the result.
+     * Call a market's contract at the `contract_url` from `/api/v1/markets/{id}`. Without an x402-aware
+     * fetch this returns the 402 payment requirements (price, provider, payee) instead of the result.
+     * `data` is the contract-shaped result; `response` is the full JSON body (routing and settlement).
      */
     async request(id, policy) {
       const detail = await this.market(id);
       const path = contractPathFor(detail);
       const params = policyParams(policy);
-      const url = `${baseUrl}${path}${path.includes("?") ? "&" : "?"}${params.toString()}`;
+      const query = params.toString();
+      const url = `${baseUrl}${path}${query ? `${path.includes("?") ? "&" : "?"}${query}` : ""}`;
       const response = await doFetch(url);
       if (response.status === 402) {
         return { status: 402, paymentRequired: await response.json().catch(() => null), provider: response.headers.get("Tender-Provider") };
       }
-      return { status: response.status, provider: response.headers.get("Tender-Provider"), data: await json(response) };
+      const body = await json(response);
+      return { status: response.status, provider: response.headers.get("Tender-Provider"), data: body?.data ?? body, response: body };
     },
   };
 }
 
-/** Contract endpoint of a market from its identifier ("weather/seoul", "prices/eth-usd"). */
+/** Contract URL of a market from the API (`contract_url`, e.g. "/api/v1/translation/text?source=en&target=ko"). */
 export function contractPathFor(market) {
-  const identifier = market?.identifier ?? "";
-  const [kind, slug = ""] = identifier.split("/");
-  return kind === "weather" ? `/api/v1/weather/current?location=${slug}` : `/api/v1/prices/spot?pair=${slug.toUpperCase()}`;
+  const url = market?.contract_url ?? market?.contract_path;
+  if (typeof url !== "string" || !url.startsWith("/")) throw new Error(`Market ${market?.id ?? ""} has no contract URL`);
+  return url;
 }
