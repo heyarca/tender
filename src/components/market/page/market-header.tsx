@@ -105,12 +105,12 @@ export function MarketHeader({ definition, autoRun, onSwitchMarket, onOpenApi, o
           <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs font-medium text-muted-foreground">
             <MarketIdentifier identifier={definition.identifier} />
             <CopyButton value={definition.identifier} label="Copy market identifier" />
-            <span aria-hidden className="text-faint max-sm:hidden">
-              ·
+            <span className="inline-flex min-w-0 items-center gap-2 max-lg:hidden">
+              <span aria-hidden className="text-faint">
+                ·
+              </span>
+              <code className="truncate font-mono text-[12px] font-normal text-muted-foreground">{definition.contract}</code>
             </span>
-            <code className="truncate font-mono text-[12px] font-normal text-muted-foreground max-sm:hidden">
-              {definition.contract}
-            </code>
           </div>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">

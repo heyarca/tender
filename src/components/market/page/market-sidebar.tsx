@@ -140,7 +140,7 @@ function MarketNavLink({
       className={cn(
         "relative flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-body font-medium no-underline transition-colors duration-quick focus-visible:shadow-focus focus-visible:outline-none",
         current
-          ? "text-foreground before:absolute before:inset-y-1.5 before:-left-px before:w-0.5 before:rounded-full before:bg-primary"
+          ? "text-foreground before:absolute before:inset-y-1.5 before:-left-px before:w-0.5 before:rounded-full before:bg-primary-strong"
           : "text-muted-foreground hover:bg-card-hover hover:text-accent-foreground",
       )}
     >
