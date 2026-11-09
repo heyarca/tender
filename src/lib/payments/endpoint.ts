@@ -47,7 +47,13 @@ export function createPaidRequestEndpoint(handleContract: ContractHandler) {
     const execute = async (signal: AbortSignal, onProgress?: (event: PaidRequestProgress) => void) => {
       const url = contractUrl("https://tender.internal", input);
       const transport: typeof fetch = async (target, init) => {
-        const contractRequest = new Request(target, init);
+        const transportRequest = new Request(target, init);
+        // Bind the local contract directly to the endpoint cancellation source.
+        // SDK retries clone Requests; their intermediate signal followers may be
+        // collected while provider work is pending in the native fetch runtime.
+        const contractRequest = new Request(transportRequest, {
+          signal: AbortSignal.any([signal, transportRequest.signal]),
+        });
         contractRequest.signal.throwIfAborted();
         if (contractRequest.url !== url.href || contractRequest.method !== "GET") throw new Error("Unexpected payment target");
         return handleContract(contractRequest, input.market, { conditions: input.conditions });
