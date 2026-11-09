@@ -13,7 +13,7 @@ const points: PricePoint[] = Array.from({ length: 40 }, (_, i) => ({
 }));
 const providers = {
   coreweave: { name: "CoreWeave", logo: "/providers/coreweave.svg" },
-  the-zone-bio: { name: "THE ZONE BIO", logo: "/providers/the-zone-bio.jpg" },
+  "the-zone-bio": { name: "THE ZONE BIO", logo: "/providers/the-zone-bio.jpg" },
 };
 
 const render = (element: Parameters<typeof renderToStaticMarkup>[0]) => renderToStaticMarkup(element);

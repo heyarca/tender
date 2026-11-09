@@ -26,11 +26,11 @@ describe("paid endpoint", () => {
     const route = withX402Payment((_request, quote) => Response.json({ provider: quote.providerId, latency_ms: 80, data_age_ms: 200 }), () => quoteFromBid("the-zone-bio", 0.7, "Bitcoin"), createPaymentServer(facilitator));
     const dispatch = vi.fn<(request: Request, market: string, options?: { conditions?: unknown }) => Promise<Response>>((request) => route(request));
     const endpoint = createPaidRequestEndpoint(dispatch);
-    const response = await endpoint(new Request("https://evil.test/api/payments/demo-request", { method: "POST", headers: { "Content-Type": "application/json", Host: "evil.test" }, body: JSON.stringify({ market: "btc-usd", conditions: { the-zone-bio: { bidPrice: 0.7 } } }) }));
+    const response = await endpoint(new Request("https://evil.test/api/payments/demo-request", { method: "POST", headers: { "Content-Type": "application/json", Host: "evil.test" }, body: JSON.stringify({ market: "btc-usd", conditions: { "the-zone-bio": { bidPrice: 0.7 } } }) }));
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ response: { provider: "the-zone-bio" }, receipt: { txHash: `0x${"a".repeat(64)}`, payer, providerId: "the-zone-bio", price_usd: 0.0000007, settled_atomic: "1", amountAtomic: "1", network: "base-sepolia" } });
     expect(dispatch).toHaveBeenCalledTimes(2);
-    expect(dispatch.mock.calls.every(([, , options]) => options?.conditions && JSON.stringify(options.conditions) === JSON.stringify({ the-zone-bio: { bidPrice: 0.7 } }))).toBe(true);
+    expect(dispatch.mock.calls.every(([, , options]) => options?.conditions && JSON.stringify(options.conditions) === JSON.stringify({ "the-zone-bio": { bidPrice: 0.7 } }))).toBe(true);
     expect(dispatch.mock.calls.every(([request]) => new URL(request.url).origin === "https://tender.internal")).toBe(true);
     expect(dispatch.mock.calls[1][0].headers.get("PAYMENT-SIGNATURE")).toBeTruthy();
     expect(facilitator.verify).toHaveBeenCalledOnce();
