@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/table";
 import { TopNav } from "@/components/shell/top-nav";
 import { PageContainer } from "@/components/shell/page-container";
+import { AgentInstallBanner } from "./agent-install-banner";
 import { cn } from "@/lib/utils";
 import { format, MARKET_IDS, type MarketId, type ProviderRow } from "@/lib/tender";
 import { useMarketView } from "@/lib/tender/client";
@@ -179,6 +180,7 @@ export function MarketDirectory() {
         onSearch={() => searchRef.current?.focus()}
       />
       <PageContainer>
+        <AgentInstallBanner />
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-title font-semibold text-foreground">Markets</h1>
