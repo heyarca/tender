@@ -20,6 +20,25 @@ export function assertSafePayment(requirements: PaymentRequirements): void {
   }
 }
 
+/** Per-instance sliding window for the public balances endpoint; cached hits bypass it. */
+export class BalancesRateLimiter {
+  private attempts: number[] = [];
+  acquire(now = Date.now()): boolean {
+    this.attempts = this.attempts.filter((time) => now - time < this.windowMs);
+    if (this.attempts.length >= this.limit) return false;
+    this.attempts.push(now);
+    return true;
+  }
+  /** Seconds until the oldest tracked attempt leaves the window; the full window when empty. */
+  retryAfterSeconds(now = Date.now()): number {
+    this.attempts = this.attempts.filter((time) => now - time < this.windowMs);
+    const oldest = this.attempts[0];
+    return oldest === undefined ? Math.ceil(this.windowMs / 1000) : Math.max(1, Math.ceil((this.windowMs - (now - oldest)) / 1000));
+  }
+  constructor(private readonly limit = 30, private readonly windowMs = 60_000) {}
+}
+export const balancesRateLimiter = new BalancesRateLimiter();
+
 /** Global to this warm instance, not keyed by spoofable client IP headers. */
 export class PaymentRateLimiter {
   private attempts: number[] = [];

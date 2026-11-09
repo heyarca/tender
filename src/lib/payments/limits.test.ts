@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { PaymentRequirements } from "@x402/core/types";
-import { assertSafePayment, PaymentRateLimiter } from "./limits";
+import { assertSafePayment, BalancesRateLimiter, PaymentRateLimiter } from "./limits";
 import { PAYMENT_NETWORK, USDC_ADDRESS } from "./config";
 import { PAYEES } from "./payees";
 
@@ -31,5 +31,16 @@ describe("payer controls", () => {
     for (let minute = 0; minute < 10; minute++) for (let request = 0; request < 6; request++) limiter.acquire(minute * 60_000)!();
     expect(limiter.acquire(600_000)).toBeNull();
     expect(limiter.acquire(3_600_000)).not.toBeNull();
+  });
+  it("allows 30 balance misses per minute and reports the retry delay", () => {
+    const limiter = new BalancesRateLimiter();
+    for (let index = 0; index < 30; index++) expect(limiter.acquire(index)).toBe(true);
+    expect(limiter.acquire(30)).toBe(false);
+    expect(limiter.retryAfterSeconds(30)).toBe(60);
+    expect(limiter.acquire(59_999)).toBe(false);
+    expect(limiter.retryAfterSeconds(59_999)).toBe(1);
+    expect(limiter.acquire(60_000)).toBe(true);
+    expect(limiter.retryAfterSeconds(90_000)).toBe(30);
+    expect(limiter.retryAfterSeconds(120_000)).toBe(60);
   });
 });

@@ -89,6 +89,15 @@ describe("USDC balance batch", () => {
     await failure;
     expect(multicall).toHaveBeenCalledTimes(2);
   });
+  it("peek serves the in-flight read and the fresh cache without new RPC traffic", async () => {
+    const read = createBalanceReader();
+    expect(read.peek()).toBeUndefined();
+    const pending = read();
+    expect(read.peek()).toBe(pending);
+    const first = await pending;
+    expect(await read.peek()).toBe(first);
+    expect(multicall).toHaveBeenCalledOnce();
+  });
   it("aborts at 7.5 seconds total, even if an attempt does not settle", async () => {
     vi.useFakeTimers();
     multicall.mockImplementation(() => new Promise(() => {}));

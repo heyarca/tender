@@ -73,14 +73,24 @@ async function loadBalances(rpcUrl: string, entries: [string, Address][]): Promi
   } finally { clearTimeout(timer); }
 }
 
+/** Balance reader: calling it may start an RPC read; `peek()` serves only cached or in-flight work. */
+export interface BalanceReader {
+  (): Promise<BalanceSnapshot>;
+  /** Snapshot promise when one exists without new RPC traffic: a fresh cache hit or an in-flight join. */
+  peek(): Promise<BalanceSnapshot> | undefined;
+}
+
 /** Per-instance success cache and keyed in-flight coalescing; failures are never cached. */
-export function createBalanceReader() {
+export function createBalanceReader(): BalanceReader {
   let cache: { key: string; expiresAt: number; value: BalanceSnapshot } | undefined;
   const inFlight = new Map<string, Promise<BalanceSnapshot>>();
-  return function read(): Promise<BalanceSnapshot> {
+  const identity = () => {
     const rpcUrl = process.env.TENDER_RPC_URL || DEFAULT_RPC_URL;
     const payer = process.env.TENDER_DEMO_PAYER_PRIVATE_KEY ? getPayerAccount().address : null;
-    const key = JSON.stringify([rpcUrl, payer]);
+    return { rpcUrl, payer, key: JSON.stringify([rpcUrl, payer]) };
+  };
+  const read = (): Promise<BalanceSnapshot> => {
+    const { rpcUrl, payer, key } = identity();
     if (cache?.key === key && Date.now() < cache.expiresAt) return Promise.resolve(cache.value);
     const pending = inFlight.get(key);
     if (pending) return pending;
@@ -92,6 +102,13 @@ export function createBalanceReader() {
     inFlight.set(key, request);
     return request;
   };
+  return Object.assign(read, {
+    peek: (): Promise<BalanceSnapshot> | undefined => {
+      const { key } = identity();
+      if (cache?.key === key && Date.now() < cache.expiresAt) return Promise.resolve(cache.value);
+      return inFlight.get(key);
+    },
+  });
 }
 
 export const readBalances = createBalanceReader();
