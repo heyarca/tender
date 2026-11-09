@@ -40,4 +40,9 @@ export const CATALOG_IMAGE_PATHS: Record<string, CatalogImagePath> = {
     jpg: "/catalog/ip-risk.jpg",
     alt: "Purple and blue abstract network light.",
   },
+  "ocr-invoice": {
+    avif: "/catalog/ocr-invoice.avif",
+    jpg: "/catalog/ocr-invoice.jpg",
+    alt: "Organized stack of paper documents.",
+  },
 };
