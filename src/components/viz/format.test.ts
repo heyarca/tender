@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import * as sharedFormat from "@/lib/tender/format";
 import { compassDirection, formatAge, formatClock, formatLatency, formatPercent, formatTimeOfDay, formatUsd } from "./format";
 
 const T = Date.UTC(2026, 10, 9, 18, 4, 31, 220);
@@ -42,5 +43,18 @@ describe("formatters", () => {
     expect(compassDirection(359)).toBe("N");
     expect(compassDirection(-90)).toBe("W");
     expect(compassDirection(200)).toBe("SSW");
+  });
+
+  it("shares the engine formatter outputs (no drift)", () => {
+    // 59_950 ms boundary: 59_980 ms is one minute, not "60.0 s".
+    expect(formatAge(59_980)).toBe("1 min");
+    expect(formatAge(59_980)).toBe(sharedFormat.dataAge(59_980));
+    // 999.6 ms rounds to at least one second, not "1000 ms".
+    expect(formatLatency(999.6)).toBe("1 s");
+    // Negative USD uses the U+2212 minus, like format.usd.
+    expect(formatUsd(-5)).toBe("\u2212$5.00");
+    expect(formatUsd(-5)).toBe(sharedFormat.usd(-5));
+    expect(formatPercent(0.9994)).toBe(sharedFormat.percent(0.9994));
+    expect(compassDirection(278)).toBe(sharedFormat.compass(278));
   });
 });

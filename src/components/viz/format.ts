@@ -1,71 +1,51 @@
 /**
- * Display formatters for viz and result components. Every formatter that touches time takes an
- * explicit `timeZone`, so server and client output agree. Formatters are cached per option set.
+ * Display formatters for viz and result components. Duration, number, USD, percent, and compass
+ * formatting is delegated to the shared engine formatters (`@/lib/tender/format`) so the output
+ * never drifts; only the viz-specific clock formatters live here (arbitrary IANA zones plus
+ * fractional seconds, which `format.time`'s PT/UTC branches do not cover). Every formatter that
+ * touches time takes an explicit `timeZone`, so server and client output agree.
  */
+import * as format from "@/lib/tender/format";
 
-const numberFormats = new Map<string, Intl.NumberFormat>();
+const MINUS = "\u2212";
+
+/**
+ * `$75,230.75`, or any fixed number of fraction digits (axis ticks use whole dollars or cents).
+ * Delegates to `format.number`; identical to `format.usd` at two decimals, with the U+2212 minus.
+ */
+export function formatUsd(value: number, decimals = 2): string {
+  const abs = format.number(Math.abs(value), decimals);
+  return value < 0 ? `${MINUS}$${abs}` : `$${abs}`;
+}
+
+/** `1,018` / `9.4` with a fixed number of fraction digits. Shared engine implementation. */
+export const formatNumber = format.number;
+
+/** Request latency: `84 ms`, `1.2 s`. Shared engine implementation; non-finite input renders as `–`. */
+export function formatLatency(ms: number): string {
+  return Number.isFinite(ms) ? format.latency(ms) : "–";
+}
+
+/** Data age: `220 ms`, `2.4 s`, `6 min`, `1 h 12 min`. Shared engine implementation. */
+export function formatAge(ms: number): string {
+  return Number.isFinite(ms) ? format.dataAge(ms) : "–";
+}
+
+/** Fraction (0..1) as a percentage: `99.94%`. Shared engine implementation. */
+export function formatPercent(fraction: number, decimals = 2): string {
+  return Number.isFinite(fraction) ? format.percent(fraction, decimals) : "–";
+}
+
+/** One `Intl.DateTimeFormat` per option set for the clock formatters below. */
 const dateFormats = new Map<string, Intl.DateTimeFormat>();
 
-function numberFormat(key: string, options: Intl.NumberFormatOptions) {
-  let format = numberFormats.get(key);
-  if (!format) {
-    format = new Intl.NumberFormat("en-US", options);
-    numberFormats.set(key, format);
+function dateFormat(key: string, options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+  let f = dateFormats.get(key);
+  if (!f) {
+    f = new Intl.DateTimeFormat("en-US", options);
+    dateFormats.set(key, f);
   }
-  return format;
-}
-
-function dateFormat(key: string, options: Intl.DateTimeFormatOptions) {
-  let format = dateFormats.get(key);
-  if (!format) {
-    format = new Intl.DateTimeFormat("en-US", options);
-    dateFormats.set(key, format);
-  }
-  return format;
-}
-
-/** `$75,230.75` (always `decimals` fraction digits). */
-export function formatUsd(value: number, decimals = 2): string {
-  return numberFormat(`usd:${decimals}`, {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  }).format(value);
-}
-
-/** `1,018` / `9.4` with a fixed number of fraction digits. */
-export function formatNumber(value: number, decimals = 0): string {
-  return numberFormat(`num:${decimals}`, {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  }).format(value);
-}
-
-/** Request latency: `84 ms`, `1.2 s` from 1,000 ms. */
-export function formatLatency(ms: number): string {
-  if (!Number.isFinite(ms)) return "–";
-  if (ms < 1_000) return `${Math.round(ms)} ms`;
-  return `${formatNumber(ms / 1_000, 1)} s`;
-}
-
-/** Data age: `220 ms`, `2.4 s`, `6 min`, `1 h 12 min`. */
-export function formatAge(ms: number): string {
-  if (!Number.isFinite(ms)) return "–";
-  const abs = Math.max(0, ms);
-  if (abs < 1_000) return `${Math.round(abs)} ms`;
-  if (abs < 60_000) return `${formatNumber(abs / 1_000, 1)} s`;
-  const minutes = Math.round(abs / 60_000);
-  if (minutes < 60) return `${minutes} min`;
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-  return rest === 0 ? `${hours} h` : `${hours} h ${rest} min`;
-}
-
-/** Fraction (0..1) as a percentage: `99.94%`. */
-export function formatPercent(fraction: number, decimals = 2): string {
-  if (!Number.isFinite(fraction)) return "–";
-  return `${formatNumber(fraction * 100, decimals)}%`;
+  return f;
 }
 
 export interface ClockOptions {
@@ -95,28 +75,7 @@ export function formatTimeOfDay(t: number, timeZone: string): string {
   return dateFormat(`tod:${timeZone}`, { timeZone, hour: "numeric", minute: "2-digit", hour12: true }).format(t);
 }
 
-const COMPASS_16 = [
-  "N",
-  "NNE",
-  "NE",
-  "ENE",
-  "E",
-  "ESE",
-  "SE",
-  "SSE",
-  "S",
-  "SSW",
-  "SW",
-  "WSW",
-  "W",
-  "WNW",
-  "NW",
-  "NNW",
-] as const;
-
-/** 16-point compass direction for a bearing in degrees: 278° → `W`. */
+/** 16-point compass direction for a bearing in degrees: 278° → `W`. Shared engine implementation. */
 export function compassDirection(degrees: number): string {
-  if (!Number.isFinite(degrees)) return "";
-  const normalized = ((degrees % 360) + 360) % 360;
-  return COMPASS_16[Math.round(normalized / 22.5) % 16];
+  return Number.isFinite(degrees) ? format.compass(degrees) : "";
 }
