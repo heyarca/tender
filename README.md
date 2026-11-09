@@ -1,6 +1,6 @@
 # Tender
 
-![](https://tender.heyarca.app/landing/opengraph-image.png?opengraph-image.3hvy4-bp8_h3m.png)
+[![Tender: make APIs compete for your traffic](docs/assets/tender-screenshot.png)](https://tender.heyarca.app)
 
 The execution market for APIs. Providers compete to serve each request on price, latency, freshness,
 and reliability. Tender enforces your routing policy and switches providers when the current one stops
