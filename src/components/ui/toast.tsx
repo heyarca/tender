@@ -73,16 +73,29 @@ export function dismissToast(id?: string) {
   toastManager.close(id);
 }
 
-const toastApi = { toast, dismiss: dismissToast } as const;
+/** Callable `toast` function that also exposes `toast` and `dismiss`, so both call styles work. */
+export interface ToastApi {
+  (options: ToastOptions): string;
+  toast: typeof toast;
+  dismiss: typeof dismissToast;
+}
+
+const toastApi: ToastApi = Object.assign((options: ToastOptions) => toast(options), {
+  toast,
+  dismiss: dismissToast,
+});
 
 /**
- * Returns `{ toast, dismiss }`. Both functions are stable and also exported directly.
+ * Returns a stable toast API. Call it directly or destructure it; `toast` and
+ * `dismissToast` are also exported for code outside React.
  *
  * @example
- * const { toast } = useToast();
+ * const toast = useToast();
  * toast({ title: "Switched to DeepInfra", description: "Together exceeded the P95 limit.", tone: "warning" });
+ *
+ * const { toast, dismiss } = useToast();
  */
-export function useToast() {
+export function useToast(): ToastApi {
   return toastApi;
 }
 
