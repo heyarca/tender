@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { paymentRateLimiter, PaymentRateLimiter } from "./limits";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { privateKeyToAccount } from "viem/accounts";
 import { createPaidRequestEndpoint } from "./endpoint";
 import { handleContract } from "@/lib/server/handlers";
@@ -22,7 +23,11 @@ vi.mock("@/lib/payments/server", async (importOriginal) => {
 vi.mock("@/lib/server/reference", () => ({
   getWeatherReference: async () => ({ source: "open-meteo", timestamp: "2026-11-09T03:00:00Z", value: { temperature_f: 61, feels_like_f: 60, condition: "Overcast", humidity_percent: 86, wind_mph: 9, wind_direction_degrees: 278, pressure_hpa: 1018, visibility_mi: 9.4, dew_point_f: 57, cloud_cover_percent: 100 } }),
 }));
-afterEach(() => { vi.unstubAllEnvs(); });
+beforeEach(() => {
+  const limiter = new PaymentRateLimiter();
+  vi.spyOn(paymentRateLimiter, "acquire").mockImplementation(() => limiter.acquire());
+});
+afterEach(() => { vi.unstubAllEnvs(); vi.restoreAllMocks(); });
 
 describe("console state through paid contract", () => {
   it("raising Together's bid routes the challenge, paid result, and receipt to DeepInfra", async () => {
