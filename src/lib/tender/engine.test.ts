@@ -250,6 +250,25 @@ describe("pinned mode", () => {
     expect(later.markets[W].route.pending).toBeNull();
   });
 
+  it("cancels the pending switch and pins its target when the target itself is pinned", () => {
+    const setup = run(
+      createInitialState(),
+      update(W, "together", { p95LatencyMs: 640 }, E + 1_000),
+      update(W, "together", { p95LatencyMs: 210 }, E + 3_000),
+    );
+    const state = run(setup, { type: "set-routing-mode", marketId: W, mode: { kind: "pinned", providerId: "together" }, now: E + 4_000 });
+    expect(state.markets[W].route.pending).toBeNull();
+    expect(active(state, W)).toBe("together");
+    expect(state.markets[W].policy.mode).toEqual({ kind: "pinned", providerId: "together" });
+    const entry = latestOf(state, W, "switch-cancelled")!;
+    expect(entry.toProviderId).toBe("together");
+    expect(entry.title).toBe("Scheduled switch to Together cancelled");
+
+    // The scheduled switch never executes: the route stays pinned.
+    const later = run(state, { type: "tick", now: E + 11_500 });
+    expect(active(later, W)).toBe("together");
+  });
+
   it("surfaces a violation without switching", () => {
     const state = run(pinned(), update(W, "together", { p95LatencyMs: 640 }, E + 2_000));
     expect(active(state, W)).toBe("together");
