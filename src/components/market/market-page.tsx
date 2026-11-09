@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { LiveSection } from "@/components/market/live/live-section";
 import { ActivitySection } from "@/components/market/activity/activity-section";
 import { ProviderConditionsSection } from "@/components/market/conditions/provider-conditions-section";
 import { MarketUiProvider } from "@/components/market/market-ui";
@@ -79,6 +80,7 @@ function MarketPageContent({ marketId, onSwitchMarket }: MarketPageProps) {
         <div className="mt-6 grid grid-cols-1 gap-x-6 border-t border-border pt-6 lg:grid-cols-[200px_minmax(0,1fr)]">
           <MarketSidebar marketId={marketId} activeProviders={activeProviders} onSwitchMarket={onSwitchMarket} />
           <div className="min-w-0">
+            <LiveSection key={`live-${marketId}`} marketId={marketId} />
             <ProvidersSection key={`providers-${marketId}`} marketId={marketId} />
             <div className="grid grid-cols-1 gap-x-6 xl:grid-cols-2">
               <RoutingPolicySection key={`routing-${marketId}`} marketId={marketId} />

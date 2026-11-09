@@ -55,7 +55,7 @@ describe("sampleRequest", () => {
   });
 
   it("fails unavailable providers with 503", () => {
-    const conditions = { ...getDefaultConditions("btc-usd").the-zone-bio, available: false };
+    const conditions = { ...getDefaultConditions("btc-usd")["the-zone-bio"], available: false };
     const { result } = sampleRequest({ ...base, conditions });
     expect(result).toMatchObject({ status: "failed", error: { code: 503, message: "Service Unavailable" }, cost: 0 });
   });

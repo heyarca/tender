@@ -9,6 +9,7 @@ import type { MarketId, ProviderId } from "@/lib/tender";
  * the command palette, and `focusSection` can find it.
  */
 export const MARKET_SECTIONS = [
+  { id: "live", label: "Live providers" },
   { id: "providers", label: "Providers" },
   { id: "routing", label: "Routing policy" },
   { id: "conditions", label: "Provider conditions" },

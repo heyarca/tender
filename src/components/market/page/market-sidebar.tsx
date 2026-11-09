@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, CircleDollarSign, Route, Server, SlidersHorizontal, type LucideIcon } from "lucide-react";
+import { Activity, CircleDollarSign, Radio, Route, Server, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import type * as React from "react";
 import {
@@ -19,6 +19,7 @@ import { marketHref } from "./routes";
 
 /** Section icons, shared with each section's header. */
 export const SECTION_ICONS: Record<MarketSectionId, LucideIcon> = {
+  live: Radio,
   providers: Server,
   routing: Route,
   conditions: SlidersHorizontal,
