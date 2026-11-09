@@ -65,7 +65,7 @@ function StepIcon({ status, index }: { status: StepStatus; index: number }) {
  */
 export function PaymentProgress({ steps, className }: { steps: PaymentStep[]; className?: string }) {
   return (
-    <ol aria-label="Payment progress" className={cn("grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-4", className)}>
+    <ol aria-label="Payment progress" className={cn("grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 sm:gap-y-4 xl:grid-cols-4", className)}>
       {steps.map((step, index) => (
         <li
           key={step.id}
@@ -77,7 +77,7 @@ export function PaymentProgress({ steps, className }: { steps: PaymentStep[]; cl
           <span
             aria-hidden="true"
             className={cn(
-              "mb-2.5 block h-1 rounded-full transition-colors duration-fast ease-smooth-out motion-reduce:transition-none",
+              "mb-2.5 hidden h-1 rounded-full transition-colors sm:block duration-fast ease-smooth-out motion-reduce:transition-none",
               barClass[step.status],
             )}
           />

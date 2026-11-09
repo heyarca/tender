@@ -10,10 +10,10 @@ import { Section } from "@/components/ui/section";
 import { InfoTooltip } from "@/components/ui/tooltip";
 import { usePaidRequest } from "@/lib/payments/client";
 import { format, getMarketDefinition, type MarketId, PREFERENCE_LABELS } from "@/lib/tender";
-import { useMarketView, useNow } from "@/lib/tender/client";
+import { useMarketView, useNow, usePendingSwitch } from "@/lib/tender/client";
 import { cn } from "@/lib/utils";
 
-import type { MarketSectionProps } from "../market-ui";
+import { focusSection, type MarketSectionProps } from "../market-ui";
 import { deriveSteps, describeFailure } from "./payment-flow";
 import {
   buildPaymentQuote,
@@ -28,11 +28,14 @@ import {
 } from "./payment-model";
 import { payeeBalance } from "./payment-records";
 import { PaymentProgress } from "./payment-progress";
-import { Address, Notice } from "./payment-ui";
+import { Address, Notice, RelativeTime } from "./payment-ui";
 import { paymentsStore, usePaymentsState } from "./payments-store";
 import { QuotePanel } from "./quote-panel";
 import { ReceiptCard } from "./receipt-card";
 import { ReceiptsTable } from "./receipts-table";
+
+const sectionLinkClass =
+  "cursor-pointer rounded-sm text-accent-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
 
 /** Balances older than this are read again when the section mounts. */
 const BALANCES_STALE_MS = 30_000;
@@ -63,6 +66,22 @@ function RetryCountdown({ retryAt }: { retryAt: number }) {
   const now = useNow();
   if (now >= retryAt) return null;
   return <span className="tabular-nums">Try again in {format.countdown(retryAt, now)}.</span>;
+}
+
+/**
+ * The console route can lag the per-request selection (an optimization switch
+ * waits for the cooldown). Paid requests select per request, like the API.
+ */
+function ConsoleRouteNote({ marketId, consoleName, paidName }: { marketId: MarketId; consoleName: string; paidName: string }) {
+  const pending = usePendingSwitch(marketId);
+  return (
+    <Notice tone="neutral" data-slot="payment-console-note">
+      {pending && pending.providerName === paidName
+        ? `The console switches from ${consoleName} to ${paidName} in ${pending.secondsRemaining} s (switch cooldown). `
+        : `The console routes to ${consoleName}. `}
+      Paid requests are routed per request, so the next one pays {paidName}.
+    </Notice>
+  );
 }
 
 /** Clears the stored retry time once it passes. */
@@ -167,13 +186,17 @@ export function PaymentsSection({ marketId }: MarketSectionProps) {
     failure: failureView,
   });
 
-  const progressAside = inFlightHere
-    ? `Paying ${attempt?.providerName ?? "provider"}…`
-    : failureView
-      ? null
-      : attempt?.elapsedMs != null && latest
-        ? `Completed in ${format.latency(attempt.elapsedMs)}`
-        : null;
+  let progressAside: ReactNode = null;
+  if (inFlightHere) progressAside = `Paying ${attempt?.providerName ?? "the provider"}…`;
+  else if (failureView) progressAside = failureView.step ? "Last attempt failed" : null;
+  else if (attempt?.elapsedMs != null && latest) progressAside = `Completed in ${format.latency(attempt.elapsedMs)}`;
+  else if (latest) {
+    progressAside = (
+      <>
+        Last paid request · <RelativeTime at={latest.at} />
+      </>
+    );
+  }
 
   // Screen reader announcement for the in-flight stages and the result.
   const announcement = inFlightHere
@@ -211,24 +234,23 @@ export function PaymentsSection({ marketId }: MarketSectionProps) {
           <QuotePanel quote={quote} payeeBalance={payee} balancesStatus={payments.balancesStatus} />
           <div className="mt-2.5 flex flex-col gap-2">
             <p className="text-caption text-muted-foreground" data-slot="payment-routing-note">
-              {routingNote(quote, edited)}
-              {quote.amounts?.rounded && quote.bidPrice !== null ? (
-                <>
-                  {" "}
-                  {format.priceWithUnit(quote.bidPrice)} is {format.cost(quote.amounts.priceUsd)} per request. {ROUNDING_NOTE}.
-                </>
-              ) : null}
+              {routingNote(quote, edited)}{" "}
+              <button type="button" className={sectionLinkClass} onClick={() => focusSection(quote.blocker?.kind === "no-eligible" ? "routing" : "conditions")}>
+                {quote.blocker?.kind === "no-eligible" ? "Edit routing policy" : "Edit provider conditions"}
+              </button>
             </p>
-            {quote.violation ? (
+            {quote.amounts?.rounded && quote.bidPrice !== null ? (
+              <p className="text-caption text-muted-foreground" data-slot="payment-rounding-note">
+                {format.priceWithUnit(quote.bidPrice)} is {format.cost(quote.amounts.priceUsd)} per request. {ROUNDING_NOTE}.
+              </p>
+            ) : null}
+            {quote.violation && quote.blocker?.kind !== "unavailable" ? (
               <Notice tone="warning" icon={<TriangleAlert aria-hidden="true" />}>
                 {quote.violation} Paid requests still go to {quote.providerName}.
               </Notice>
             ) : null}
-            {quote.consoleProviderName && !quote.blocker ? (
-              <Notice tone="neutral">
-                The console still routes to {quote.consoleProviderName} until the switch cooldown ends. Paid requests
-                select per request, so the next one pays {quote.providerName}.
-              </Notice>
+            {quote.consoleProviderName && quote.providerName && !quote.blocker ? (
+              <ConsoleRouteNote marketId={marketId} consoleName={quote.consoleProviderName} paidName={quote.providerName} />
             ) : null}
           </div>
         </div>

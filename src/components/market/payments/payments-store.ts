@@ -46,6 +46,18 @@ const EMPTY: PaymentsState = {
   balancesAt: null,
 };
 
+const BALANCES_RETRY_MS = 1_500;
+
+async function readBalances(): Promise<BalancesSnapshot | null> {
+  try {
+    const response = await fetch("/api/payments/balances", { cache: "no-store", headers: { Accept: "application/json" } });
+    if (!response.ok) return null;
+    return parseBalances(await response.json());
+  } catch {
+    return null;
+  }
+}
+
 let state: PaymentsState = EMPTY;
 let loaded = false;
 const listeners = new Set<() => void>();
@@ -121,13 +133,14 @@ export const paymentsStore = {
       emit({ ...state, balancesStatus: "loading" });
       inFlight = (async () => {
         try {
-          const response = await fetch("/api/payments/balances", { cache: "no-store", headers: { Accept: "application/json" } });
-          const body: unknown = await response.json().catch(() => null);
-          const balances = response.ok ? parseBalances(body) : null;
-          if (!balances) throw new Error("Unable to read balances");
-          emit({ ...state, balances, balancesStatus: "ready", balancesAt: Date.now() });
-        } catch {
-          emit({ ...state, balancesStatus: "error" });
+          // One retry: the public Base Sepolia RPC occasionally rejects a burst of reads.
+          let balances = await readBalances();
+          if (!balances) {
+            await new Promise((resolve) => setTimeout(resolve, BALANCES_RETRY_MS));
+            balances = await readBalances();
+          }
+          if (balances) emit({ ...state, balances, balancesStatus: "ready", balancesAt: Date.now() });
+          else emit({ ...state, balancesStatus: "error" });
         } finally {
           inFlight = null;
         }

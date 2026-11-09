@@ -37,7 +37,7 @@ function BalanceLine({ balance, status }: { balance: UsdcBalance | null; status:
 export function QuotePanel({ quote, payeeBalance, balancesStatus }: QuotePanelProps) {
   const { amounts } = quote;
   return (
-    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4" data-slot="payment-quote">
+    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4" data-slot="payment-quote">
       <StatCard
         label="Provider"
         tone={quote.providerId ? "default" : "warning"}

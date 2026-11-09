@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { addressUrl, shortAddress, shortHash, txUrl } from "./payment-model";
 
 const linkClass =
-  "rounded-sm text-foreground underline decoration-current/30 underline-offset-2 transition-colors duration-quick hover:text-accent-foreground hover:decoration-current focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
+  "rounded-sm text-foreground underline-offset-2 transition-colors duration-quick hover:text-accent-foreground hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
 
 export interface AddressProps {
   address: string;
@@ -30,7 +30,7 @@ export function Address({ address, role, className }: AddressProps) {
         rel="noopener noreferrer"
         title={address}
         aria-label={`${role} address ${address} on Basescan (opens in a new tab)`}
-        className={cn(linkClass, "font-mono text-[13px] whitespace-nowrap")}
+        className={cn(linkClass, "font-mono text-[13px] font-normal whitespace-nowrap")}
       >
         {shortAddress(address)}
       </a>
@@ -56,7 +56,7 @@ export function TxLink({ hash, withLabel = false, className }: TxLinkProps) {
         rel="noopener noreferrer"
         title={hash}
         aria-label={`Transaction ${hash} on Basescan (opens in a new tab)`}
-        className={cn(linkClass, "inline-flex items-center gap-1 font-mono text-[13px] whitespace-nowrap")}
+        className={cn(linkClass, "inline-flex items-center gap-1 font-mono text-[13px] font-normal whitespace-nowrap")}
       >
         {shortHash(hash)}
         {withLabel ? <span className="font-sans text-caption text-muted-foreground">Basescan</span> : null}
