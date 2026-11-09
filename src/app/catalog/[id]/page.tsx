@@ -1,26 +1,15 @@
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { CatalogMarketDetail } from "@/components/market/catalog/catalog-market-detail";
-import { CATALOG_MARKETS, getCatalogMarket } from "@/lib/catalog";
+import { notFound, permanentRedirect } from "next/navigation";
+import { isRegisteredMarket, MARKET_SPECS } from "@/lib/registry";
 
-/** Fixture catalog pages are generated at build time; no market request is made here. */
+/** Old catalog URLs. Every market lives at `/markets/{id}` now. */
+export const instant = false;
+
 export function generateStaticParams() {
-  return CATALOG_MARKETS.map((market) => ({ id: market.id }));
+  return MARKET_SPECS.map((market) => ({ id: market.id }));
 }
 
-export async function generateMetadata({ params }: PageProps<"/catalog/[id]">): Promise<Metadata> {
+export default async function CatalogRedirect({ params }: PageProps<"/catalog/[id]">) {
   const { id } = await params;
-  const market = getCatalogMarket(id);
-  if (!market) return { title: "Catalog market not found" };
-  return {
-    title: market.name,
-    description: market.description,
-  };
-}
-
-export default async function CatalogMarketPage({ params }: PageProps<"/catalog/[id]">) {
-  const { id } = await params;
-  const market = getCatalogMarket(id);
-  if (!market) notFound();
-  return <CatalogMarketDetail market={market} />;
+  if (!isRegisteredMarket(id)) notFound();
+  permanentRedirect(`/markets/${id}`);
 }
