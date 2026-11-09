@@ -25,3 +25,9 @@ These assets are derived from free Unsplash photos. Source pages are retained fo
 - Source page: https://unsplash.com/photos/black-magnifying-glass-on-white-paper-yx17UuZw1Ck
 - Direct image: https://images.unsplash.com/photo-1626148749358-5b3b3f45b41a?auto=format&fit=crop&q=60&crop=entropy&cs=srgb&fm=jpg&ixid=NHwxMjA3fDA&ixlib=rb-4.1.0
 - License: [Unsplash License](https://unsplash.com/license)
+
+## `chat-general`
+- Photographer: Bruce Barrow
+- Source page: https://unsplash.com/photos/blurry-abstract-neon-lights-in-the-dark-76MPkaAS9Zw
+- Direct image: https://images.unsplash.com/photo-1764515836350-639a387a0350?auto=format&fit=crop&q=60&crop=entropy&cs=srgb&fm=jpg&ixid=NHwxMjA3fDA&ixlib=rb-4.1.0
+- License: [Unsplash License](https://unsplash.com/license)
