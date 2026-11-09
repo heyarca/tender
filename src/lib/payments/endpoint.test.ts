@@ -4,7 +4,9 @@ import { privateKeyToAccount } from "viem/accounts";
 import { createPaidRequestEndpoint } from "./endpoint";
 import { createPaymentServer, withX402Payment } from "./server";
 import { quoteFromBid } from "./quote";
-import { PAYMENT_NETWORK } from "./config";
+import { PAYMENT_NETWORK, USDC_ADDRESS } from "./config";
+import { PAYEES } from "./payees";
+import { encodePaymentRequiredHeader } from "@x402/core/http";
 
 // Publicly known test-only key. Never use for funded wallets.
 const key = `0x${"0".repeat(63)}1` as const;
@@ -71,6 +73,17 @@ describe("paid endpoint", () => {
     const response = await endpoint(new Request("https://tender.test/pay", { method: "POST", headers: { "Content-Type": "application/json" }, body: '{"market":"btc-usd"}' }));
     expect(response.status).toBe(502);
     expect(dispatch).not.toHaveBeenCalled();
+  });
+  it("answers 422, not 502, when a 402 challenge names an unknown provider", async () => {
+    vi.stubEnv("TENDER_DEMO_PAYER_PRIVATE_KEY", key);
+    const requirements = { scheme: "exact", network: PAYMENT_NETWORK, asset: USDC_ADDRESS, amount: "1", payTo: PAYEES.together, maxTimeoutSeconds: 60, extra: { providerId: "nosuch" } };
+    const challenge = encodePaymentRequiredHeader({ x402Version: 2, resource: { url: "https://tender.internal/api/v1/prices/spot" }, accepts: [requirements] });
+    const dispatch = vi.fn(async () => new Response("payment required", { status: 402, headers: { "PAYMENT-REQUIRED": challenge } }));
+    const endpoint = createPaidRequestEndpoint(dispatch);
+    const response = await endpoint(new Request("https://tender.test/api/payments/demo-request", { method: "POST", headers: { "Content-Type": "application/json" }, body: '{"market":"btc-usd"}' }));
+    expect(response.status).toBe(422);
+    expect(await response.json()).toEqual({ error: "Untrusted payment recipient" });
+    expect(dispatch).toHaveBeenCalledOnce();
   });
   it("returns 503 when payer is absent", async () => {
     vi.stubEnv("TENDER_DEMO_PAYER_PRIVATE_KEY", "");

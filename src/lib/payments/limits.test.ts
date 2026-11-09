@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { PaymentRequirements } from "@x402/core/types";
-import { assertSafePayment, BalancesRateLimiter, PaymentRateLimiter } from "./limits";
+import { assertSafePayment, BalancesRateLimiter, PaymentRateLimiter, PaymentSafetyError } from "./limits";
 import { PAYMENT_NETWORK, USDC_ADDRESS } from "./config";
 import { PAYEES } from "./payees";
 
@@ -16,6 +16,11 @@ describe("payer controls", () => {
     expect(() => assertSafePayment({ ...safe, payTo: PAYEES.parasail })).toThrow();
     expect(() => assertSafePayment({ ...safe, extra: {} })).toThrow();
     expect(() => assertSafePayment({ ...safe, extra: { ...safe.extra, paymentFlow: "escrow" } })).toThrow();
+  });
+  it("rejects unknown provider ids with a typed safety error", () => {
+    expect(() => assertSafePayment({ ...safe, extra: { providerId: "nosuch" } })).toThrow(PaymentSafetyError);
+    expect(() => assertSafePayment({ ...safe, payTo: PAYEES.parasail, extra: { providerId: "nosuch" } })).toThrow(PaymentSafetyError);
+    expect(() => assertSafePayment({ ...safe, extra: { providerId: "nosuch" } })).toThrow("Untrusted payment recipient");
   });
   it("allows one in-flight request and six attempts per minute", () => {
     const limiter = new PaymentRateLimiter();

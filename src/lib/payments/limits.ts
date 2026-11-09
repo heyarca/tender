@@ -1,5 +1,5 @@
 import { MAX_PAYMENT_ATOMIC, PAYMENT_NETWORK, USDC_ADDRESS } from "./config";
-import { getPayee } from "./payees";
+import { getPayee, PAYEES } from "./payees";
 import type { PaymentRequirements } from "@x402/core/types";
 
 export class PaymentSafetyError extends Error {}
@@ -15,7 +15,8 @@ export function assertSafePayment(requirements: PaymentRequirements): void {
   if (!/^\d+$/.test(requirements.amount) || BigInt(requirements.amount) <= BigInt(0) || BigInt(requirements.amount) > MAX_PAYMENT_ATOMIC) {
     throw new PaymentSafetyError("Payment exceeds the 100 atomic USDC per-request spend cap");
   }
-  if (typeof providerId !== "string" || requirements.payTo.toLowerCase() !== getPayee(providerId).toLowerCase()) {
+  // Unknown ids must be a typed safety failure (422), not an escaping generic error (502).
+  if (typeof providerId !== "string" || !Object.hasOwn(PAYEES, providerId) || requirements.payTo.toLowerCase() !== getPayee(providerId).toLowerCase()) {
     throw new PaymentSafetyError("Untrusted payment recipient");
   }
 }
