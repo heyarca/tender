@@ -2,22 +2,26 @@
  * Deterministic request execution (SPEC §4.3). Requests never wait for an
  * auction: they use the current route immediately.
  */
-import { requestEntry, providerName } from "./activity";
-import { LATENCY_LIMIT, REQUEST_LOG_LIMIT, SERIES_LIMIT } from "./constants";
+import { requestEntry } from "./activity";
+import { FIXTURE_EPOCH, LATENCY_LIMIT, REQUEST_LOG_LIMIT, SERIES_LIMIT } from "./constants";
 import { nextRequestId, pushActivity, type StepContext } from "./context";
 import { compass } from "./format";
 import { createRng, type Rng } from "./random";
-import { btcPriceAt, conditionLabel, SF_LOCATION, weatherAt } from "./signals";
+import { btcPriceAt, conditionLabel, SF_LOCATION, weatherAt, type WeatherState } from "./signals";
 import { getProviderFixture } from "./fixtures";
 import type {
   BtcPayload,
+  BtcReference,
   MarketId,
+  MarketReference,
   MarketState,
   ProviderConditions,
   ProviderId,
   RequestResult,
+  RoutingMode,
   ServedRequestResult,
   WeatherPayload,
+  WeatherReference,
 } from "./types";
 
 const round = (value: number, decimals: number) => {
@@ -46,19 +50,91 @@ export function sampleDataAge(rng: Rng, dataAgeMs: number, marketId: MarketId): 
   return marketId === "sf-weather" ? Math.round(value / 1000) * 1000 : Math.max(0, Math.round(value));
 }
 
-/** Weather payload a provider reports for an observation at `observedAt`. */
-export function weatherPayload(observedAt: number, origin: number, bias: number): WeatherPayload {
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+/** Dew point (°F) from temperature (°F) and relative humidity (%), Magnus formula. */
+export function dewPointF(temperatureF: number, humidityPct: number): number {
+  const c = ((temperatureF - 32) * 5) / 9;
+  const gamma = Math.log(Math.max(1, humidityPct) / 100) + (17.62 * c) / (243.12 + c);
+  const dew = (243.12 * gamma) / (17.62 - gamma);
+  return (dew * 9) / 5 + 32;
+}
+
+type WeatherNumericField = Exclude<keyof WeatherReference, "kind" | "at" | "condition" | "feelsLikeF">;
+
+/** True conditions at an observation time, with label overrides from a reference. */
+export interface AnchoredWeather extends WeatherState {
+  /** Reference label, or `null` to derive it from cloud cover. */
+  condition: string | null;
+  /** Reference feels-like (moved by the drift), or `null` to derive it. */
+  feelsLikeF: number | null;
+}
+
+/**
+ * True San Francisco conditions at `observedAt`. Without a reference this is
+ * the deterministic signal. With one, each given field is the reference value
+ * moved by the signal's drift between `referenceAt` and `observedAt`.
+ */
+export function anchoredWeatherAt(
+  observedAt: number,
+  origin: number,
+  reference?: WeatherReference,
+  referenceAt: number = observedAt,
+): AnchoredWeather {
   const w = weatherAt(observedAt, origin);
+  if (!reference) return { ...w, condition: null, feelsLikeF: null };
+  const r = weatherAt(referenceAt, origin);
+  const shift = (key: WeatherNumericField): number => {
+    const value = reference[key];
+    return typeof value === "number" && Number.isFinite(value) ? value + (w[key] - r[key]) : w[key];
+  };
+  const feels = reference.feelsLikeF;
+  const temperatureF = shift("temperatureF");
+  const humidityPct = clamp(shift("humidityPct"), 0, 100);
+  const given = (key: WeatherNumericField) => typeof reference[key] === "number" && Number.isFinite(reference[key]);
+  // Keep the dew point consistent when the reference moves temperature or humidity but omits it.
+  const dewPoint = () =>
+    given("dewPointF") || (!given("temperatureF") && !given("humidityPct"))
+      ? shift("dewPointF")
+      : dewPointF(temperatureF, humidityPct);
+  return {
+    temperatureF,
+    humidityPct,
+    windMph: Math.max(0, shift("windMph")),
+    windDirectionDeg: ((shift("windDirectionDeg") % 360) + 360) % 360,
+    pressureHpa: shift("pressureHpa"),
+    visibilityMi: Math.max(0, shift("visibilityMi")),
+    dewPointF: dewPoint(),
+    cloudCoverPct: clamp(shift("cloudCoverPct"), 0, 100),
+    condition: typeof reference.condition === "string" && reference.condition ? reference.condition : null,
+    feelsLikeF:
+      typeof feels === "number" && Number.isFinite(feels) ? feels + (w.temperatureF - r.temperatureF) : null,
+  };
+}
+
+/**
+ * Weather payload a provider reports for an observation at `observedAt`:
+ * the true conditions then, plus the provider's bias (≤ 0.5°F, ≤ 2% humidity).
+ */
+export function weatherPayload(
+  observedAt: number,
+  origin: number,
+  bias: number,
+  reference?: WeatherReference,
+  referenceAt?: number,
+): WeatherPayload {
+  const w = anchoredWeatherAt(observedAt, origin, reference, referenceAt);
   const temperatureF = w.temperatureF + bias * 0.5;
-  const humidityPct = Math.min(100, Math.max(0, w.humidityPct - bias * 2));
+  const humidityPct = clamp(w.humidityPct - bias * 2, 0, 100);
   const windDirectionDeg = Math.round(w.windDirectionDeg) % 360;
+  const feelsLikeF = w.feelsLikeF === null ? temperatureF - 0.1 * w.windMph : w.feelsLikeF + bias * 0.5;
   return {
     kind: "weather",
     location: { ...SF_LOCATION },
     observedAt,
     temperatureF: round(temperatureF, 1),
-    feelsLikeF: round(temperatureF - 0.1 * w.windMph, 1),
-    condition: conditionLabel(w.cloudCoverPct),
+    feelsLikeF: round(feelsLikeF, 1),
+    condition: w.condition ?? conditionLabel(w.cloudCoverPct),
     humidityPct: Math.round(humidityPct),
     windMph: Math.round(w.windMph),
     windDirectionDeg,
@@ -70,9 +146,48 @@ export function weatherPayload(observedAt: number, origin: number, bias: number)
   };
 }
 
-/** BTC price a provider reports for the source time `sourceTimestamp`. */
-export function btcProviderPrice(sourceTimestamp: number, origin: number, bias: number): number {
-  return round(btcPriceAt(sourceTimestamp, origin) + bias * 1.5, 2);
+/**
+ * True BTC/USD price at `at`. Without a reference this is the deterministic
+ * walk; with one, the reference price moved by the walk between `reference.at`
+ * (default `referenceAt`) and `at`.
+ */
+export function anchoredBtcPriceAt(at: number, origin: number, reference?: BtcReference, referenceAt: number = at): number {
+  if (!reference || !Number.isFinite(reference.priceUsd)) return btcPriceAt(at, origin);
+  const anchor = reference.at ?? referenceAt;
+  return reference.priceUsd + (btcPriceAt(at, origin) - btcPriceAt(anchor, origin));
+}
+
+/** BTC price a provider reports for the source time `sourceTimestamp` (true price + bias ≤ $1.50). */
+export function btcProviderPrice(
+  sourceTimestamp: number,
+  origin: number,
+  bias: number,
+  reference?: BtcReference,
+  referenceAt?: number,
+): number {
+  return round(anchoredBtcPriceAt(sourceTimestamp, origin, reference, referenceAt) + bias * 1.5, 2);
+}
+
+/**
+ * Deterministic reference value of a market at `at` (the fallback when no
+ * upstream value is available).
+ */
+export function signalReference(marketId: MarketId, at: number, origin: number = FIXTURE_EPOCH): MarketReference {
+  if (marketId === "btc-usd") return { kind: "btc", at, priceUsd: round(btcPriceAt(at, origin), 2) };
+  const w = weatherAt(at, origin);
+  return {
+    kind: "weather",
+    at,
+    temperatureF: round(w.temperatureF, 1),
+    condition: conditionLabel(w.cloudCoverPct),
+    humidityPct: round(w.humidityPct, 1),
+    windMph: round(w.windMph, 1),
+    windDirectionDeg: round(w.windDirectionDeg, 1),
+    pressureHpa: round(w.pressureHpa, 1),
+    visibilityMi: round(w.visibilityMi, 2),
+    dewPointF: round(w.dewPointF, 1),
+    cloudCoverPct: round(w.cloudCoverPct, 1),
+  };
 }
 
 const FAILURES = [
@@ -86,24 +201,46 @@ export function seriesValue(result: ServedRequestResult): number {
   return result.marketId === "btc-usd" ? result.payload.priceUsd : result.payload.temperatureF;
 }
 
+/** Input of `sampleRequest`: everything a single request depends on. */
+export interface RequestSampleInput {
+  marketId: MarketId;
+  /** Provider the route selected; `null` means no eligible provider (the request is rejected). */
+  providerId: ProviderId | null;
+  /** Provider conditions at request time (default: fixture defaults). */
+  conditions?: ProviderConditions;
+  /** `req_000123` style id (see `formatRequestId`). */
+  requestId: string;
+  /** Request time (ms). */
+  now: number;
+  /** Seeded PRNG state (uint32). The same seed and input give the same result. */
+  seed: number;
+  /** Routing mode that selected the provider (default `"auto"`). */
+  routingMode?: RoutingMode["kind"];
+  /** Origin of the deterministic market signal (default `FIXTURE_EPOCH`). */
+  signalOrigin?: number;
+  /** BTC only: price of the previous served request, for `changeUsd`. */
+  previousPriceUsd?: number | null;
+  /**
+   * Upstream reference value (live SF conditions or BTC spot). Ignored when it
+   * does not match the market. Default: the deterministic signal.
+   */
+  reference?: MarketReference | null;
+}
+
 /**
- * Compute a request result for the market's current route. Pure: returns the
- * result and the next PRNG state; does not touch the market.
+ * Sample one request deterministically. Pure: returns the result and the next
+ * PRNG state. Draw order is fixed (failure roll, failure kind, latency, data age).
+ * Unknown providers are rejected like a missing route.
  */
-export function executeRequest(
-  market: MarketState,
-  requestId: string,
-  now: number,
-): { result: RequestResult; rng: number } {
-  const routingMode = market.policy.mode.kind;
-  const providerId: ProviderId | null =
-    market.policy.mode.kind === "pinned" ? market.policy.mode.providerId : market.route.activeProviderId;
-  const provider = providerId ? market.providers.find((p) => p.id === providerId) : undefined;
-  if (!providerId || !provider) {
+export function sampleRequest(input: RequestSampleInput): { result: RequestResult; rng: number } {
+  const { marketId, providerId, requestId, now } = input;
+  const routingMode = input.routingMode ?? "auto";
+  const fixture = providerId ? getProviderFixture(marketId, providerId) : undefined;
+  if (!providerId || !fixture) {
     return {
       result: {
         status: "rejected",
-        marketId: market.id,
+        marketId,
         requestId,
         requestedAt: now,
         routingMode,
@@ -111,24 +248,24 @@ export function executeRequest(
         reason: "No eligible provider",
         cost: 0,
       },
-      rng: market.rng,
+      rng: input.seed >>> 0,
     };
   }
 
-  const rng = createRng(market.rng);
-  const c: ProviderConditions = provider.conditions;
-  const name = providerName(market.id, providerId);
+  const rng = createRng(input.seed);
+  const c: ProviderConditions = input.conditions ?? fixture.defaults;
+  const name = fixture.name;
   // Fixed draw order keeps sequences stable.
   const failureRoll = rng.next();
   const failureKind = rng.next();
   const latencyMs = sampleLatency(rng, c.p95LatencyMs);
-  const dataAgeMs = sampleDataAge(rng, c.dataAgeMs, market.id);
+  const dataAgeMs = sampleDataAge(rng, c.dataAgeMs, marketId);
 
   if (!c.available) {
     return {
       result: {
         status: "failed",
-        marketId: market.id,
+        marketId,
         requestId,
         requestedAt: now,
         routingMode,
@@ -146,7 +283,7 @@ export function executeRequest(
     return {
       result: {
         status: "failed",
-        marketId: market.id,
+        marketId,
         requestId,
         requestedAt: now,
         routingMode,
@@ -160,7 +297,8 @@ export function executeRequest(
     };
   }
 
-  const bias = getProviderFixture(market.id, providerId)?.bias ?? 0;
+  const origin = input.signalOrigin ?? FIXTURE_EPOCH;
+  const reference = input.reference ?? undefined;
   const base = {
     status: "ok" as const,
     requestId,
@@ -172,27 +310,66 @@ export function executeRequest(
     dataAgeMs,
     cost: c.bidPrice / 1e6,
   };
-  if (market.id === "sf-weather") {
+  if (marketId === "sf-weather") {
     return {
-      result: { ...base, marketId: "sf-weather", payload: weatherPayload(now - dataAgeMs, market.signalOrigin, bias) },
+      result: { ...base, marketId: "sf-weather", payload: weatherPayload(
+          now - dataAgeMs,
+          origin,
+          fixture.bias,
+          reference?.kind === "weather" ? reference : undefined,
+          reference?.at ?? now,
+        ),
+      },
       rng: rng.state,
     };
   }
   const sourceTimestamp = now - dataAgeMs;
-  const priceUsd = btcProviderPrice(sourceTimestamp, market.signalOrigin, bias);
-  const previous = market.requests.find(
-    (r): r is Extract<RequestResult, { status: "ok"; marketId: "btc-usd" }> => r.status === "ok" && r.marketId === "btc-usd",
+  const priceUsd = btcProviderPrice(
+    sourceTimestamp,
+    origin,
+    fixture.bias,
+    reference?.kind === "btc" ? reference : undefined,
+    now,
   );
-  const changeUsd = previous ? round(priceUsd - previous.payload.priceUsd, 2) : null;
+  const previous = input.previousPriceUsd ?? null;
+  const changeUsd = previous !== null ? round(priceUsd - previous, 2) : null;
   const payload: BtcPayload = {
     kind: "btc",
     pair: "BTC-USD",
     priceUsd,
     changeUsd,
-    changePct: previous && changeUsd !== null ? round((changeUsd / previous.payload.priceUsd) * 100, 4) : null,
+    changePct: previous !== null && changeUsd !== null ? round((changeUsd / previous) * 100, 4) : null,
     sourceTimestamp,
   };
   return { result: { ...base, marketId: "btc-usd", payload }, rng: rng.state };
+}
+
+/**
+ * Compute a request result for the market's current route. Pure: returns the
+ * result and the next PRNG state; does not touch the market.
+ */
+export function executeRequest(
+  market: MarketState,
+  requestId: string,
+  now: number,
+): { result: RequestResult; rng: number } {
+  const providerId: ProviderId | null =
+    market.policy.mode.kind === "pinned" ? market.policy.mode.providerId : market.route.activeProviderId;
+  const provider = providerId ? market.providers.find((p) => p.id === providerId) : undefined;
+  const previous = market.requests.find(
+    (r): r is Extract<RequestResult, { status: "ok"; marketId: "btc-usd" }> => r.status === "ok" && r.marketId === "btc-usd",
+  );
+  return sampleRequest({
+    marketId: market.id,
+    providerId: provider ? provider.id : null,
+    conditions: provider?.conditions,
+    requestId,
+    now,
+    seed: market.rng,
+    routingMode: market.policy.mode.kind,
+    signalOrigin: market.signalOrigin,
+    previousPriceUsd: previous?.payload.priceUsd ?? null,
+  });
 }
 
 /** Run one request on the market: log it, update counters, spend, history, chart, and activity. */
