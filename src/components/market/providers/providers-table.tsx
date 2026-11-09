@@ -46,7 +46,7 @@ const MotionRow = motion.create(TableRow);
 const MotionSubheadRow = motion.create(TableSubheadRow);
 
 const COLUMN_COUNT = 9;
-const LAYOUT_TRANSITION: Transition = { type: "tween", duration: 0.4, ease: [0.22, 1, 0.36, 1] };
+const LAYOUT_TRANSITION: Transition = { type: "tween", duration: 0.5, ease: [0.22, 1, 0.36, 1] };
 const FLASH_MS = 1600;
 
 const TINT: Record<SignalTone, string> = {
@@ -153,31 +153,34 @@ export function ProvidersTable({ view, selectedId, onSelect }: ProvidersTablePro
           </TableHead>
         </TableRow>
       </TableHeader>
+      {/* One keyed list, so a provider that changes group moves (and animates) instead of remounting. */}
       <TableBody>
-        {routed.map(renderRow)}
-        {excluded.length > 0 ? (
-          <MotionSubheadRow
-            key="excluded-divider"
-            layout={reduceMotion ? false : "position"}
-            layoutDependency={order}
-            transition={LAYOUT_TRANSITION}
-            colSpan={COLUMN_COUNT}
-            data-slot="excluded-divider"
-            // Let the sticky label below take the full-width cell as its containing block.
-            className="[&>td>div>span:first-child]:contents"
-          >
-            {/* Sticky on small screens so the label stays beside the sticky provider column while scrolling. */}
-            <span className="flex items-center gap-1.5 max-md:sticky max-md:left-4">
-              Excluded by your policy ({excluded.length})
-              <InfoTooltip
-                label="Why providers are excluded"
-                iconSize={12}
-                content="These providers fail at least one requirement in your routing policy. Automatic routing never sends them requests."
-              />
-            </span>
-          </MotionSubheadRow>
-        ) : null}
-        {excluded.map(renderRow)}
+        {[
+          ...routed.map(renderRow),
+          excluded.length > 0 ? (
+            <MotionSubheadRow
+              key="excluded-divider"
+              layout={reduceMotion ? false : "position"}
+              layoutDependency={order}
+              transition={LAYOUT_TRANSITION}
+              colSpan={COLUMN_COUNT}
+              data-slot="excluded-divider"
+              // Let the sticky label below take the full-width cell as its containing block.
+              className="[&>td>div>span:first-child]:contents"
+            >
+              {/* Sticky on small screens so the label stays beside the sticky provider column while scrolling. */}
+              <span className="flex items-center gap-1.5 max-md:sticky max-md:left-4">
+                Excluded by your policy ({excluded.length})
+                <InfoTooltip
+                  label="Why providers are excluded"
+                  iconSize={12}
+                  content="These providers fail at least one requirement in your routing policy. Automatic routing never sends them requests."
+                />
+              </span>
+            </MotionSubheadRow>
+          ) : null,
+          ...excluded.map(renderRow),
+        ]}
       </TableBody>
     </Table>
   );
@@ -254,7 +257,8 @@ function ProviderTableRow({ row, view, selected, onSelect, layoutKey, reduceMoti
       data-provider={row.id}
       data-role={row.role}
       data-status={row.status}
-      className="group/row"
+      // Opaque rows, so a row sliding past others during a reorder covers them instead of overlapping text.
+      className={cn("group/row", !selected && "bg-card")}
     >
       <TableRowHeader
         muted={excluded}
