@@ -10,12 +10,24 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://tender.heyarca.app"),
   title: {
     default: "Tender — The execution market for APIs",
     template: "%s · Tender",
   },
   description:
     "Providers compete to serve your API requests on price, latency, freshness, and reliability.",
+  openGraph: {
+    title: "Tender — The execution market for APIs",
+    description:
+      "Providers compete to serve your API requests on price, latency, freshness, and reliability.",
+    siteName: "Tender",
+    type: "website",
+    url: "/",
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
