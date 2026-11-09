@@ -60,6 +60,10 @@ export function MarketsSection() {
             </article>
           ))}
         </div>
+        <Link href="/markets" className={styles.marketCatalogLink}>
+          Browse all APIs
+          <ChevronRight aria-hidden="true" strokeWidth={1.75} />
+        </Link>
       </div>
     </section>
   );

@@ -58,8 +58,8 @@ function NightPhoto() {
         ref={ref}
         className={`${styles.mediaFill} ${styles.switchPhoto}`}
         src="/landing/switch-night.jpg"
-        width={2400}
-        height={1200}
+        width={2560}
+        height={1280}
         alt=""
         loading="lazy"
         decoding="async"

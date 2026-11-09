@@ -71,7 +71,7 @@ describe("SwitchSection", () => {
     }
     expect(section().querySelectorAll("[aria-label='Market overview']")).toHaveLength(1);
     expect(routeText()).toContain("Routing to");
-    expect(routeText()).toContain("Parasail");
+    expect(routeText()).toContain("THE ZONE BIO");
   });
 
   it("does not change the store on mount", () => {
@@ -88,19 +88,19 @@ describe("SwitchSection", () => {
     const store = mount();
     fireEvent.click(button("Raise latency"));
     const state = market(store);
-    expect(conditions(store).parasail.p95LatencyMs).toBeGreaterThan(state.policy.maxP95LatencyMs);
-    expect(state.route.activeProviderId).toBe("inference-net");
-    expect(routeText()).toContain("inference.net");
+    expect(conditions(store)["the-zone-bio"].p95LatencyMs).toBeGreaterThan(state.policy.maxP95LatencyMs);
+    expect(state.route.activeProviderId).toBe("arca-labs");
+    expect(routeText()).toContain("Arca Labs");
     expect(button("Reset").hasAttribute("disabled")).toBe(false);
   });
 
   it("makes the active provider's data stale, then resets the conditions", () => {
     const store = mount();
     fireEvent.click(button("Make data stale"));
-    expect(conditions(store).parasail.dataAgeMs).toBeGreaterThan(market(store).policy.maxDataAgeMs);
-    expect(market(store).route.activeProviderId).toBe("inference-net");
+    expect(conditions(store)["the-zone-bio"].dataAgeMs).toBeGreaterThan(market(store).policy.maxDataAgeMs);
+    expect(market(store).route.activeProviderId).toBe("arca-labs");
     fireEvent.click(button("Reset"));
-    expect(conditions(store).parasail.dataAgeMs).toBe(220);
+    expect(conditions(store)["the-zone-bio"].dataAgeMs).toBe(220);
   });
 
   it("acts on the market chosen in the window bar", () => {

@@ -52,6 +52,15 @@ describe("MarketsSection", () => {
     ).toBeTruthy();
   });
 
+  it("links to the full API catalog after the example markets", () => {
+    render(<MarketsSection />);
+    const section = document.getElementById("markets")!;
+    const catalog = within(section).getByRole("link", { name: "Browse all APIs" });
+    expect(catalog.getAttribute("href")).toBe("/markets");
+    const links = within(section).getAllByRole("link");
+    expect(links.at(-1)).toBe(catalog);
+  });
+
   it("shows the product's own results from the engine's initial views", () => {
     render(<MarketsSection />);
     const btc = getInitialMarketView("btc-usd");

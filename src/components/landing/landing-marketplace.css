@@ -19,12 +19,13 @@
   overflow: clip; /* not a scroll container, so the box can grow to fit the overlay */
   aspect-ratio: 4 / 3;
   border-radius: 16px;
-  background: #cfd3cc;
+  background: var(--lp-panel);
 }
 .tenderLanding_marketplaceMedia > * { grid-area: 1 / 1; }
 /* Until the photo loads (or if it is missing), cover Chrome's broken-image glyph with the neutral fill. */
-.tenderLanding_marketplaceMedia img::after { content: ""; position: absolute; inset: 0; background: #cfd3cc; }
-.tenderLanding_marketplaceShade { position: absolute; inset: 0; background: rgb(3 8 10 / 0.14); pointer-events: none; }
+.tenderLanding_marketplaceMedia img::after { content: ""; position: absolute; inset: 0; background: var(--lp-panel); }
+.tenderLanding_marketplaceShade { position: absolute; inset: 0; background: rgb(3 8 10 / 0.2); pointer-events: none; }
+.tenderLanding_marketplaceMedia .tenderLanding_mediaFill { filter: saturate(0.8); }
 .tenderLanding_marketplaceOverlay {
   position: relative;
   z-index: 1;
@@ -69,8 +70,12 @@
 .tenderLanding_marketplaceUnit { font-size: 14px; color: var(--lp-ink-3); }
 
 .tenderLanding_marketplaceBook .tenderLanding_marketplaceLanes { width: 100%; height: 180px; overflow: visible; }
-.tenderLanding_marketplaceLane { fill: none; stroke: rgb(255 255 255 / 0.78); stroke-width: 1.5; }
-.tenderLanding_marketplaceLaneSelected { fill: none; stroke: var(--lp-lime); stroke-width: 3; }
+/* Lanes read on a busy photo: a dark casing under each line, like map roads. */
+.tenderLanding_marketplaceLanes path { fill: none; stroke-linecap: round; }
+.tenderLanding_marketplaceLane path { stroke: rgb(255 255 255 / 0.92); stroke-width: 2; }
+.tenderLanding_marketplaceLane .tenderLanding_marketplaceLaneCasing { stroke: rgb(3 8 10 / 0.28); stroke-width: 5; }
+.tenderLanding_marketplaceLaneSelected path { stroke: var(--lp-lime); stroke-width: 3; }
+.tenderLanding_marketplaceLaneSelected .tenderLanding_marketplaceLaneCasing { stroke: rgb(3 8 10 / 0.4); stroke-width: 7; }
 .tenderLanding_marketplaceJoin { display: none; }
 
 .tenderLanding_marketplaceWinner {
@@ -107,12 +112,12 @@
   .tenderLanding_marketplaceCard { gap: 32px; padding: 28px 20px 20px; border-radius: var(--lp-radius-card); }
   .tenderLanding_marketplaceCopy { gap: 16px; }
   .tenderLanding_marketplaceBody { font-size: 17px; }
-  .tenderLanding_marketplaceMedia { aspect-ratio: 4 / 5; border-radius: 12px; }
+  .tenderLanding_marketplaceMedia { aspect-ratio: 9 / 16; border-radius: 12px; }
 }
 
 /* Narrow figure (after the media queries so it wins): stack the offers above the selected offer */
 @container tenderMarketplace (max-width: 559px) {
-  .tenderLanding_marketplaceOverlay { justify-content: flex-start; gap: 16px; padding: 20px; }
+  .tenderLanding_marketplaceOverlay { gap: 16px; padding: 20px; }
   .tenderLanding_marketplaceBook { grid-template-columns: minmax(0, 1fr); }
   .tenderLanding_marketplaceOffers { gap: 8px; }
   .tenderLanding_marketplaceOffer { height: 48px; }
@@ -146,7 +151,7 @@
 .tenderLanding_closingInner { display: flex; flex-direction: column; align-items: center; padding-top: 120px; text-align: center; }
 .tenderLanding_closingTitle { font-size: 56px; line-height: 1.04; letter-spacing: -0.035em; color: var(--lp-ink); }
 .tenderLanding_closingTitle span { display: block; }
-.tenderLanding_closingInner .tenderLanding_closingBody { max-width: 27em; margin-top: 28px; font-size: 18px; line-height: 1.55; color: var(--lp-ink-2); }
+.tenderLanding_closingInner .tenderLanding_closingBody { max-width: 600px; margin-top: 28px; text-wrap: balance; font-size: 18px; line-height: 1.55; color: var(--lp-ink-2); }
 .tenderLanding_closingAction { margin-top: 40px; }
 
 @media (max-width: 1023px) {

@@ -63,13 +63,13 @@ describe("product-backed scene state", () => {
     }
   });
 
-  it("selects the real Parasail route and retains its already elapsed cooldown", () => {
+  it("selects the real THE ZONE BIO route and retains its already elapsed cooldown", () => {
     const state = createSceneState();
     const view = selectScene(state);
-    expect(view.route.activeProviderId).toBe("parasail");
+    expect(view.route.activeProviderId).toBe("the-zone-bio");
     expect(view.route.pending).toBeNull();
     expect(state.now - view.route.lastSwitchAt).toBeGreaterThan(SWITCH_COOLDOWN_MS);
-    expect(view.lastResult).toMatchObject({ status: "ok", providerId: "parasail" });
+    expect(view.lastResult).toMatchObject({ status: "ok", providerId: "the-zone-bio" });
     expect(view).toBe(selectMarketView(state.markets["btc-usd"]));
   });
 
@@ -85,11 +85,11 @@ describe("product-backed scene state", () => {
   });
 
   it("supplies stable UI row ids without changing the engine's ordering", () => {
-    expect(HERO_PROVIDER_IDS).toEqual(["parasail", "inference-net", "novita", "crusoe"]);
-    expect(TABLE_PROVIDER_IDS).toEqual(["parasail", "inference-net", "coreweave", "novita", "crusoe"]);
+    expect(HERO_PROVIDER_IDS).toEqual(["the-zone-bio", "arca-labs", "novita", "crusoe"]);
+    expect(TABLE_PROVIDER_IDS).toEqual(["the-zone-bio", "arca-labs", "coreweave", "novita", "crusoe"]);
     const switched = sceneReducer(createSceneState(), { type: "latency" });
     const view = selectScene(switched);
-    expect(view.providers[0].id).toBe("inference-net");
+    expect(view.providers[0].id).toBe("arca-labs");
     expect(TABLE_PROVIDER_IDS.map((id) => view.providersById[id].id)).toEqual(TABLE_PROVIDER_IDS);
   });
 });
@@ -103,12 +103,12 @@ describe("failure and price scenes", () => {
     const state = sceneReducer(prior, { type });
     const fresh = createSceneState();
     expect(state).toEqual(applyAndRun(fresh, {
-      type: "update-provider", marketId: "btc-usd", providerId: "parasail", patch, now: fresh.now,
+      type: "update-provider", marketId: "btc-usd", providerId: "the-zone-bio", patch, now: fresh.now,
     }));
     const view = selectScene(state);
-    expect(view.providersById.parasail.status).toBe(status);
-    expect(view.route).toMatchObject({ activeProviderId: "inference-net", pending: null, lastSwitchAt: state.now });
-    expect(view.lastResult).toMatchObject({ status: "ok", providerId: "inference-net", requestedAt: state.now });
+    expect(view.providersById["the-zone-bio"].status).toBe(status);
+    expect(view.route).toMatchObject({ activeProviderId: "arca-labs", pending: null, lastSwitchAt: state.now });
+    expect(view.lastResult).toMatchObject({ status: "ok", providerId: "arca-labs", requestedAt: state.now });
     expect(view.activity.find((entry) => entry.kind === "route-switch")).toMatchObject({ trigger: "failover" });
   });
 
@@ -117,13 +117,13 @@ describe("failure and price scenes", () => {
     const prior = tick(sceneReducer(fresh, { type: "latency" }), 3);
     const state = sceneReducer(prior, { type: "lower-price" });
     expect(state).toEqual(applyAndRun(fresh, {
-      type: "update-provider", marketId: "btc-usd", providerId: "inference-net", patch: { bidPrice: 0.65 }, now: fresh.now,
+      type: "update-provider", marketId: "btc-usd", providerId: "arca-labs", patch: { bidPrice: 0.65 }, now: fresh.now,
     }));
     const view = selectScene(state);
-    expect(view.route).toMatchObject({ activeProviderId: "inference-net", pending: null, lastSwitchAt: state.now });
-    expect(view.providersById.parasail.conditions).toEqual(fixture("parasail").defaults);
-    expect(view.providersById["inference-net"].conditions.bidPrice).toBe(0.65);
-    expect(view.lastResult).toMatchObject({ status: "ok", providerId: "inference-net", cost: 0.65 / 1e6 });
+    expect(view.route).toMatchObject({ activeProviderId: "arca-labs", pending: null, lastSwitchAt: state.now });
+    expect(view.providersById["the-zone-bio"].conditions).toEqual(fixture("the-zone-bio").defaults);
+    expect(view.providersById["arca-labs"].conditions.bidPrice).toBe(0.65);
+    expect(view.lastResult).toMatchObject({ status: "ok", providerId: "arca-labs", cost: 0.65 / 1e6 });
     expect(view.activity.find((entry) => entry.kind === "route-switch")).toMatchObject({ trigger: "optimization" });
   });
 
@@ -131,13 +131,13 @@ describe("failure and price scenes", () => {
     const lower = sceneReducer(createSceneState(), { type: "lower-price" });
     const state = sceneReducer(lower, { type: "counter-offer" });
     expect(state).toEqual(applyAndRun(lower, {
-      type: "update-provider", marketId: "btc-usd", providerId: "parasail", patch: { bidPrice: 0.6 }, now: lower.now,
+      type: "update-provider", marketId: "btc-usd", providerId: "the-zone-bio", patch: { bidPrice: 0.6 }, now: lower.now,
     }));
     const view = selectScene(state);
-    expect(view.route.activeProviderId).toBe("inference-net");
-    expect(view.route.pending).toMatchObject({ providerId: "parasail", scheduledAt: state.now, executeAt: state.now + SWITCH_COOLDOWN_MS });
+    expect(view.route.activeProviderId).toBe("arca-labs");
+    expect(view.route.pending).toMatchObject({ providerId: "the-zone-bio", scheduledAt: state.now, executeAt: state.now + SWITCH_COOLDOWN_MS });
     expect(pendingSecondsRemaining(view.route.pending!, state.now)).toBe(10);
-    expect(view.lastResult).toMatchObject({ status: "ok", providerId: "inference-net" });
+    expect(view.lastResult).toMatchObject({ status: "ok", providerId: "arca-labs" });
   });
 
   it("uses only the real remaining cooldown for a later counter-offer", () => {
@@ -158,16 +158,16 @@ describe("failure and price scenes", () => {
       state = sceneReducer(state, { type: "tick" });
       const view = selectScene(state);
       expect(state.now).toBe(start + second * CLOCK_TICK_MS);
-      expect(view.route.activeProviderId).toBe("inference-net");
+      expect(view.route.activeProviderId).toBe("arca-labs");
       expect(pendingSecondsRemaining(view.route.pending!, state.now)).toBe(10 - second);
       expect(view.lastResult).toBe(request);
       expect(view.metrics.requests.total).toBe(count);
     }
     state = sceneReducer(state, { type: "tick" });
     const switched = selectScene(state);
-    expect(switched.route).toMatchObject({ activeProviderId: "parasail", pending: null, lastSwitchAt: start + SWITCH_COOLDOWN_MS });
+    expect(switched.route).toMatchObject({ activeProviderId: "the-zone-bio", pending: null, lastSwitchAt: start + SWITCH_COOLDOWN_MS });
     expect(switched.metrics.requests.total).toBe(count + 1);
-    expect(switched.lastResult).toMatchObject({ status: "ok", providerId: "parasail", requestedAt: state.now });
+    expect(switched.lastResult).toMatchObject({ status: "ok", providerId: "the-zone-bio", requestedAt: state.now });
     expect(selectScene(tick(state, 5)).lastResult).toBe(switched.lastResult);
   });
 
@@ -178,27 +178,27 @@ describe("failure and price scenes", () => {
     expect(next.markets).toBe(state.markets);
   });
 
-  it("restores actual Parasail defaults and lets the engine schedule the return", () => {
+  it("restores actual THE ZONE BIO defaults and lets the engine schedule the return", () => {
     const failed = sceneReducer(createSceneState(), { type: "latency" });
     const state = sceneReducer(failed, { type: "restore" });
     expect(state).toEqual(applyAndRun(failed, {
-      type: "restore-provider", marketId: "btc-usd", providerId: "parasail", now: failed.now,
+      type: "restore-provider", marketId: "btc-usd", providerId: "the-zone-bio", now: failed.now,
     }));
     const view = selectScene(state);
-    expect(view.providersById.parasail.conditions).toEqual(fixture("parasail").defaults);
-    expect(view.route.activeProviderId).toBe("inference-net");
-    expect(view.route.pending?.providerId).toBe("parasail");
-    expect(view.lastResult).toMatchObject({ status: "ok", providerId: "inference-net" });
-    expect(selectScene(tick(state, 10)).lastResult).toMatchObject({ status: "ok", providerId: "parasail" });
+    expect(view.providersById["the-zone-bio"].conditions).toEqual(fixture("the-zone-bio").defaults);
+    expect(view.route.activeProviderId).toBe("arca-labs");
+    expect(view.route.pending?.providerId).toBe("the-zone-bio");
+    expect(view.lastResult).toMatchObject({ status: "ok", providerId: "arca-labs" });
+    expect(selectScene(tick(state, 10)).lastResult).toMatchObject({ status: "ok", providerId: "the-zone-bio" });
   });
 
   it("cancels the pending counter-offer when restore makes it more expensive", () => {
     const lower = sceneReducer(createSceneState(), { type: "lower-price" });
     const pending = sceneReducer(lower, { type: "counter-offer" });
     const state = sceneReducer(pending, { type: "restore" });
-    expect(selectScene(state).route).toMatchObject({ activeProviderId: "inference-net", pending: null });
-    expect(selectScene(state).providersById.parasail.conditions).toEqual(fixture("parasail").defaults);
-    expect(selectScene(tick(state, 10)).route.activeProviderId).toBe("inference-net");
+    expect(selectScene(state).route).toMatchObject({ activeProviderId: "arca-labs", pending: null });
+    expect(selectScene(state).providersById["the-zone-bio"].conditions).toEqual(fixture("the-zone-bio").defaults);
+    expect(selectScene(tick(state, 10)).route.activeProviderId).toBe("arca-labs");
   });
 
   it("reset cancels pending work and restores both complete market states", () => {
@@ -206,8 +206,8 @@ describe("failure and price scenes", () => {
     const pending = tick(sceneReducer(lower, { type: "counter-offer" }), 4);
     const state = sceneReducer(pending, { type: "reset" });
     expect(state).toEqual(createSceneState());
-    expect(selectScene(state).route).toMatchObject({ activeProviderId: "parasail", pending: null });
-    expect(selectScene(tick(state, 12)).route.activeProviderId).toBe("parasail");
+    expect(selectScene(state).route).toMatchObject({ activeProviderId: "the-zone-bio", pending: null });
+    expect(selectScene(tick(state, 12)).route.activeProviderId).toBe("the-zone-bio");
   });
 });
 
@@ -233,9 +233,9 @@ describe("real policy, request, and validation behavior", () => {
   it("fails over immediately when the active provider fails during a pending switch", () => {
     const lower = sceneReducer(createSceneState(), { type: "lower-price" });
     const pending = sceneReducer(lower, { type: "counter-offer" });
-    const state = sceneReducer(pending, { type: "provider", providerId: "inference-net", patch: { available: false } });
-    expect(selectScene(state).route).toMatchObject({ activeProviderId: "parasail", pending: null });
-    expect(selectScene(state).lastResult).toMatchObject({ status: "ok", providerId: "parasail" });
+    const state = sceneReducer(pending, { type: "provider", providerId: "arca-labs", patch: { available: false } });
+    expect(selectScene(state).route).toMatchObject({ activeProviderId: "the-zone-bio", pending: null });
+    expect(selectScene(state).lastResult).toMatchObject({ status: "ok", providerId: "the-zone-bio" });
   });
 
   it("preserves no-eligible and rejected results instead of returning an old success", () => {
@@ -257,11 +257,11 @@ describe("real policy, request, and validation behavior", () => {
   it("preserves an actual failed result without promoting the last served result", () => {
     const initial = createSceneState();
     const pinned = reduce(initial, {
-      type: "set-routing-mode", marketId: "btc-usd", mode: { kind: "pinned", providerId: "parasail" }, now: initial.now,
+      type: "set-routing-mode", marketId: "btc-usd", mode: { kind: "pinned", providerId: "the-zone-bio" }, now: initial.now,
     });
-    const state = sceneReducer(pinned, { type: "provider", providerId: "parasail", patch: { available: false } });
+    const state = sceneReducer(pinned, { type: "provider", providerId: "the-zone-bio", patch: { available: false } });
     const view = selectScene(state);
-    expect(view.lastResult).toMatchObject({ status: "failed", providerId: "parasail", error: { code: 503 }, cost: 0 });
+    expect(view.lastResult).toMatchObject({ status: "failed", providerId: "the-zone-bio", error: { code: 503 }, cost: 0 });
     expect(view.lastResult).not.toHaveProperty("payload");
     expect(view.lastResult).not.toBe(view.lastServed);
     expect(view.metrics.requests.served).toBe(initial.markets["btc-usd"].counters.served);
@@ -284,11 +284,11 @@ describe("real policy, request, and validation behavior", () => {
     const spec = MARKETS["btc-usd"].conditionInputs[key];
     for (const [value, bound] of [[-1_000_000, spec.min], [1_000_000, spec.max]]) {
       const patch = { [key]: value };
-      const next = sceneReducer(state, { type: "provider", providerId: "parasail", patch });
+      const next = sceneReducer(state, { type: "provider", providerId: "the-zone-bio", patch });
       expect(next).toEqual(applyAndRun(state, {
-        type: "update-provider", marketId: "btc-usd", providerId: "parasail", patch, now: state.now,
+        type: "update-provider", marketId: "btc-usd", providerId: "the-zone-bio", patch, now: state.now,
       }));
-      expect(selectScene(next).providersById.parasail.conditions[key]).toBeCloseTo(bound * spec.factor);
+      expect(selectScene(next).providersById["the-zone-bio"].conditions[key]).toBeCloseTo(bound * spec.factor);
     }
   });
 
@@ -297,7 +297,7 @@ describe("real policy, request, and validation behavior", () => {
     const invalidPolicy = { maxPrice: Number.NaN, maxDataAgeMs: Number.POSITIVE_INFINITY, minSuccessRate: "99" } as unknown as PolicyPatch;
     const invalidConditions = { bidPrice: Number.NaN, p95LatencyMs: Number.NEGATIVE_INFINITY, available: "false" } as unknown as ConditionsPatch;
     expect(sceneReducer(state, { type: "policy", patch: invalidPolicy })).toEqual(runBtc(state));
-    expect(sceneReducer(state, { type: "provider", providerId: "parasail", patch: invalidConditions })).toEqual(runBtc(state));
+    expect(sceneReducer(state, { type: "provider", providerId: "the-zone-bio", patch: invalidConditions })).toEqual(runBtc(state));
     expect(sceneReducer(state, { type: "provider", providerId: "unknown", patch: { bidPrice: 0.6 } })).toEqual(runBtc(state));
   });
 });
@@ -307,7 +307,7 @@ describe("purity", () => {
     { type: "latency" }, { type: "stale" }, { type: "lower-price" }, { type: "counter-offer" },
     { type: "tick" }, { type: "restore" }, { type: "run" }, { type: "reset" },
     { type: "policy", patch: { maxPrice: 0 } },
-    { type: "provider", providerId: "parasail", patch: { available: false } },
+    { type: "provider", providerId: "the-zone-bio", patch: { available: false } },
   ];
 
   it("never mutates engine state inputs", () => {

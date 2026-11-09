@@ -15,7 +15,7 @@ const BANNED = /simulat|sample|illustrat|\bdemo\b|not a claim|\blive\b|powered b
 describe("buildMarketplaceScene", () => {
   it("uses the Bitcoin fixture bids and the engine's first-ranked offer", () => {
     const scene = buildMarketplaceScene();
-    const ids = ["inference-net", "coreweave", "baseten"];
+    const ids = ["arca-labs", "coreweave", "baseten"];
     expect(scene.offers.map((offer) => offer.id)).toEqual(ids);
     for (const offer of scene.offers) {
       const fixture = getProviderFixture("btc-usd", offer.id);
@@ -33,7 +33,7 @@ describe("buildMarketplaceScene", () => {
       policy,
     );
     expect(scene.selected.id).toBe(evaluation.recommendedId);
-    expect(scene.selected.id).toBe("inference-net");
+    expect(scene.selected.id).toBe("arca-labs");
   });
 
   it("states the default Bitcoin requirements for price, speed, freshness, and reliability", () => {
@@ -69,7 +69,7 @@ describe("MarketplaceSection", () => {
     const offers = screen.getByRole("list", { name: "Provider offers" });
     const items = within(offers).getAllByRole("listitem");
     expect(items.map((item) => item.textContent)).toEqual([
-      "inference.net$0.95 /M req",
+      "Arca Labs$0.95 /M req",
       "CoreWeave$1.40 /M req",
       "Baseten$1.80 /M req",
     ]);
@@ -77,7 +77,7 @@ describe("MarketplaceSection", () => {
     expect(items[1]?.dataset.selected).toBeUndefined();
     expect(items[2]?.dataset.selected).toBeUndefined();
     expect(Array.from(offers.querySelectorAll("img")).map((img) => img.getAttribute("src"))).toEqual([
-      "/providers/inference-net.png",
+      "/providers/arca-labs.png",
       "/providers/coreweave.svg",
       "/providers/baseten.svg",
     ]);
@@ -86,7 +86,7 @@ describe("MarketplaceSection", () => {
   it("names the selected offer and the requirements it meets", () => {
     const { container } = render(<MarketplaceSection />);
     expect(screen.getByText("Selected offer:", { exact: false }).closest("p")?.textContent).toBe(
-      "Selected offer: inference.net$0.95 /M req",
+      "Selected offer: Arca Labs$0.95 /M req",
     );
     expect(screen.getByText("Your requirements")).toBeTruthy();
     const terms = Array.from(container.querySelectorAll("dt")).map((term) => term.textContent);

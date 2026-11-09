@@ -20,8 +20,8 @@ const MARKET = "btc-usd";
 
 /** The two bids the section walks through, in order. */
 export const PRICE_STEPS: readonly { providerId: ProviderId; bid: number; label: string }[] = [
-  { providerId: "inference-net", bid: 0.65, label: "inference.net bids $0.65" },
-  { providerId: "parasail", bid: 0.6, label: "Parasail counters at $0.60" },
+  { providerId: "arca-labs", bid: 0.65, label: "Arca Labs bids $0.65" },
+  { providerId: "the-zone-bio", bid: 0.6, label: "THE ZONE BIO counters at $0.60" },
 ];
 
 const sameBid = (bid: number | undefined, target: number) => bid !== undefined && Math.abs(bid - target) < 1e-9;

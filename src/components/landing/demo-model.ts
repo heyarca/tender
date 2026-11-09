@@ -16,8 +16,8 @@ export type SceneAction =
   | { type: "policy"; patch: PolicyPatch }
   | { type: "provider"; providerId: string; patch: ConditionsPatch };
 
-export const HERO_PROVIDER_IDS = ["parasail", "inference-net", "novita", "crusoe"] as const;
-export const TABLE_PROVIDER_IDS = ["parasail", "inference-net", "coreweave", "novita", "crusoe"] as const;
+export const HERO_PROVIDER_IDS = ["the-zone-bio", "arca-labs", "novita", "crusoe"] as const;
+export const TABLE_PROVIDER_IDS = ["the-zone-bio", "arca-labs", "coreweave", "novita", "crusoe"] as const;
 
 function runBtc(state: TenderState): TenderState {
   return reduce(state, { type: "run-request", marketId: "btc-usd", now: state.now });
@@ -38,15 +38,15 @@ export function sceneReducer(state: TenderState, action: SceneAction): TenderSta
     case "reset":
       return createSceneState();
     case "latency":
-      return updateProvider(createSceneState(), "parasail", { p95LatencyMs: 180 });
+      return updateProvider(createSceneState(), "the-zone-bio", { p95LatencyMs: 180 });
     case "stale":
-      return updateProvider(createSceneState(), "parasail", { dataAgeMs: 2_400 });
+      return updateProvider(createSceneState(), "the-zone-bio", { dataAgeMs: 2_400 });
     case "lower-price":
-      return updateProvider(createSceneState(), "inference-net", { bidPrice: 0.65 });
+      return updateProvider(createSceneState(), "arca-labs", { bidPrice: 0.65 });
     case "counter-offer":
-      return updateProvider(state, "parasail", { bidPrice: 0.6 });
+      return updateProvider(state, "the-zone-bio", { bidPrice: 0.6 });
     case "restore":
-      return runBtc(reduce(state, { type: "restore-provider", marketId: "btc-usd", providerId: "parasail", now: state.now }));
+      return runBtc(reduce(state, { type: "restore-provider", marketId: "btc-usd", providerId: "the-zone-bio", now: state.now }));
     case "tick": {
       const next = reduce(state, { type: "tick", now: state.now + CLOCK_TICK_MS });
       return next.markets["btc-usd"].route.activeProviderId !== state.markets["btc-usd"].route.activeProviderId

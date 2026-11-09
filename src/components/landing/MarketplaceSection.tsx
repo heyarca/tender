@@ -5,7 +5,7 @@ import { landingStyles as styles } from "./styles";
 
 const MARKET_ID = "btc-usd";
 /** Three Bitcoin price providers from the product fixtures, shown as offers. */
-const OFFER_IDS = ["inference-net", "coreweave", "baseten"] as const;
+const OFFER_IDS = ["arca-labs", "coreweave", "baseten"] as const;
 
 export interface MarketplaceOffer {
   id: string;
@@ -61,6 +61,13 @@ const LANE_Y = [14.44, 50, 85.56];
 
 function MarketplaceFigure({ scene }: { scene: MarketplaceScene }) {
   const { requirements, offers, selected } = scene;
+  // One lane per offer row, converging on the selected offer; the selected lane is drawn last, on top.
+  const lanes = offers
+    .map((offer, index) => {
+      const y = LANE_Y[index] ?? 50;
+      return { id: offer.id, selected: offer.id === selected.id, d: `M0 ${y} C46 ${y} 38 50 78 50 L100 50` };
+    })
+    .sort((a, b) => Number(a.selected) - Number(b.selected));
   return (
     <div className={`${styles.mediaFrame} ${styles.marketplaceMedia}`}>
       <picture>
@@ -99,17 +106,12 @@ function MarketplaceFigure({ scene }: { scene: MarketplaceScene }) {
             ))}
           </ul>
           <svg className={styles.marketplaceLanes} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-            {offers.map((offer, index) => {
-              const y = LANE_Y[index] ?? 50;
-              return (
-                <path
-                  key={offer.id}
-                  className={offer.id === selected.id ? styles.marketplaceLaneSelected : styles.marketplaceLane}
-                  d={`M0 ${y} C46 ${y} 38 50 78 50 L100 50`}
-                  vectorEffect="non-scaling-stroke"
-                />
-              );
-            })}
+            {lanes.map((lane) => (
+              <g key={lane.id} className={lane.selected ? styles.marketplaceLaneSelected : styles.marketplaceLane}>
+                <path className={styles.marketplaceLaneCasing} d={lane.d} vectorEffect="non-scaling-stroke" />
+                <path d={lane.d} vectorEffect="non-scaling-stroke" />
+              </g>
+            ))}
           </svg>
           <span className={styles.marketplaceJoin} aria-hidden="true" />
           <p className={styles.marketplaceWinner}>

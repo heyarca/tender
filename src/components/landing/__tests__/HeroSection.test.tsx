@@ -73,32 +73,32 @@ describe("HeroSection", () => {
       .getAllByRole("row")
       .slice(1)
       .map((row) => row.querySelector("[role=cell]")?.textContent);
-    expect(names).toEqual(["Parasail", "inference.net", "NovitaAI", "Crusoe"]);
-    expect(within(rowOf("Parasail")).getByText("Active")).toBeTruthy();
+    expect(names).toEqual(["THE ZONE BIO", "Arca Labs", "NovitaAI", "Crusoe"]);
+    expect(within(rowOf("THE ZONE BIO")).getByText("Active")).toBeTruthy();
     expect(within(rowOf("NovitaAI")).getByText("Too slow")).toBeTruthy();
     expect(within(rowOf("Crusoe")).getByText("Stale data")).toBeTruthy();
-    expect(rowOf("Parasail").textContent).toContain("$0.70 /M req");
+    expect(rowOf("THE ZONE BIO").textContent).toContain("$0.70 /M req");
   });
 
-  it("switches from Parasail to inference.net once, after the delay", () => {
+  it("switches from THE ZONE BIO to Arca Labs once, after the delay", () => {
     render(<HeroSection />);
     const status = screen.getByRole("status");
     expect(status.textContent).toBe("");
 
     act(() => vi.advanceTimersByTime(HERO_SWITCH_DELAY_MS - 1));
-    expect(within(rowOf("Parasail")).getByText("Active")).toBeTruthy();
+    expect(within(rowOf("THE ZONE BIO")).getByText("Active")).toBeTruthy();
 
     act(() => vi.advanceTimersByTime(1));
-    expect(within(rowOf("Parasail")).getByText("Too slow")).toBeTruthy();
-    expect(rowOf("Parasail").textContent).toContain("180 ms");
-    expect(within(rowOf("inference.net")).getByText("Active")).toBeTruthy();
-    expect(screen.getByText("Routing to inference.net")).toBeTruthy();
-    expect(status.textContent).toContain("Switched from Parasail to inference.net");
+    expect(within(rowOf("THE ZONE BIO")).getByText("Too slow")).toBeTruthy();
+    expect(rowOf("THE ZONE BIO").textContent).toContain("180 ms");
+    expect(within(rowOf("Arca Labs")).getByText("Active")).toBeTruthy();
+    expect(screen.getByText("Routing to Arca Labs")).toBeTruthy();
+    expect(status.textContent).toContain("Switched from THE ZONE BIO to Arca Labs");
     expect(status.textContent).toContain("P95 180 ms exceeds 150 ms");
 
     act(() => vi.advanceTimersByTime(HERO_SWITCH_DELAY_MS * 3));
-    expect(screen.getAllByText("Switched from Parasail to inference.net")).toHaveLength(1);
-    expect(within(rowOf("inference.net")).getByText("Active")).toBeTruthy();
+    expect(screen.getAllByText("Switched from THE ZONE BIO to Arca Labs")).toHaveLength(1);
+    expect(within(rowOf("Arca Labs")).getByText("Active")).toBeTruthy();
   });
 
   it("does not switch under reduced motion", () => {
@@ -107,7 +107,7 @@ describe("HeroSection", () => {
     render(<HeroSection />);
     expect(setTimeout.mock.calls.some(([, delay]) => delay === HERO_SWITCH_DELAY_MS)).toBe(false);
     act(() => vi.advanceTimersByTime(HERO_SWITCH_DELAY_MS * 3));
-    expect(within(rowOf("Parasail")).getByText("Active")).toBeTruthy();
+    expect(within(rowOf("THE ZONE BIO")).getByText("Active")).toBeTruthy();
     expect(screen.getByRole("status").textContent).toBe("");
   });
 

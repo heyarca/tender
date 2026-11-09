@@ -132,7 +132,7 @@ export function TrafficFilm() {
 
 /**
  * Hero media: the traffic film with the routing card on top. The card runs the
- * product engine in an isolated scene; once, a few seconds after mount, Parasail
+ * product engine in an isolated scene; once, a few seconds after mount, THE ZONE BIO
  * slows down and the engine fails over (skipped under reduced motion).
  */
 export function HeroMedia() {

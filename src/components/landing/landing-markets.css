@@ -8,6 +8,11 @@
 .tenderLanding_marketLink svg { width: 22px; height: 22px; flex-shrink: 0; color: var(--lp-ink-2); transition: transform 0.3s var(--lp-ease), color 0.3s var(--lp-ease); }
 .tenderLanding_marketLink:hover svg, .tenderLanding_marketLink:focus-visible svg { transform: translateX(3px); color: var(--lp-ink); }
 .tenderLanding_marketDescription { max-width: 25em; margin-top: 12px; font-size: 17px; line-height: 1.5; color: var(--lp-ink-3); }
+/* Quiet catalog link under the example cards: /markets lists every API. */
+.tenderLanding_marketCatalogLink { display: inline-flex; align-items: center; gap: 2px; margin-top: 32px; border-radius: 6px; font-size: 17px; line-height: 24px; color: var(--lp-olive); }
+.tenderLanding_marketCatalogLink svg { width: 20px; height: 20px; flex-shrink: 0; transition: transform 0.3s var(--lp-ease); }
+.tenderLanding_marketCatalogLink:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; }
+.tenderLanding_marketCatalogLink:hover svg, .tenderLanding_marketCatalogLink:focus-visible svg { transform: translateX(3px); }
 
 /* Figure: a pale stage at the bottom of the card holding a white product window. */
 .tenderLanding_marketStage { position: relative; isolation: isolate; display: flex; flex: 1 0 auto; flex-direction: column; justify-content: flex-end; min-height: 420px; margin-top: 40px; padding: 24px; overflow: hidden; border-radius: 16px; background: var(--lp-page); }
@@ -18,7 +23,11 @@
 /* A missing photo leaves the neutral stage instead of a broken-image glyph. */
 .tenderLanding_marketPhoto img::after { content: ""; position: absolute; inset: 0; background: #d9dcd6; }
 .tenderLanding_marketWindow { position: relative; width: 100%; padding: 20px 22px 18px; border-radius: 14px; background: var(--lp-surface); box-shadow: 0 0 0 1px rgb(3 8 10 / 0.06), 0 1px 2px rgb(3 8 10 / 0.04), 0 18px 40px -22px rgb(3 8 10 / 0.24); transition: transform 0.45s var(--lp-ease), box-shadow 0.45s var(--lp-ease); }
-.tenderLanding_marketWindowFloat { width: min(100%, 380px); box-shadow: 0 0 0 1px rgb(3 8 10 / 0.08), 0 2px 6px rgb(3 8 10 / 0.08), 0 28px 56px -24px rgb(3 8 10 / 0.42); }
+.tenderLanding_marketWindowFloat { align-self: flex-end; width: min(100%, 380px); box-shadow: 0 0 0 1px rgb(3 8 10 / 0.08), 0 2px 6px rgb(3 8 10 / 0.08), 0 28px 56px -24px rgb(3 8 10 / 0.42); }
+/* Crop toward the bridge tower so the result panel sits over fog and water (full photo on phones). */
+@media (min-width: 768px) {
+  .tenderLanding_marketStagePhoto .tenderLanding_marketPhoto img { transform: scale(1.5); transform-origin: 100% 10%; }
+}
 .tenderLanding_marketCard:hover .tenderLanding_marketWindow { transform: translateY(-4px); box-shadow: 0 0 0 1px rgb(3 8 10 / 0.07), 0 2px 4px rgb(3 8 10 / 0.05), 0 26px 48px -24px rgb(3 8 10 / 0.3); }
 .tenderLanding_marketCard:hover .tenderLanding_marketWindowFloat { box-shadow: 0 0 0 1px rgb(3 8 10 / 0.08), 0 2px 6px rgb(3 8 10 / 0.08), 0 34px 64px -24px rgb(3 8 10 / 0.48); }
 
@@ -83,6 +92,7 @@
 }
 @media (max-width: 767px) {
   .tenderLanding_marketGrid { gap: 16px; }
+  .tenderLanding_marketCatalogLink { margin-top: 24px; font-size: 16px; }
   .tenderLanding_marketCard { padding: 28px 8px 8px; border-radius: 18px; }
   .tenderLanding_marketHeading, .tenderLanding_marketDescription { padding-inline: 16px; }
   .tenderLanding_marketHeading { font-size: 22px; }

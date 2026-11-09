@@ -1,11 +1,11 @@
 /* Landing switch + price section styles (tenderLanding_ namespace). */
 
 /* ---------- Switch providers: photo stage with the real market UI ---------- */
-.tenderLanding_switchStage { padding: 40px 56px 56px; background: #0d1214; color: #ffffff; }
+.tenderLanding_switchStage { padding: 64px 64px 64px; background: #0d1214; color: #ffffff; }
 .tenderLanding_switchPhoto { z-index: 0; }
 .tenderLanding_switchPhoto[data-missing] { display: none; }
-.tenderLanding_switchShade { position: absolute; inset: 0; z-index: 0; background: linear-gradient(180deg, rgb(3 8 10 / 0.64) 0%, rgb(3 8 10 / 0.34) 30%, rgb(3 8 10 / 0.5) 70%, rgb(3 8 10 / 0.78) 100%); }
-.tenderLanding_switchControls { position: relative; z-index: 1; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 24px; margin-bottom: 32px; }
+.tenderLanding_switchShade { position: absolute; inset: 0; z-index: 0; background: linear-gradient(180deg, rgb(3 8 10 / 0.58) 0%, rgb(3 8 10 / 0.3) 22%, rgb(3 8 10 / 0.38) 60%, rgb(3 8 10 / 0.66) 100%); }
+.tenderLanding_switchControls { position: relative; z-index: 1; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 24px; margin-bottom: 40px; }
 .tenderLanding_switchActions { display: flex; flex-wrap: wrap; gap: 8px; }
 
 .tenderLanding_switchRoute { display: inline-flex; align-items: center; gap: 10px; min-width: 0; max-width: 100%; height: 44px; padding: 0 18px 0 16px; border: 1px solid rgb(255 255 255 / 0.18); border-radius: 999px; background: rgb(3 8 10 / 0.46); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); font-size: 16px; line-height: 20px; color: #ffffff; white-space: nowrap; box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08); }
@@ -15,7 +15,7 @@
 .tenderLanding_switchRouteName { min-width: 0; overflow: hidden; text-overflow: ellipsis; color: #ffffff; }
 .tenderLanding_switchRouteNext { flex-shrink: 0; margin-left: 2px; padding-left: 12px; border-left: 1px solid rgb(255 255 255 / 0.22); color: var(--lp-lime); }
 
-.tenderLanding_switchWindow { position: relative; z-index: 1; display: flex; flex-direction: column; max-height: 860px; }
+.tenderLanding_switchWindow { position: relative; z-index: 1; display: flex; flex-direction: column; max-height: min(860px, calc(100svh - 140px)); min-height: 560px; }
 .tenderLanding_switchBar { display: flex; flex-shrink: 0; align-items: center; justify-content: space-between; gap: 16px; min-height: 60px; padding: 12px 14px 12px 22px; border-bottom: 1px solid var(--lp-line); background: var(--lp-surface); color: var(--lp-ink); }
 .tenderLanding_switchBarTitle { display: flex; align-items: center; gap: 10px; min-width: 0; font-size: 15px; line-height: 20px; }
 .tenderLanding_switchBarLogo { flex-shrink: 0; width: auto; height: 16px; }
@@ -36,9 +36,19 @@
 .tenderLanding_switchProduct :is([class*="text-caption"], [class*="text-overline"], [class*="text-micro"], [class*="text-2xs"], [class*="text-[9px]"], [class*="text-[10px]"], [class*="text-[11px]"], [class*="text-[12px]"]),
 .tenderLanding_switchProduct svg text { font-size: 13px; }
 
+@media (min-width: 768px) and (max-width: 1399px) {
+  /* The overview's grid follows the viewport, not the window: stack it while the window is narrow
+     and lay the route card and the four stats out in one band. */
+  .tenderLanding_switchProduct > section:first-child { grid-template-columns: minmax(0, 1fr); }
+  .tenderLanding_switchProduct > section:first-child > div:last-child { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .tenderLanding_switchProduct [data-slot="active-provider"] { grid-column: 1 / -1; }
+}
+@media (max-width: 1279px) {
+  .tenderLanding_switchStage { padding: 48px 40px 40px; }
+}
 @media (max-width: 1023px) {
   .tenderLanding_switchStage { padding: 28px 28px 36px; }
-  .tenderLanding_switchWindow { max-height: 780px; }
+  .tenderLanding_switchWindow { max-height: min(780px, calc(100svh - 140px)); }
   .tenderLanding_switchProduct { padding-inline: 20px; }
 }
 @media (max-width: 767px) {
@@ -47,7 +57,7 @@
   .tenderLanding_switchRoute { align-self: flex-start; }
   .tenderLanding_switchActions { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .tenderLanding_switchActions > :last-child { grid-column: 1 / -1; }
-  .tenderLanding_switchWindow { max-height: min(680px, 82svh); border-radius: 14px; }
+  .tenderLanding_switchWindow { max-height: min(680px, calc(100svh - 120px)); min-height: 480px; border-radius: 14px; }
   .tenderLanding_switchBar { flex-wrap: wrap; padding: 12px; gap: 10px; }
   .tenderLanding_switchBar > :last-child { width: 100%; }
   .tenderLanding_switchProduct { padding: 0 12px 64px; }

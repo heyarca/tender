@@ -115,7 +115,7 @@ describe("RequirementsSection", () => {
 
   it("summarises the live route under the form", () => {
     const store = setup();
-    expect(summary().textContent).toBe("4 of 8 providers qualify.Parasail serves the next request.");
+    expect(summary().textContent).toBe("4 of 8 providers qualify.THE ZONE BIO serves the next request.");
     expect(summary().dataset.tone).toBe("positive");
 
     act(() => store.actions.setPolicy("btc-usd", { maxPrice: 0 }));
