@@ -20,12 +20,19 @@ export type WeatherMarketId =
   | "singapore-weather";
 
 /** Price markets (normalized `BtcPayload` result). */
-export type PriceMarketId = "btc-usd" | "eth-usd" | "sol-usd" | "xrp-usd" | "eur-usd" | "gbp-usd";
+export type PriceMarketId =
+  | "btc-usd"
+  | "eth-usd"
+  | "sol-usd"
+  | "xrp-usd"
+  | "eur-usd"
+  | "gbp-usd"
+  | "sz-mlcc"
+  | "lithium-carbonate"
+  | "freight-sha-lax";
 
 /** Markets that serve one indicative quote (value + unit) from a sample index. */
-export type QuoteMarketId = "sz-mlcc" | "lithium-carbonate" | "freight-sha-lax";
-
-export type MarketId = WeatherMarketId | PriceMarketId | QuoteMarketId;
+export type MarketId = WeatherMarketId | PriceMarketId;
 
 /** Provider identifier, unique inside a market (matches `public/providers/<id>.<ext>`). */
 export type ProviderId = string;
@@ -404,26 +411,9 @@ export interface BtcReference {
 }
 
 /** Indicative quote of a quote market (value in the market's unit). */
-export interface QuotePayload {
-  kind: "quote";
-  symbol: string;
-  value: number;
-  /** Display unit, e.g. "USD/reel". */
-  unit: string;
-  changeValue: number | null;
-  changePct: number | null;
-  sourceTimestamp: number;
-}
-
 /** Upstream quote (true value at `at`) injected by server code. */
-export interface QuoteReference {
-  kind: "quote";
-  at?: number;
-  value: number;
-}
-
 /** Reference value of a market: weather conditions, BTC spot price, or an indicative quote. */
-export type MarketReference = WeatherReference | BtcReference | QuoteReference;
+export type MarketReference = WeatherReference | BtcReference;
 
 interface RequestBase {
   /** `req_000123` (monotonic across markets). */
@@ -471,12 +461,7 @@ export interface RejectedRequestResult extends RequestBase {
   cost: 0;
 }
 
-export interface ServedQuoteResult extends ServedBase {
-  marketId: QuoteMarketId;
-  payload: QuotePayload;
-}
-
-export type ServedRequestResult = ServedWeatherResult | ServedBtcResult | ServedQuoteResult;
+export type ServedRequestResult = ServedWeatherResult | ServedBtcResult;
 
 /** Result of `runRequest`. Discriminate on `status`, then on `marketId` for the payload. */
 export type RequestResult = ServedRequestResult | FailedRequestResult | RejectedRequestResult;

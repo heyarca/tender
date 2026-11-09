@@ -4,7 +4,6 @@ import { quoteFromBid, withX402Payment, type SettlementAmounts } from "@/lib/pay
 import { ApiError, errorResponse, json } from "./http";
 import { requestPolicy } from "./markets";
 import { getPriceReference, getWeatherReference } from "./reference";
-import { isQuoteMarketId, QUOTE_CONTRACTS } from "@/lib/tender/fixtures";
 
 /** Trusted in-process inputs only. Public contract routes never parse these from HTTP. */
 export interface ContractOptions {
@@ -46,8 +45,7 @@ export function marketForContract(kind: "weather" | "price", value: string | nul
 function validateContract(request: Request, marketId: MarketId) {
   if (request.method !== "GET") throw new ApiError(405, "method_not_allowed", "Use GET for this contract");
   const query = new URL(request.url).searchParams;
-  const quote = isQuoteMarketId(marketId) ? QUOTE_CONTRACTS[marketId] : null;
-  const { key, value } = quote ? { key: quote.key, value: quote.value } : contractInput(marketId);
+  const { key, value } = contractInput(marketId);
   if (query.getAll(key).length > 1 || (query.has(key) && query.get(key)?.toLowerCase() !== value.toLowerCase())) {
     throw new ApiError(400, "unsupported_input", `Supported ${key}: ${value}`);
   }
@@ -60,11 +58,6 @@ function routingHeaders(selection: RouteSelection) {
   };
 }
 async function referenceFor(marketId: MarketId): Promise<{ reference: MarketReference | undefined; source: string; timestamp: string }> {
-  if (isQuoteMarketId(marketId)) {
-    // No licensed upstream feed: quotes come from Tender's sample index, and the response says so.
-    const now = Date.now();
-    return { source: "sample-index", timestamp: new Date(now).toISOString(), reference: signalReference(marketId, now) };
-  }
   // Live upstream reference data only exists for San Francisco and BTC/USD; every other market serves the deterministic signal.
   if (marketId !== "sf-weather" && marketId !== "btc-usd") {
     return { source: "signal", timestamp: new Date().toISOString(), reference: undefined };
@@ -98,13 +91,11 @@ async function serveSelection(selection: RouteSelection, settlement: SettlementA
     policy_violation: selection.policyViolation, policy_violations: selection.violations.map((r) => r.message),
     reference_source: input.source, reference_timestamp: input.timestamp,
   };
-  if (result.payload.kind === "quote") {
-    const p = result.payload;
-    return json({ ...common, symbol: p.symbol, price: p.value, unit: p.unit, currency: "USD", indicative: true,
-      source_timestamp: new Date(p.sourceTimestamp).toISOString() });
-  }
   if (result.payload.kind === "btc") {
-    return json({ ...common, pair: result.payload.pair, price: result.payload.priceUsd, currency: "USD",
+    const unit = getMarketDefinition(result.marketId).units.value;
+    // Real-world goods come from a sample index; say so in the payload.
+    const indicative = unit !== "USD" ? { unit, indicative: true } : {};
+    return json({ ...common, pair: result.payload.pair, price: result.payload.priceUsd, currency: "USD", ...indicative,
       source_timestamp: new Date(result.payload.sourceTimestamp).toISOString() });
   }
   const w = result.payload;

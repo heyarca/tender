@@ -21,11 +21,11 @@ import { SOL_USD } from "./sol-usd";
 import { XRP_USD } from "./xrp-usd";
 import { EUR_USD } from "./eur-usd";
 import { GBP_USD } from "./gbp-usd";
-import { FREIGHT_SHA_LAX, LITHIUM_CARBONATE, SZ_MLCC } from "./quotes";
+import { FREIGHT_SHA_LAX, LITHIUM_CARBONATE, SZ_MLCC } from "./real-world";
 
 export { BTC_USD, BTC_USD_DEFAULT_POLICY, BTC_USD_PROVIDERS } from "./btc-usd";
 export { SF_WEATHER, SF_WEATHER_DEFAULT_POLICY, SF_WEATHER_PROVIDERS } from "./sf-weather";
-export { FREIGHT_SHA_LAX, isQuoteMarketId, LITHIUM_CARBONATE, QUOTE_CONTRACTS, QUOTE_MARKET_IDS, SZ_MLCC } from "./quotes";
+export { FREIGHT_SHA_LAX, LITHIUM_CARBONATE, SZ_MLCC } from "./real-world";
 
 /** Market ids in display order. */
 export const MARKET_IDS = [
@@ -44,6 +44,11 @@ export const MARKET_IDS = [
   "eth-usd",
   "sol-usd",
   "xrp-usd",
+  "eur-usd",
+  "gbp-usd",
+  "sz-mlcc",
+  "lithium-carbonate",
+  "freight-sha-lax",
 ] as const satisfies readonly MarketId[];
 
 /** Market definitions by id. */

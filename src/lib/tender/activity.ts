@@ -470,9 +470,7 @@ export function requestEntry(result: RequestResult): EntryFields {
   const value =
     result.payload.kind === "weather"
       ? `${format.temperature(result.payload.temperatureF)}, ${result.payload.condition}`
-      : result.payload.kind === "quote"
-        ? `${result.payload.value.toLocaleString("en-US", { maximumFractionDigits: 4 })} ${result.payload.unit}`
-        : `BTC-USD ${format.usd(result.payload.priceUsd)}`;
+      : `${result.payload.pair} ${format.usd(result.payload.priceUsd)}`;
   return {
     kind: "request-served",
     requestId: result.requestId,

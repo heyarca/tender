@@ -25,24 +25,13 @@ import { MarketGlyph } from "@/components/market/page/market-icon";
 import { format, MARKET_IDS, type MarketIcon, type MarketId, type ProviderRow } from "@/lib/tender";
 import { useMarketView } from "@/lib/tender/client";
 
-type Category = "Weather" | "Components" | "Commodities" | "Logistics" | "Currencies" | "Crypto prices";
-
-/** Display order of categories: weather first, crypto last. */
-const CATEGORY_ORDER: Category[] = ["Weather", "Components", "Commodities", "Logistics", "Currencies", "Crypto prices"];
-
-const CATEGORY_BY_ICON: Record<MarketIcon, Category> = {
-  cloud: "Weather",
-  cpu: "Components",
-  pickaxe: "Commodities",
-  ship: "Logistics",
-  euro: "Currencies",
-  pound: "Currencies",
-  bitcoin: "Crypto prices",
-  coins: "Crypto prices",
-};
+type Category = "Weather" | "Crypto prices" | "Currencies" | "Real-world goods";
 
 function categoryFor(icon: MarketIcon): Category {
-  return CATEGORY_BY_ICON[icon];
+  if (icon === "cloud") return "Weather";
+  if (icon === "euro" || icon === "pound") return "Currencies";
+  if (icon === "cpu" || icon === "pickaxe" || icon === "ship") return "Real-world goods";
+  return "Crypto prices";
 }
 
 /** Decorative square thumbnails, cycled by market order so new markets pick one up automatically. */

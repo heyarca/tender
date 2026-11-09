@@ -200,6 +200,6 @@ export const GBP_USD: MarketDefinition = {
     },
   },
   providers: GBP_USD_PROVIDERS,
-  codeSamples: getApiSnippets({ id: "gbp-usd", identifier: "prices/gbp-usd" }, GBP_USD_DEFAULT_POLICY),
+  codeSamples: getApiSnippets({ id: "gbp-usd", identifier: "prices/gbp-usd", dataAgeUnit: "ms" }, GBP_USD_DEFAULT_POLICY),
   sampleResponse,
 };

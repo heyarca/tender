@@ -238,6 +238,10 @@ export const PRICE_MARKETS: Partial<Record<MarketId, { pair: string; basePrice: 
   "xrp-usd": { pair: "XRP-USD", basePrice: 2.14, sensitivity: 1.8 },
   "eur-usd": { pair: "EUR-USD", basePrice: 1.0812, sensitivity: 0.08 },
   "gbp-usd": { pair: "GBP-USD", basePrice: 1.2734, sensitivity: 0.09 },
+  // Sample indexes for real-world goods, not live feeds.
+  "sz-mlcc": { pair: "MLCC-0402-100NF", basePrice: 3.42, sensitivity: 0.15 },
+  "lithium-carbonate": { pair: "LI2CO3-CN", basePrice: 10_480, sensitivity: 0.1 },
+  "freight-sha-lax": { pair: "SHA-LAX-40FT", basePrice: 2_315, sensitivity: 0.12 },
 };
 
 /** True price at `at` for any price market; `btc-usd` is byte-identical to `btcPriceAt`. */
@@ -252,26 +256,4 @@ export function priceAtFor(marketId: MarketId, at: number, origin: number): numb
 /** Pair label for any price market; `btc-usd` is `"BTC-USD"`. */
 export function pairFor(marketId: MarketId): string {
   return PRICE_MARKETS[marketId]?.pair ?? "BTC-USD";
-}
-
-/** Baselines of the indicative quote markets (USD, in each market's unit). */
-export const QUOTE_BASELINES = {
-  "sz-mlcc": { value: 3.42, volatility: 0.004, seed: 0x5a01 },
-  "lithium-carbonate": { value: 10_480, volatility: 0.002, seed: 0x5a02 },
-  "freight-sha-lax": { value: 2_315, volatility: 0.003, seed: 0x5a03 },
-} as const;
-
-const quoteOctaves = (seed: number) => octaves(seed, [
-  [60, 0.3],
-  [600, 0.6],
-  [3600, 1],
-]);
-const QUOTE_OCTAVES = Object.fromEntries(
-  Object.entries(QUOTE_BASELINES).map(([id, b]) => [id, quoteOctaves(b.seed)]),
-) as Record<keyof typeof QUOTE_BASELINES, Octave[]>;
-
-/** Indicative quote at `at`: the baseline drifting by a small sample walk (not a live feed). */
-export function quoteValueAt(marketId: keyof typeof QUOTE_BASELINES, at: number, origin: number): number {
-  const b = QUOTE_BASELINES[marketId];
-  return b.value * (1 + b.volatility * anchoredNoise((at - origin) / 1000, QUOTE_OCTAVES[marketId]));
 }

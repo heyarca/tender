@@ -89,7 +89,10 @@ function ApiSnippets({ view }: { view: MarketView }) {
   const origin = useOrigin();
   const { definition, policy, lastResult } = view;
 
-  const snippets = useMemo(() => getApiSnippets(definition, policy), [definition, policy]);
+  const snippets = useMemo(
+    () => getApiSnippets({ id: definition.id, identifier: definition.identifier, dataAgeUnit: definition.units.dataAge === "min" ? "min" : "ms" }, policy),
+    [definition, policy],
+  );
   const code = useMemo(() => {
     switch (tab) {
       case "curl":

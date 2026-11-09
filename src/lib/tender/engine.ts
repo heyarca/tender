@@ -19,10 +19,10 @@ import {
 import { AUTO_RUN_INTERVAL_MS, CLOCK_TICK_MS, FIXTURE_EPOCH, SERIES_SEED_POINTS } from "./constants";
 import { pushActivity, type StepContext } from "./context";
 import { evaluateProvider } from "./evaluate";
-import { getDefaultPolicy, getProviderFixture, isQuoteMarketId, MARKET_IDS, MARKETS } from "./fixtures";
+import { getDefaultPolicy, getProviderFixture, MARKET_IDS, MARKETS } from "./fixtures";
 import { appendSample, exactSample, monitorMarket, seedHistory } from "./monitor";
 import { createRng } from "./random";
-import { btcProviderPrice, quoteProviderValue, runRequest, weatherPayload } from "./requests";
+import { btcProviderPrice, runRequest, weatherPayload } from "./requests";
 import { evaluateMarketState, isPendingDue, reconcileRoute, type ReconcileCause } from "./router";
 import { sanitizeConditionsPatch, sanitizePolicy, sanitizePolicyPatch } from "./sanitize";
 import type {
@@ -84,10 +84,7 @@ const SEEDS: Record<MarketId, number> = {
   "sol-usd": 0x7f4a7c15,
   "xrp-usd": 0x6a09e667,
   "eur-usd": 0xbb67ae85,
-  "gbp-usd": 0x3c6ef372,
-  "sz-mlcc": 0x2c1b3c6d,
-  "lithium-carbonate": 0x297a2d39,
-  "freight-sha-lax": 0x6b43a9b5,
+  "gbp-usd": 0x3c6ef372, "sz-mlcc": 0x2c1b3c6d, "lithium-carbonate": 0x297a2d39, "freight-sha-lax": 0x6b43a9b5,
 };
 const SERIES_STEP_MS: Record<MarketId, number> = {
   "sf-weather": 60_000,
@@ -101,10 +98,7 @@ const SERIES_STEP_MS: Record<MarketId, number> = {
   "sol-usd": 3_000,
   "xrp-usd": 3_000,
   "eur-usd": 3_000,
-  "gbp-usd": 3_000,
-  "sz-mlcc": 60_000,
-  "lithium-carbonate": 60_000,
-  "freight-sha-lax": 60_000,
+  "gbp-usd": 3_000, "sz-mlcc": 60_000, "lithium-carbonate": 60_000, "freight-sha-lax": 60_000,
 };
 
 export interface InitialStateOptions {
@@ -121,11 +115,9 @@ function seedSeries(marketId: MarketId, providerId: ProviderId | null, condition
   return Array.from({ length: SERIES_SEED_POINTS }, (_, index) => {
     const at = end - (SERIES_SEED_POINTS - index) * step;
     const value =
-      isQuoteMarketId(marketId)
-        ? quoteProviderValue(marketId, at - age, origin, bias)
-        : MARKETS[marketId].units.dataAge === "ms"
-          ? btcProviderPrice(at - age, origin, bias, undefined, undefined, marketId)
-          : weatherPayload(at - age, origin, bias, undefined, undefined, marketId).temperatureF;
+      MARKETS[marketId].units.dataAge === "ms"
+        ? btcProviderPrice(at - age, origin, bias, undefined, undefined, marketId)
+        : weatherPayload(at - age, origin, bias, undefined, undefined, marketId).temperatureF;
     return { at, value, providerId, requestId: null };
   });
 }

@@ -2,7 +2,7 @@ import { wrapFetchWithPayment, x402Client, decodePaymentResponseHeader } from "@
 import { ExactEvmScheme } from "@x402/evm/exact/client";
 import { decodePaymentRequiredHeader } from "@x402/core/http";
 import { PREFERENCES } from "@/lib/tender";
-import { isMarketId, isQuoteMarketId, MARKETS, QUOTE_CONTRACTS } from "@/lib/tender/fixtures";
+import { isMarketId, MARKETS } from "@/lib/tender/fixtures";
 import { parsePaymentConditions } from "./conditions";
 import type { PaymentRequirements } from "@x402/core/types";
 import { EXPLORER_URL, PAYMENT_NETWORK, USDC_ADDRESS } from "./config";
@@ -36,7 +36,7 @@ export function parsePaidRequestInput(value: unknown): PaidRequestInput {
 
 /** Caller controls the base URL, never derive it from an incoming Host header. */
 export function contractUrl(baseUrl: string, input: PaidRequestInput): URL {
-  const url = new URL(isQuoteMarketId(input.market) ? QUOTE_CONTRACTS[input.market].path : input.market === "sf-weather" ? "/api/v1/weather/current" : "/api/v1/prices/spot", baseUrl);
+  const url = new URL(MARKETS[input.market].units.dataAge === "min" ? "/api/v1/weather/current" : "/api/v1/prices/spot", baseUrl);
   const names = { maxPrice: "max_price", maxP95LatencyMs: "max_p95_ms", maxDataAgeMs: "max_data_age_ms", minSuccessRate: "min_success_rate", preference: "preference" } as const;
   for (const [key, name] of Object.entries(names)) {
     const value = input.policy?.[key as keyof typeof names];

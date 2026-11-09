@@ -215,6 +215,6 @@ export const SINGAPORE_WEATHER: MarketDefinition = {
     },
   },
   providers: SINGAPORE_WEATHER_PROVIDERS,
-  codeSamples: getApiSnippets({ id: "singapore-weather", identifier: "weather/singapore" }, SINGAPORE_WEATHER_DEFAULT_POLICY),
+  codeSamples: getApiSnippets({ id: "singapore-weather", identifier: "weather/singapore", dataAgeUnit: "min" }, SINGAPORE_WEATHER_DEFAULT_POLICY),
   sampleResponse,
 };

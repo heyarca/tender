@@ -1,12 +1,7 @@
 import { MARKETS, type MarketId, type RoutingPolicy } from "@/lib/tender";
-import { isQuoteMarketId, QUOTE_CONTRACTS } from "@/lib/tender/fixtures";
 
 /** Contract endpoint of a market (path + its one supported argument). */
 export function contractPath(marketId: MarketId): string {
-  if (isQuoteMarketId(marketId)) {
-    const c = QUOTE_CONTRACTS[marketId];
-    return `${c.path}?${c.key}=${c.value}`;
-  }
   const definition = MARKETS[marketId];
   const slug = definition.identifier.split("/")[1] ?? "";
   return definition.units.dataAge === "min"

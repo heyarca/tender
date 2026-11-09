@@ -215,6 +215,6 @@ export const NY_WEATHER: MarketDefinition = {
     },
   },
   providers: NY_WEATHER_PROVIDERS,
-  codeSamples: getApiSnippets({ id: "ny-weather", identifier: "weather/new-york" }, NY_WEATHER_DEFAULT_POLICY),
+  codeSamples: getApiSnippets({ id: "ny-weather", identifier: "weather/new-york", dataAgeUnit: "min" }, NY_WEATHER_DEFAULT_POLICY),
   sampleResponse,
 };

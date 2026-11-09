@@ -87,9 +87,6 @@ export function toWeatherReading(served: ServedRequestResult | null): WeatherRea
 export function toBitcoinQuote(served: ServedRequestResult | null): BitcoinQuote | null {
   if (!served) return null;
   const p = served.payload;
-  if (p.kind === "quote") {
-    return { pair: `${p.symbol} · ${p.unit}`, price: p.value, change: p.changeValue, sourceTimestamp: p.sourceTimestamp, dataAgeMs: served.dataAgeMs, latencyMs: served.latencyMs };
-  }
   if (p.kind !== "btc") return null;
   return {
     pair: p.pair.replace("-", "/"),

@@ -200,6 +200,6 @@ export const BTC_USD: MarketDefinition = {
     },
   },
   providers: BTC_USD_PROVIDERS,
-  codeSamples: getApiSnippets({ id: "btc-usd", identifier: "prices/btc-usd" }, BTC_USD_DEFAULT_POLICY),
+  codeSamples: getApiSnippets({ id: "btc-usd", identifier: "prices/btc-usd", dataAgeUnit: "ms" }, BTC_USD_DEFAULT_POLICY),
   sampleResponse,
 };

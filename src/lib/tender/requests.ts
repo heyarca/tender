@@ -7,8 +7,8 @@ import { FIXTURE_EPOCH, LATENCY_LIMIT, REQUEST_LOG_LIMIT, SERIES_LIMIT } from ".
 import { nextRequestId, pushActivity, type StepContext } from "./context";
 import { compass } from "./format";
 import { createRng, type Rng } from "./random";
-import { conditionLabel, pairFor, priceAtFor, quoteValueAt, weatherAtFor, weatherLocationFor, type WeatherState } from "./signals";
-import { getProviderFixture, isQuoteMarketId, MARKETS, QUOTE_CONTRACTS } from "./fixtures";
+import { conditionLabel, pairFor, priceAtFor, weatherAtFor, weatherLocationFor, type WeatherState } from "./signals";
+import { getProviderFixture, MARKETS } from "./fixtures";
 import type {
   BtcPayload,
   BtcReference,
@@ -17,9 +17,6 @@ import type {
   PriceMarketId,
   WeatherMarketId,
   MarketState,
-  QuoteMarketId,
-  QuotePayload,
-  QuoteReference,
   ProviderConditions,
   ProviderId,
   RequestResult,
@@ -57,7 +54,7 @@ export function sampleDataAge(rng: Rng, dataAgeMs: number, marketId: MarketId): 
 
 /** Weather-style markets report data age in minutes; price markets in milliseconds. */
 function isWeatherMarket(marketId: MarketId): boolean {
-  return !isQuoteMarketId(marketId) && MARKETS[marketId].units.dataAge === "min";
+  return MARKETS[marketId].units.dataAge === "min";
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
@@ -198,25 +195,11 @@ export function btcProviderPrice(
   return round(anchoredBtcPriceAt(sourceTimestamp, origin, reference, referenceAt, marketId) + bias * 1.5 * scale, priceDecimals(marketId));
 }
 
-/** True quote at `at`, anchored to an upstream reference when one is given. */
-export function anchoredQuoteAt(marketId: QuoteMarketId, at: number, origin: number, reference?: QuoteReference, referenceAt: number = at): number {
-  if (!reference || !Number.isFinite(reference.value)) return quoteValueAt(marketId, at, origin);
-  const anchor = reference.at ?? referenceAt;
-  return reference.value + (quoteValueAt(marketId, at, origin) - quoteValueAt(marketId, anchor, origin));
-}
-
-/** Quote a provider reports for `sourceTimestamp` (true value + bias ≤ 0.2%). */
-export function quoteProviderValue(marketId: QuoteMarketId, sourceTimestamp: number, origin: number, bias: number, reference?: QuoteReference, referenceAt?: number): number {
-  const value = anchoredQuoteAt(marketId, sourceTimestamp, origin, reference, referenceAt);
-  return round(value * (1 + bias * 0.002), value < 100 ? 4 : 2);
-}
-
 /**
  * Deterministic reference value of a market at `at` (the fallback when no
  * upstream value is available).
  */
 export function signalReference(marketId: MarketId, at: number, origin: number = FIXTURE_EPOCH): MarketReference {
-  if (isQuoteMarketId(marketId)) return { kind: "quote", at, value: quoteValueAt(marketId, at, origin) };
   if (!isWeatherMarket(marketId)) return { kind: "btc", at, priceUsd: round(priceAtFor(marketId, at, origin), priceDecimals(marketId)) };
   const w = weatherAtFor(marketId, at, origin);
   return {
@@ -242,14 +225,7 @@ const FAILURES = [
 
 /** Value plotted in the market chart for a served result. */
 export function seriesValue(result: ServedRequestResult): number {
-  switch (result.payload.kind) {
-    case "btc":
-      return result.payload.priceUsd;
-    case "quote":
-      return result.payload.value;
-    case "weather":
-      return result.payload.temperatureF;
-  }
+  return result.payload.kind === "btc" ? result.payload.priceUsd : result.payload.temperatureF;
 }
 
 /** Input of `sampleRequest`: everything a single request depends on. */
@@ -376,22 +352,6 @@ export function sampleRequest(input: RequestSampleInput): { result: RequestResul
     };
   }
   const sourceTimestamp = now - dataAgeMs;
-  if (isQuoteMarketId(marketId)) {
-    const value = quoteProviderValue(marketId, sourceTimestamp, origin, fixture.bias, reference?.kind === "quote" ? reference : undefined, now);
-    const previousValue = input.previousPriceUsd ?? null;
-    const changeValue = previousValue !== null ? round(value - previousValue, 4) : null;
-    const contract = QUOTE_CONTRACTS[marketId];
-    const payload: QuotePayload = {
-      kind: "quote",
-      symbol: contract.symbol,
-      value,
-      unit: contract.unit,
-      changeValue,
-      changePct: previousValue && changeValue !== null ? round((changeValue / previousValue) * 100, 4) : null,
-      sourceTimestamp,
-    };
-    return { result: { ...base, marketId, payload }, rng: rng.state };
-  }
   const priceUsd = btcProviderPrice(
     sourceTimestamp,
     origin,
