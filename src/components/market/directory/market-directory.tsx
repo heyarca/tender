@@ -414,7 +414,7 @@ function MarketCard({ row }: { row: DirectoryRow }) {
       {row.image ? (
         <picture className="size-16 shrink-0 overflow-hidden rounded-md border border-border bg-muted">
           <source srcSet={row.image.avif} type="image/avif" />
-          <img src={row.image.jpg} alt={row.image.alt} width={64} height={64} className="size-full object-cover" />
+          <img src={row.image.jpg} alt={row.image.alt} width={64} height={64} className="size-full object-cover grayscale contrast-110" />
         </picture>
       ) : (
         <img
@@ -422,7 +422,7 @@ function MarketCard({ row }: { row: DirectoryRow }) {
           alt=""
           width={64}
           height={64}
-          className="size-16 shrink-0 rounded-md border border-border object-cover"
+          className="size-16 shrink-0 rounded-md border border-border object-cover grayscale contrast-110"
         />
       )}
       <div className="min-w-0 flex-1">
