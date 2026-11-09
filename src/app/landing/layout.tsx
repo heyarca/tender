@@ -1,17 +1,11 @@
-import { Geist } from "next/font/google";
-import "@/components/landing/landing.css";
+import { ppMori } from "@/fonts/pp-mori";
+import "@/components/landing/landing-base.css";
+import "@/components/landing/landing-hero.css";
+import "@/components/landing/landing-markets.css";
+import "@/components/landing/landing-product.css";
+import "@/components/landing/landing-marketplace.css";
 import { landingStyles as styles } from "@/components/landing/styles";
 
-const display = Geist({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-landing-display",
-});
-
-export default function LandingLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return <div className={`${styles.site} ${display.variable}`}>{children}</div>;
+export default function LandingLayout({ children }: LayoutProps<"/landing">) {
+  return <div className={`${styles.site} ${ppMori.variable}`}>{children}</div>;
 }

@@ -1,0 +1,128 @@
+/* Landing hero (tenderLanding_hero* namespace). */
+
+/* Section: the floating nav covers the top ~96px; the tracks arc above the headline. */
+.tenderLanding_hero { position: relative; isolation: isolate; padding-top: 236px; }
+
+/* Tracks: faint double-line lanes, unscaled and centred, cropped by the viewport. */
+.tenderLanding_heroTracks { position: absolute; top: 0; left: 50%; z-index: -1; width: 1600px; height: 260px; margin-left: -800px; pointer-events: none; }
+.tenderLanding_heroTracksSvg { width: 1600px; height: 260px; overflow: visible; }
+.tenderLanding_heroLane path { stroke: rgb(3 8 10 / 0.1); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.tenderLanding_heroLaneWin path { stroke: rgb(3 8 10 / 0.15); }
+.tenderLanding_heroTracks .tenderLanding_heroLaneMark { stroke: rgb(3 8 10 / 0.3); stroke-width: 1.25; stroke-linecap: round; stroke-linejoin: round; }
+.tenderLanding_heroVehicle {
+  position: absolute; top: 0; left: 0;
+  width: 18px; height: 7px; border-radius: 4px;
+  background: var(--lp-lime);
+  box-shadow: 0 0 0 1px rgb(3 8 10 / 0.32), 0 2px 6px -1px rgb(3 8 10 / 0.24);
+  offset-rotate: auto;
+  offset-distance: 50%;
+  animation: tenderLanding_heroDrive 30s linear -11s infinite;
+}
+@keyframes tenderLanding_heroDrive {
+  0% { offset-distance: 0%; opacity: 0; }
+  4% { opacity: 1; }
+  96% { opacity: 1; }
+  100% { offset-distance: 100%; opacity: 0; }
+}
+
+/* Intro */
+.tenderLanding_heroIntro { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.tenderLanding_heroTitle { font-size: 64px; font-weight: 400; line-height: 1; letter-spacing: -0.035em; color: var(--lp-ink); }
+.tenderLanding_heroTitleLine { display: block; }
+.tenderLanding_heroIntro .tenderLanding_heroLead { max-width: 540px; margin-top: 24px; font-size: 18px; line-height: 1.5; color: var(--lp-ink-2); text-wrap: balance; }
+.tenderLanding_heroActions { display: flex; justify-content: center; gap: 12px; margin-top: 32px; }
+
+/* Media block: film + routing card */
+.tenderLanding_heroMediaWrap { margin-top: 64px; }
+.tenderLanding_heroMedia { width: 100%; aspect-ratio: 2 / 1; min-height: 560px; background: #c9cdc6; }
+.tenderLanding_heroVideo { opacity: 0; transition: opacity 0.6s var(--lp-ease); }
+.tenderLanding_heroVideo[data-started] { opacity: 1; }
+.tenderLanding_heroFilmToggle { position: absolute; right: 24px; bottom: 24px; z-index: 2; }
+.tenderLanding_heroStage { position: absolute; inset: 0; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr) 560px; gap: 32px; align-items: start; padding: 40px; pointer-events: none; }
+.tenderLanding_heroStage > * { pointer-events: auto; }
+
+/* Routing card */
+.tenderLanding_heroCard { grid-column: 2; grid-row: 1; padding: 20px 20px 10px; border-radius: 18px; background: var(--lp-surface); box-shadow: var(--lp-shadow-window); color: var(--lp-ink); font-size: 15px; line-height: 20px; text-align: left; }
+.tenderLanding_heroCardHead { display: flex; align-items: center; gap: 12px; }
+.tenderLanding_heroMarketIcon { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 999px; background: var(--lp-surface); box-shadow: inset 0 0 0 1px var(--lp-line-strong); color: var(--lp-olive); }
+.tenderLanding_heroCardHeading { display: flex; flex-direction: column; min-width: 0; }
+.tenderLanding_heroCardTitle { font-size: 17px; line-height: 22px; font-weight: 600; letter-spacing: -0.01em; }
+.tenderLanding_heroCardRoute { font-size: 14px; line-height: 20px; color: var(--lp-ink-3); }
+
+.tenderLanding_heroLimits { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 18px; }
+.tenderLanding_heroLimit { padding: 9px 12px 10px; border-radius: 10px; background: rgb(3 8 10 / 0.035); }
+.tenderLanding_heroLimit dt { font-size: 14px; line-height: 20px; color: var(--lp-ink-3); }
+.tenderLanding_heroLimit dd { margin: 2px 0 0; font-size: 15px; line-height: 20px; color: var(--lp-ink); white-space: nowrap; }
+.tenderLanding_heroUnit { font-size: 14px; color: var(--lp-ink-3); }
+
+.tenderLanding_heroTable { margin-top: 14px; }
+.tenderLanding_heroRow { display: grid; grid-template-columns: minmax(0, 1fr) 124px 72px 112px; align-items: center; column-gap: 12px; min-height: 52px; margin-inline: -8px; padding-inline: 8px; border-radius: 10px; transition: background-color 0.5s var(--lp-ease); }
+.tenderLanding_heroTableHead .tenderLanding_heroRow { min-height: 36px; font-size: 14px; color: var(--lp-ink-3); }
+.tenderLanding_heroTable [role="rowgroup"] + [role="rowgroup"] .tenderLanding_heroRow + .tenderLanding_heroRow { box-shadow: inset 0 1px 0 var(--lp-line); }
+.tenderLanding_heroRow[data-active] { background: rgb(200 255 0 / 0.16); }
+.tenderLanding_heroRow[data-active] + .tenderLanding_heroRow, .tenderLanding_heroTable [role="rowgroup"] + [role="rowgroup"] .tenderLanding_heroRow[data-active] { box-shadow: none; }
+.tenderLanding_heroCellName { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.tenderLanding_heroProviderName { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tenderLanding_heroCellPrice, .tenderLanding_heroCellLatency { text-align: right; white-space: nowrap; transition: color 0.4s var(--lp-ease); }
+.tenderLanding_heroCellState { display: flex; justify-content: flex-end; }
+.tenderLanding_heroCellPrice[data-failed], .tenderLanding_heroCellLatency[data-failed] { color: var(--warning-text); }
+.tenderLanding_heroMobileLabel { display: none; }
+
+.tenderLanding_heroState { display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 10px; border-radius: 8px; font-size: 14px; line-height: 20px; white-space: nowrap; transition: background-color 0.4s var(--lp-ease), color 0.4s var(--lp-ease); }
+.tenderLanding_heroState[data-tone="active"] { padding-left: 7px; background: var(--lp-lime); color: var(--lp-ink); box-shadow: inset 0 0 0 1px var(--lp-lime-border); }
+.tenderLanding_heroState[data-tone="eligible"] { background: rgb(3 8 10 / 0.05); color: var(--lp-ink-2); }
+.tenderLanding_heroState[data-tone="excluded"] { background: var(--warning-bg); color: var(--warning-text); }
+
+/* Route event toast */
+.tenderLanding_heroToastRegion { grid-column: 1; grid-row: 1; justify-self: start; align-self: start; }
+.tenderLanding_heroToast { display: flex; align-items: flex-start; gap: 12px; max-width: 380px; padding: 14px 18px 14px 14px; border-radius: 16px; background: var(--lp-surface); box-shadow: var(--lp-shadow-window); text-align: left; animation: tenderLanding_heroToastIn 0.6s var(--lp-ease) both; }
+.tenderLanding_heroToastIcon { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 10px; background: var(--lp-lime); color: var(--lp-ink); box-shadow: inset 0 0 0 1px var(--lp-lime-border); }
+.tenderLanding_heroToastText { display: flex; flex-direction: column; gap: 2px; padding-top: 1px; }
+.tenderLanding_heroToastTitle { font-size: 15px; line-height: 20px; color: var(--lp-ink); }
+.tenderLanding_heroToastDetail { font-size: 14px; line-height: 20px; color: var(--lp-ink-3); }
+@keyframes tenderLanding_heroToastIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (max-width: 1279px) {
+  .tenderLanding_heroStage { grid-template-columns: minmax(0, 1fr) 520px; gap: 24px; padding: 32px; }
+}
+@media (max-width: 1023px) {
+  .tenderLanding_hero { padding-top: 200px; }
+  .tenderLanding_heroTitle { font-size: 56px; }
+  .tenderLanding_heroMediaWrap { margin-top: 64px; }
+  .tenderLanding_heroMedia { aspect-ratio: auto; min-height: 640px; }
+  .tenderLanding_heroStage { display: flex; flex-direction: column; justify-content: space-between; align-items: center; gap: 24px; padding: 32px 32px 88px; }
+  .tenderLanding_heroToastRegion { align-self: stretch; display: flex; justify-content: center; }
+  .tenderLanding_heroCard { width: min(100%, 560px); }
+}
+@media (max-width: 767px) {
+  .tenderLanding_hero { padding-top: 168px; }
+  .tenderLanding_heroTracks { transform: scale(0.72); transform-origin: 50% 0; }
+  .tenderLanding_heroTitle { font-size: 44px; line-height: 1.02; }
+  .tenderLanding_heroIntro .tenderLanding_heroLead { margin-top: 20px; font-size: 17px; }
+  .tenderLanding_heroActions { margin-top: 28px; width: 100%; max-width: 420px; }
+  .tenderLanding_heroMediaWrap { margin-top: 48px; }
+  .tenderLanding_heroMedia { min-height: 680px; border-radius: 20px; }
+  .tenderLanding_heroStage { padding: 12px 12px 72px; justify-content: space-between; }
+  .tenderLanding_heroFilmToggle { right: 12px; bottom: 16px; }
+  .tenderLanding_heroCard { width: 100%; padding: 16px 16px 6px; border-radius: 16px; }
+  .tenderLanding_heroLimits { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tenderLanding_heroTableHead { display: none; }
+  .tenderLanding_heroRow { grid-template-columns: auto auto minmax(0, 1fr) auto; grid-template-rows: auto auto; row-gap: 2px; column-gap: 10px; min-height: 0; padding-block: 10px; }
+  .tenderLanding_heroCellName { grid-column: 1 / 4; grid-row: 1; }
+  .tenderLanding_heroCellPrice { grid-column: 1; grid-row: 2; padding-left: 36px; text-align: left; color: var(--lp-ink-2); }
+  .tenderLanding_heroCellLatency { grid-column: 2; grid-row: 2; text-align: left; color: var(--lp-ink-2); }
+  .tenderLanding_heroCellState { grid-column: 4; grid-row: 1 / 3; }
+  .tenderLanding_heroMobileLabel { display: inline; color: var(--lp-ink-3); }
+  .tenderLanding_heroToast { max-width: none; width: 100%; }
+}
+@media (max-width: 479px) {
+  .tenderLanding_heroTitle { font-size: 40px; }
+  .tenderLanding_heroActions { flex-direction: column; }
+  .tenderLanding_heroActions .tenderLanding_button { flex: none; width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tenderLanding_heroVehicle { animation: none; offset-distance: 50%; opacity: 1; }
+}

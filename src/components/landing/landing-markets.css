@@ -1,0 +1,107 @@
+/* Landing markets + requirements section styles (tenderLanding_ namespace). */
+
+/* ---------- #markets: two tall market cards ---------- */
+.tenderLanding_marketGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.tenderLanding_marketCard { display: flex; flex-direction: column; min-width: 0; min-height: 600px; padding: 48px; }
+.tenderLanding_marketHeading { font-size: 24px; line-height: 1.25; letter-spacing: -0.018em; }
+.tenderLanding_marketLink { display: inline-flex; align-items: center; gap: 2px; color: var(--lp-ink); }
+.tenderLanding_marketLink svg { width: 22px; height: 22px; flex-shrink: 0; color: var(--lp-ink-2); transition: transform 0.3s var(--lp-ease), color 0.3s var(--lp-ease); }
+.tenderLanding_marketLink:hover svg, .tenderLanding_marketLink:focus-visible svg { transform: translateX(3px); color: var(--lp-ink); }
+.tenderLanding_marketDescription { max-width: 25em; margin-top: 12px; font-size: 17px; line-height: 1.5; color: var(--lp-ink-3); }
+
+/* Figure: a pale stage at the bottom of the card holding a white product window. */
+.tenderLanding_marketStage { position: relative; isolation: isolate; display: flex; flex: 1 0 auto; flex-direction: column; justify-content: flex-end; min-height: 420px; margin-top: 40px; padding: 24px; overflow: hidden; border-radius: 16px; background: var(--lp-page); }
+.tenderLanding_marketStageGrid { background-image: radial-gradient(circle at 1px 1px, rgb(3 8 10 / 0.11) 1px, transparent 0); background-size: 14px 14px; background-position: 6px 6px; }
+.tenderLanding_marketStagePhoto { background: #d9dcd6; }
+.tenderLanding_marketPhoto { position: absolute; inset: 0; z-index: -1; }
+.tenderLanding_marketPhoto img { position: relative; width: 100%; height: 100%; object-fit: cover; color: transparent; }
+/* A missing photo leaves the neutral stage instead of a broken-image glyph. */
+.tenderLanding_marketPhoto img::after { content: ""; position: absolute; inset: 0; background: #d9dcd6; }
+.tenderLanding_marketWindow { position: relative; width: 100%; padding: 20px 22px 18px; border-radius: 14px; background: var(--lp-surface); box-shadow: 0 0 0 1px rgb(3 8 10 / 0.06), 0 1px 2px rgb(3 8 10 / 0.04), 0 18px 40px -22px rgb(3 8 10 / 0.24); transition: transform 0.45s var(--lp-ease), box-shadow 0.45s var(--lp-ease); }
+.tenderLanding_marketWindowFloat { width: min(100%, 380px); box-shadow: 0 0 0 1px rgb(3 8 10 / 0.08), 0 2px 6px rgb(3 8 10 / 0.08), 0 28px 56px -24px rgb(3 8 10 / 0.42); }
+.tenderLanding_marketCard:hover .tenderLanding_marketWindow { transform: translateY(-4px); box-shadow: 0 0 0 1px rgb(3 8 10 / 0.07), 0 2px 4px rgb(3 8 10 / 0.05), 0 26px 48px -24px rgb(3 8 10 / 0.3); }
+.tenderLanding_marketCard:hover .tenderLanding_marketWindowFloat { box-shadow: 0 0 0 1px rgb(3 8 10 / 0.08), 0 2px 6px rgb(3 8 10 / 0.08), 0 34px 64px -24px rgb(3 8 10 / 0.48); }
+
+/* ---------- #how-it-works: requirement accordion beside the real policy form ---------- */
+.tenderLanding_reqLayout { display: grid; grid-template-columns: 405px minmax(0, 1fr); align-items: start; gap: 32px; }
+.tenderLanding_reqAccordion { position: sticky; top: 112px; border-top: 1px solid var(--lp-line); }
+.tenderLanding_reqItem { border-bottom: 1px solid var(--lp-line); }
+.tenderLanding_reqItemHeading { font-size: 29px; line-height: 1.15; letter-spacing: -0.024em; }
+.tenderLanding_reqTrigger { display: block; width: 100%; padding: 26px 0; border: 0; border-radius: 6px; background: none; font: inherit; color: var(--lp-ink-4); text-align: left; cursor: pointer; transition: color 0.2s var(--lp-ease); }
+.tenderLanding_reqTrigger:hover { color: var(--lp-ink-2); }
+.tenderLanding_reqTrigger[aria-expanded="true"] { color: var(--lp-ink); cursor: default; }
+.tenderLanding_reqTrigger:focus-visible { outline: 2px solid var(--lp-olive); outline-offset: 4px; }
+.tenderLanding_reqBody { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows 0.4s var(--lp-ease), opacity 0.3s var(--lp-ease); }
+.tenderLanding_reqBody[data-open] { grid-template-rows: 1fr; opacity: 1; }
+.tenderLanding_reqBodyInner { min-height: 0; overflow: hidden; }
+.tenderLanding_reqBodyText { max-width: 22em; margin-top: -8px; font-size: 17px; line-height: 1.5; color: var(--lp-ink-3); }
+.tenderLanding_reqLimitLink { display: inline-flex; align-items: center; gap: 2px; margin: 16px 0 30px; border-radius: 6px; font-size: 16px; line-height: 24px; color: var(--lp-ink); }
+.tenderLanding_reqLimitLink svg { width: 18px; height: 18px; color: var(--lp-ink-2); transition: transform 0.3s var(--lp-ease); }
+.tenderLanding_reqLimitLink:hover { color: var(--lp-olive); }
+.tenderLanding_reqLimitLink:hover svg { transform: translateX(3px); color: var(--lp-olive); }
+
+.tenderLanding_reqPanel { display: flex; flex-direction: column; gap: 24px; min-width: 0; padding: 40px; border-radius: var(--lp-radius-media); background: var(--lp-panel); }
+.tenderLanding_reqWindow { min-width: 0; }
+.tenderLanding_reqWindowBar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--lp-line); background: #fafafa; }
+.tenderLanding_reqProduct { padding: 28px 32px 32px; }
+.tenderLanding_reqProduct > section { margin-bottom: 0; }
+/* The window is the frame: drop the section's own bordered body inside it. */
+.tenderLanding_reqProduct [data-slot="section-body"] { padding: 20px 0 0; border: 0; }
+
+/* The module in focus marks its real policy field: olive ring + lime wash behind the field. */
+.tenderLanding_reqProduct [data-slot="spec-field"] { position: relative; isolation: isolate; }
+.tenderLanding_reqProduct [data-slot="spec-field"]::before { content: ""; position: absolute; inset: -10px -10px -6px; z-index: -1; border-radius: 12px; background: var(--lp-lime-wash); box-shadow: inset 0 0 0 1px var(--lp-olive); opacity: 0; transform: scale(0.98); transition: opacity 0.3s var(--lp-ease), transform 0.3s var(--lp-ease); pointer-events: none; }
+.tenderLanding_reqPanel[data-requirement="maxPrice"] [data-slot="spec-field"]:has(input[id$="-maxPrice"])::before,
+.tenderLanding_reqPanel[data-requirement="maxP95LatencyMs"] [data-slot="spec-field"]:has(input[id$="-maxP95LatencyMs"])::before,
+.tenderLanding_reqPanel[data-requirement="maxDataAgeMs"] [data-slot="spec-field"]:has(input[id$="-maxDataAgeMs"])::before,
+.tenderLanding_reqPanel[data-requirement="minSuccessRate"] [data-slot="spec-field"]:has(input[id$="-minSuccessRate"])::before { opacity: 1; transform: none; }
+
+.tenderLanding_reqSummary { display: flex; flex-wrap: wrap; align-items: center; column-gap: 8px; row-gap: 4px; padding-inline: 4px; font-size: 16px; line-height: 24px; color: var(--lp-ink); }
+.tenderLanding_reqSummaryDot { width: 8px; height: 8px; flex-shrink: 0; border-radius: 999px; background: var(--positive); box-shadow: 0 0 0 3px rgb(0 191 111 / 0.16); }
+.tenderLanding_reqSummary[data-tone="warning"] .tenderLanding_reqSummaryDot { background: var(--warning); box-shadow: 0 0 0 3px rgb(229 160 0 / 0.16); }
+.tenderLanding_reqSummary[data-tone="negative"] .tenderLanding_reqSummaryDot { background: var(--negative); box-shadow: 0 0 0 3px rgb(255 45 85 / 0.16); }
+.tenderLanding_reqSummaryNext { display: inline-flex; align-items: center; gap: 8px; color: var(--lp-ink-2); }
+
+/* Embedded product text never drops below 13px on the landing page. */
+.tenderLanding_marketWindow :is(.text-caption, .text-overline, .text-micro, .text-2xs, .text-\[9px\], .text-\[10px\], .text-\[11px\], .text-\[13px\]),
+.tenderLanding_reqWindow :is(.text-caption, .text-overline, .text-micro, .text-2xs, .text-\[9px\], .text-\[10px\], .text-\[11px\], .text-\[13px\]) { font-size: 13px; }
+.tenderLanding_marketWindow svg g[style*="font-size"] { font-size: 13px !important; }
+
+@media (max-width: 1279px) {
+  .tenderLanding_reqLayout { grid-template-columns: 340px minmax(0, 1fr); }
+  .tenderLanding_reqItemHeading { font-size: 26px; }
+  .tenderLanding_reqPanel { padding: 28px; }
+  .tenderLanding_marketCard { padding: 40px; }
+}
+@media (max-width: 1023px) {
+  .tenderLanding_reqLayout { grid-template-columns: minmax(0, 1fr); gap: 40px; }
+  .tenderLanding_reqAccordion { position: static; }
+  /* Two result windows side by side get too narrow below 1024px: stack the cards. */
+  .tenderLanding_marketGrid { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .tenderLanding_marketCard { min-height: 0; padding: 36px; }
+  .tenderLanding_marketStage { min-height: 400px; margin-top: 32px; }
+}
+@media (max-width: 767px) {
+  .tenderLanding_marketGrid { gap: 16px; }
+  .tenderLanding_marketCard { padding: 28px 8px 8px; border-radius: 18px; }
+  .tenderLanding_marketHeading, .tenderLanding_marketDescription { padding-inline: 16px; }
+  .tenderLanding_marketHeading { font-size: 22px; }
+  .tenderLanding_marketDescription { font-size: 16px; }
+  .tenderLanding_marketStage { min-height: 0; margin-top: 24px; padding: 8px; border-radius: 12px; }
+  .tenderLanding_marketStagePhoto { padding-top: 168px; }
+  .tenderLanding_marketWindow { padding: 14px 14px 12px; border-radius: 10px; }
+  .tenderLanding_marketWindowFloat { width: 100%; }
+  .tenderLanding_reqItemHeading { font-size: 24px; }
+  .tenderLanding_reqTrigger { padding: 22px 0; }
+  .tenderLanding_reqBodyText { font-size: 16px; }
+  .tenderLanding_reqPanel { padding: 12px; border-radius: 20px; }
+  .tenderLanding_reqWindowBar { padding: 8px; }
+  .tenderLanding_reqWindowBar [role="radiogroup"] { width: 100%; }
+  .tenderLanding_reqWindowBar [role="radio"] { flex: 1 1 0; min-width: 0; }
+  .tenderLanding_reqWindowBar [role="radio"] svg { display: none; }
+  .tenderLanding_reqProduct { padding: 20px 16px; }
+  .tenderLanding_reqSummary { padding: 4px 8px 8px; font-size: 15px; }
+}
+@media (hover: none) {
+  .tenderLanding_marketCard:hover .tenderLanding_marketWindow { transform: none; }
+}
