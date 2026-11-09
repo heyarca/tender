@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { ChartTooltip } from "./ChartTooltip";
 import { providerColor } from "./colors";
 import { formatClock, formatLatency } from "./format";
-import { ProviderGlyph } from "./ProviderGlyph";
+import { ProviderLogo } from "@/components/ui/provider-logo";
 import { latencyScaleMax } from "./scale";
 import type { TimelineRequest, VizProviders } from "./types";
 
@@ -202,7 +202,6 @@ export function LatencyStrip({
           align={hover.align}
           top={height + 6}
           provider={hovered.providerId ? providers?.[hovered.providerId] : undefined}
-          color={colorOf(hovered.providerId)}
           timeZone={timeZone}
           zoneLabel={timeZoneLabel ?? timeZone}
           showMilliseconds={showMilliseconds}
@@ -243,7 +242,6 @@ function LatencyTooltip({
   align,
   top,
   provider,
-  color,
   timeZone,
   zoneLabel,
   showMilliseconds,
@@ -253,7 +251,6 @@ function LatencyTooltip({
   align: TooltipAlign;
   top: number;
   provider?: { name: string; logo?: string };
-  color: string;
   timeZone: string;
   zoneLabel: string;
   showMilliseconds: boolean;
@@ -270,12 +267,7 @@ function LatencyTooltip({
         <div className="mt-1 text-warning-text">No eligible provider — request not sent</div>
       ) : (
         <div className="mt-1 flex items-center gap-1.5 text-foreground">
-          <ProviderGlyph
-            name={provider?.name ?? request.providerId ?? ""}
-            logo={provider?.logo}
-            color={color}
-            size={14}
-          />
+          <ProviderLogo src={provider?.logo} name={provider?.name ?? request.providerId ?? ""} size={16} />
           <span className="truncate">{provider?.name ?? request.providerId}</span>
           <span
             className={cn(

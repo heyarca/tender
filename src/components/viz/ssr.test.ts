@@ -116,6 +116,19 @@ describe("server render", () => {
     expect(rejected).toContain("Not sent");
   });
 
+  it("renders the shared provider tile for a provider without a logo", () => {
+    const meta = render(
+      createElement(ResultMeta, {
+        provider: { id: "sambanova", name: "SambaNova" },
+        latencyMs: 84,
+      }),
+    );
+    // ProviderLogo (src/components/ui/provider-logo): the one provider-tile implementation.
+    expect(meta).toContain('data-slot="provider-logo"');
+    expect(meta).toContain("uppercase");
+    expect(meta.replace(/<[^>]+>/g, "")).toContain("S");
+  });
+
   it("renders the provenance line and JSON", () => {
     const meta = render(
       createElement(ResultMeta, {

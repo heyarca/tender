@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { formatAge, formatLatency } from "@/components/viz/format";
-import { ProviderGlyph } from "@/components/viz/ProviderGlyph";
+import { ProviderLogo } from "@/components/ui/provider-logo";
 import type { ResultProvider, ResultStatus } from "./types";
 
 export interface ResultMetaProps {
@@ -48,7 +48,7 @@ export function ResultMeta({
           <span className={status === "failed" ? "text-negative-text" : undefined}>
             {status === "failed" ? "Failed at" : "Served by"}
           </span>
-          <ProviderGlyph name={provider.name} logo={provider.logo} size={16} />
+          <ProviderLogo src={provider.logo} name={provider.name} size={16} />
           <span className="truncate font-medium text-foreground">{provider.name}</span>
         </span>
       ),

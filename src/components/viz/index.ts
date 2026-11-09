@@ -3,7 +3,6 @@ export { SuccessBars, SuccessBars as UptimeBars, type SuccessBarsProps } from ".
 export { PriceChart, type PriceChartProps } from "./PriceChart";
 export { LatencyStrip, LatencyStrip as RequestTimeline, type LatencyStripProps } from "./LatencyStrip";
 export { Delta, type DeltaProps } from "./Delta";
-export { ProviderGlyph, type ProviderGlyphProps } from "./ProviderGlyph";
 export { ChartTooltip, ChartTooltipRow, type ChartTooltipProps } from "./ChartTooltip";
 export type { PricePoint, TimelineRequest, TimelineStatus, VizProvider, VizProviders } from "./types";
 export {
