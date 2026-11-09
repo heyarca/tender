@@ -89,10 +89,11 @@ The client hook exposes `stage: "idle" | "payment-required" | "signed" | "comple
 
 Returns `{ network, asset, tokenAddress, payer, payees }`. Each balance has `id`, `address`, `amountAtomic` and `amountUsd` (decimal string).
 `payer` is null if no key is configured. The payer and all payees are read in one Base Sepolia Multicall3 `eth_call`, without per-provider RPC fan-out.
-Each warm instance coalesces concurrent reads and caches a successful snapshot for five seconds. The cache is keyed by RPC endpoint and payer address; failures are never cached and expired snapshots are not served on error.
+Each warm instance coalesces concurrent reads and caches a successful snapshot for five seconds. The cache is keyed by RPC endpoint and payer address; failures are never cached and expired snapshots are not served as fresh.
 A failed batch is retried once. Each attempt is bounded to 3.5 seconds and the complete operation has a 7.5-second deadline.
 Reads that would reach the RPC are rate-limited to 30 per minute per warm instance; over the limit the route returns 429 with `Retry-After`. Cached and coalesced responses bypass the limiter.
-Failure returns 502, not a fabricated zero balance. HTTP responses remain `private, no-store`; only the short server-side cache is used.
+When a fresh read fails and the last successful snapshot in this instance is at most 60 seconds old, the route returns 200 with that snapshot plus `stale: true` and `as_of` (ISO time of the snapshot). It returns 502 only when no usable snapshot exists. Failures never refresh the snapshot. Fresh responses carry no `stale`/`as_of` fields.
+HTTP responses remain `private, no-store`; only the short server-side cache is used.
 
 ## Payer safety
 

@@ -3,7 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import { PaymentResponseError, readPaidResponse } from "./client-response";
 import type { PaidRequestResult, PaymentMarket, PaymentPolicy, PaymentReceipt, PaidRequestOptions, PaidRequestFailure, PaidRequestStage } from "./types";
-export type { PaidRequestResult, PaymentMarket, PaymentPolicy, PaymentReceipt, PaidRequestOptions, PaymentConditions, PaidResponsePayload, PaidRequestFailure, PaidRequestStage, PaidRequestProgress, PaidRequestEvent } from "./types";
+export type { PaidRequestResult, PaymentMarket, PaymentPolicy, PaymentReceipt, PaidRequestOptions, PaymentConditions, PaidResponsePayload, PaidRequestFailure, PaidRequestStage, PaidRequestProgress, PaidRequestEvent, BalanceEntry, BalancesResponse } from "./types";
 
 export function usePaidRequest(market: PaymentMarket) {
   const [receipts, setReceipts] = useState<PaymentReceipt[]>([]);

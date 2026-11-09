@@ -98,6 +98,21 @@ describe("USDC balance batch", () => {
     expect(await read.peek()).toBe(first);
     expect(multicall).toHaveBeenCalledOnce();
   });
+  it("keeps the last good snapshot across cache expiry and failures for stale fallback", async () => {
+    vi.useFakeTimers();
+    const read = createBalanceReader();
+    expect(read.lastGood()).toBeUndefined();
+    const first = await read();
+    expect(read.lastGood()).toEqual({ at: Date.now(), value: first });
+    expect(multicall).toHaveBeenCalledOnce();
+    await vi.advanceTimersByTimeAsync(BALANCE_CACHE_MS + 1);
+    multicall.mockRejectedValue(new Error("RPC down"));
+    await expect(read()).rejects.toThrow("RPC down");
+    expect(multicall).toHaveBeenCalledTimes(3);
+    expect(read.lastGood()?.value).toBe(first);
+    vi.stubEnv("TENDER_RPC_URL", "https://other.tender.test");
+    expect(read.lastGood()).toBeUndefined();
+  });
   it("aborts at 7.5 seconds total, even if an attempt does not settle", async () => {
     vi.useFakeTimers();
     multicall.mockImplementation(() => new Promise(() => {}));

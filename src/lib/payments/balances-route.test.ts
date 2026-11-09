@@ -1,11 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GET } from "@/app/api/payments/balances/route";
 import { BalancesRateLimiter, balancesRateLimiter } from "./limits";
+import { BALANCE_STALE_MS } from "./wallet";
 import type { BalanceSnapshot } from "./wallet";
 
 vi.mock("next/server", () => ({ connection: vi.fn(async () => undefined) }));
-const { read, peek } = vi.hoisted(() => ({ read: vi.fn(), peek: vi.fn() }));
-vi.mock("./wallet", () => ({ readBalances: Object.assign(read, { peek }) }));
+const { read, peek, lastGood } = vi.hoisted(() => ({ read: vi.fn(), peek: vi.fn(), lastGood: vi.fn() }));
+vi.mock("./wallet", () => ({ BALANCE_STALE_MS: 60_000, readBalances: Object.assign(read, { peek, lastGood }) }));
 
 const snapshot: BalanceSnapshot = {
   network: "base-sepolia",
@@ -42,6 +43,42 @@ describe("balances endpoint", () => {
     expect(limited.headers.get("Retry-After")).toBe("60");
     expect(await limited.json()).toEqual({ error: "Balance request limit reached" });
     expect(read).toHaveBeenCalledTimes(30);
+  });
+  it("serves the last good snapshot as stale when a fresh read fails within 60 s", async () => {
+    peek.mockReturnValue(undefined);
+    read.mockRejectedValue(new Error("RPC failed"));
+    const at = Date.now() - 10_000;
+    lastGood.mockReturnValue({ at, value: snapshot });
+    const response = await GET();
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe("private, no-store");
+    expect(await response.json()).toEqual({ ...snapshot, stale: true, as_of: new Date(at).toISOString() });
+  });
+  it("still serves the last good snapshot at exactly 60 s", async () => {
+    peek.mockReturnValue(undefined);
+    read.mockRejectedValue(new Error("RPC failed"));
+    lastGood.mockReturnValue({ at: Date.now() - BALANCE_STALE_MS, value: snapshot });
+    const response = await GET();
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ stale: true });
+  });
+  it("returns 502 when the last good snapshot is older than 60 s", async () => {
+    peek.mockReturnValue(undefined);
+    read.mockRejectedValue(new Error("RPC failed"));
+    lastGood.mockReturnValue({ at: Date.now() - BALANCE_STALE_MS - 1, value: snapshot });
+    const response = await GET();
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({ error: "Unable to read Base Sepolia USDC balances" });
+  });
+  it("leaves no stale flags on fresh reads", async () => {
+    peek.mockReturnValue(undefined);
+    read.mockResolvedValue(snapshot);
+    const response = await GET();
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body).toEqual(snapshot);
+    expect("stale" in body).toBe(false);
+    expect("as_of" in body).toBe(false);
   });
   it("serves cached or coalesced snapshots without consuming the rate limit", async () => {
     peek.mockReturnValue(Promise.resolve(snapshot));
