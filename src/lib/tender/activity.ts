@@ -28,6 +28,15 @@ export function providerName(marketId: MarketId, providerId: ProviderId | null):
   return getProviderFixture(marketId, providerId)?.name ?? providerId;
 }
 
+/**
+ * Data age in the market's display unit: ms-unit markets (BTC) keep millisecond
+ * precision for sub-minute ages ("1,010 ms", not "1 s"); other markets use
+ * `format.dataAge` ("6 min").
+ */
+function marketDataAge(marketId: MarketId, ms: number): string {
+  return MARKETS[marketId].units.dataAge === "ms" && ms < 60_000 ? `${format.count(ms)} ms` : format.dataAge(ms);
+}
+
 function joinWords(words: string[]): string {
   if (words.length <= 1) return words.join("");
   return `${words.slice(0, -1).join(", ")} and ${words[words.length - 1]}`;
@@ -45,14 +54,14 @@ export function failureText(reasons: readonly ExclusionReason[]): string {
 }
 
 /** Copy for a policy field change: "Max P95 latency 400 ms → 200 ms". */
-export function policyChangeText(change: PolicyChange): string {
+export function policyChangeText(marketId: MarketId, change: PolicyChange): string {
   switch (change.field) {
     case "maxPrice":
       return `Max price ${format.price(change.from as number)} → ${format.price(change.to as number)} /M`;
     case "maxP95LatencyMs":
       return `Max P95 latency ${format.latency(change.from as number)} → ${format.latency(change.to as number)}`;
     case "maxDataAgeMs":
-      return `Max data age ${format.dataAge(change.from as number)} → ${format.dataAge(change.to as number)}`;
+      return `Max data age ${marketDataAge(marketId, change.from as number)} → ${marketDataAge(marketId, change.to as number)}`;
     case "minSuccessRate":
       return `Min success rate ${format.percent(change.from as number)} → ${format.percent(change.to as number)}`;
     case "preference":
@@ -158,8 +167,8 @@ export function conditionsResetEntry(restoredProviderIds: ProviderId[], marketId
   };
 }
 
-export function policyUpdatedEntry(changes: PolicyChange[]): EntryFields {
-  const lines = changes.map(policyChangeText);
+export function policyUpdatedEntry(marketId: MarketId, changes: PolicyChange[]): EntryFields {
+  const lines = changes.map((change) => policyChangeText(marketId, change));
   return {
     kind: "policy-updated",
     changes,
@@ -169,11 +178,14 @@ export function policyUpdatedEntry(changes: PolicyChange[]): EntryFields {
   };
 }
 
-export function policyResetEntry(changes: PolicyChange[], modeReset: boolean): EntryFields {
+export function policyResetEntry(marketId: MarketId, changes: PolicyChange[], modeReset: boolean): EntryFields {
   return {
     kind: "policy-reset",
     title: "Routing policy reset to defaults",
-    details: [...changes.map(policyChangeText), ...(modeReset ? ["Automatic switching turned on"] : [])],
+    details: [
+      ...changes.map((change) => policyChangeText(marketId, change)),
+      ...(modeReset ? ["Automatic switching turned on"] : []),
+    ],
     tone: "neutral",
   };
 }
@@ -338,9 +350,11 @@ export function noEligibleEntry(
   fromId: ProviderId | null,
   fromReasons: readonly ExclusionReason[],
   triggerText?: string,
+  cancelledPendingId?: ProviderId | null,
 ): EntryFields {
   const details: string[] = [];
   if (triggerText) details.push(`Trigger: ${sentence(triggerText)}`);
+  if (cancelledPendingId) details.push(`Scheduled switch to ${providerName(marketId, cancelledPendingId)} cancelled.`);
   if (fromId) details.push(`${providerName(marketId, fromId)} ${failureText(fromReasons)}.`);
   details.push(NO_ELIGIBLE_TEXT);
   return {
