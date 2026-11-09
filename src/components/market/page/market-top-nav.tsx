@@ -6,7 +6,7 @@ import { useMemo } from "react";
 import { TopNav, type TopNavLink } from "@/components/shell/top-nav";
 import { Button } from "@/components/ui/button";
 import { focusSection, MARKET_SECTIONS, type MarketSectionId } from "@/components/market/market-ui";
-import { DEFAULT_MARKET_ID, type MarketId } from "@/lib/tender";
+import type { MarketId } from "@/lib/tender";
 import { marketHref } from "./routes";
 
 /** Hash of the TopNav link that opens the API dialog. */
@@ -74,7 +74,7 @@ export function MarketTopNav({ marketId, onSearch, onOpenApi, onRun }: MarketTop
       <TopNav
         links={links}
         activeHref={marketHref(marketId)}
-        homeHref={marketHref(DEFAULT_MARKET_ID)}
+        homeHref="/landing"
         onSearch={onSearch}
         searchLabel="Search"
         actions={
