@@ -347,7 +347,6 @@ export function MarketDirectory() {
                   <Badge tone="info" variant="soft">
                     USDC · x402
                   </Badge>
-                  every market
                 </p>
               </div>
             </div>
