@@ -75,3 +75,19 @@ export interface BitcoinQuote {
   /** Request latency (ms). */
   latencyMs: number;
 }
+
+/** Normalized result of any other contract (`FieldsPayload` from the engine), as displayed. */
+export interface FieldsReading {
+  /** Contract id, e.g. `components.price`. */
+  contractId: string;
+  /** Schema-shaped result (dotted field keys read nested values). */
+  values: Readonly<Record<string, unknown>>;
+  /** Source time of the data (epoch ms). */
+  sourceTimestamp: number;
+  /** Change of the contract's series field vs the previous served request, or `null`. */
+  change: number | null;
+  /** Data age when the response arrived (ms). */
+  dataAgeMs: number;
+  /** Request latency (ms). */
+  latencyMs: number;
+}
