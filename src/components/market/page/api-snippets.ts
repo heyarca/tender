@@ -37,18 +37,19 @@ export function contractUrl(origin: string, marketId: MarketId, policy: RoutingP
 /** cURL walkthrough of a paid request: discovery, the 402 challenge, and the signed retry. */
 export function buildCurlSnippet(origin: string, marketId: MarketId, policy: RoutingPolicy): string {
   const base = origin.replace(/\/$/, "");
-  const url = `$BASE${contractPath(marketId)}&${policyQuery(policy)}`;
+  const contract = `"$BASE${contractPath(marketId)}&$POLICY"`;
   return [
     `BASE=${base}`,
+    `POLICY="${policyQuery(policy)}"`,
     "",
     "# Bids, performance, and the route for this policy",
-    `curl -sS "$BASE${marketPath(marketId)}?${policyQuery(policy)}"`,
+    `curl -sS "$BASE${marketPath(marketId)}?$POLICY"`,
     "",
     "# 402 Payment Required: PAYMENT-REQUIRED holds the USDC quote (Base Sepolia)",
-    `curl -i "${url}"`,
+    `curl -i ${contract}`,
     "",
     "# Retry with an x402 signature; PAYMENT-RESPONSE holds the settlement",
-    `curl -i "${url}" \\`,
+    `curl -i ${contract} \\`,
     `  -H "PAYMENT-SIGNATURE: $PAYMENT_SIGNATURE"`,
     "",
   ].join("\n");
