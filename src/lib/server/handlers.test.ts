@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PaymentQuote, SettlementAmounts } from "@/lib/payments/types";
 import { getPayee } from "@/lib/payments/payees";
 import type { ConditionsPatch } from "@/lib/tender";
-const payments = vi.hoisted(() => ({ calls: [] as PaymentQuote[], fail: false, failureResponse: false }));
+const payments = vi.hoisted(() => ({ calls: [] as PaymentQuote[], fail: false, failureResponse: false, settleThrow: false }));
 vi.mock("node:crypto", () => ({ randomUUID: () => "84d53c30-6de2-4439-b910-67ff8b1fc974" }));
 vi.mock("@/lib/payments/server", async () => {
   const { quoteFromBid } = await import("@/lib/payments/quote");
@@ -11,7 +11,14 @@ vi.mock("@/lib/payments/server", async () => {
     if (payments.failureResponse) return Response.json({ error: "Internal Server Error" }, { status: 500 });
     const q = quote(request);
     payments.calls.push(q);
-    if (!request.headers.has("PAYMENT-SIGNATURE")) return Response.json({ error: "payment_required", ...q }, { status: 402 });
+    if (!request.headers.has("PAYMENT-SIGNATURE")) return Response.json({ error: "payment_required", ...q }, { status: 402, headers: { "PAYMENT-REQUIRED": "base64-challenge" } });
+    if (payments.settleThrow) {
+      // Mirrors the @x402/next settlement catch: the handler already produced a
+      // payload, then settlement throws and the SDK returns a bare 402 with no
+      // PAYMENT-REQUIRED or PAYMENT-RESPONSE header.
+      await handler(request, q as PaymentQuote & SettlementAmounts);
+      return Response.json({}, { status: 402 });
+    }
     return handler(request, q as PaymentQuote & SettlementAmounts);
   } };
 });
@@ -22,7 +29,7 @@ import { clearReferenceCache } from "./reference";
 
 const req = (path: string, paid = true, headers?: HeadersInit) => new Request(`https://tender.example/api/v1/${path}`, { headers: { ...(paid ? { "PAYMENT-SIGNATURE": "test-only" } : {}), ...headers } });
 beforeEach(() => {
-  payments.calls = []; payments.fail = false; payments.failureResponse = false; clearReferenceCache();
+  payments.calls = []; payments.fail = false; payments.failureResponse = false; payments.settleThrow = false; clearReferenceCache();
   vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(new Date("2026-11-09T18:30:05Z"));
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ bid: "75000", ask: "75002", time: "2026-11-09T18:30:00Z" })));
 });
@@ -109,6 +116,22 @@ describe("paid contract handlers", () => {
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({ error: { code: "payment_unavailable", message: "Payment service unavailable" } });
     expect(fetch).not.toHaveBeenCalled();
+  });
+  it("keeps the unpaid 402 challenge body and PAYMENT-REQUIRED header intact", async () => {
+    const response = await price(req("prices/spot", false));
+    expect(response.status).toBe(402);
+    expect(response.headers.get("PAYMENT-REQUIRED")).toBe("base64-challenge");
+    expect(await response.json()).toMatchObject({ error: "payment_required", providerId: "parasail" });
+    expect(fetch).not.toHaveBeenCalled();
+  });
+  it("normalizes a bare settlement-failure 402 after a served payload to 503", async () => {
+    payments.settleThrow = true;
+    const response = await price(req("prices/spot"));
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ error: { code: "payment_unavailable", message: "Payment service unavailable" } });
+    expect(response.headers.get("PAYMENT-REQUIRED")).toBeNull();
+    expect(response.headers.get("PAYMENT-RESPONSE")).toBeNull();
+    expect(response.headers.get("Cache-Control")).toBe("private, no-store");
   });
   it.each(["prices/spot?pair=ETH-USD", "prices/spot?pair=BTC-USD&pair=BTC-USD", "prices/spot?pin=together", "prices/spot?min_success_rate=99.9"])("rejects invalid input %s before payment", async (path) => {
     expect((await price(req(path))).status).toBe(400);
