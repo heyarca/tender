@@ -30,4 +30,9 @@ export const CATALOG_IMAGE_PATHS: Record<string, CatalogImagePath> = {
     jpg: "/catalog/chat-general.jpg",
     alt: "Soft abstract neon lights in a dark field.",
   },
+  "company-profile": {
+    avif: "/catalog/company-profile.avif",
+    jpg: "/catalog/company-profile.jpg",
+    alt: "Minimal glass-walled office corridor.",
+  },
 };
