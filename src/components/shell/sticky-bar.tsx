@@ -37,22 +37,41 @@ export function StickyBar({ sentinelId, sentinelRef, "aria-label": ariaLabel, cl
   const [visible, setVisible] = React.useState(false);
 
   React.useEffect(() => {
-    const target = sentinelRef?.current ?? (sentinelId ? document.getElementById(sentinelId) : null);
-    if (!target) return;
+    let target: Element | null = null;
     let frame = 0;
+    let resizeObserver: ResizeObserver | null = null;
     const update = () => {
       frame = 0;
+      if (!target) return;
       setVisible(target.getBoundingClientRect().bottom <= navbarHeightPx());
     };
     const schedule = () => {
       if (frame === 0) frame = window.requestAnimationFrame(update);
     };
-    schedule();
+    // (Re)bind the sentinel: it may mount after data loads or be replaced, so the
+    // document is watched and the lookup retried on every DOM change.
+    const bind = () => {
+      const next = sentinelRef?.current ?? (sentinelId ? document.getElementById(sentinelId) : null);
+      if (!next) return;
+      if (next !== target) {
+        target = next;
+        resizeObserver?.disconnect();
+        resizeObserver = new ResizeObserver(schedule);
+        resizeObserver.observe(target);
+      }
+      schedule();
+    };
+
+    bind();
+    const mutations = new MutationObserver(bind);
+    mutations.observe(document.documentElement, { childList: true, subtree: true });
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", schedule);
     return () => {
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
+      mutations.disconnect();
+      resizeObserver?.disconnect();
       if (frame !== 0) window.cancelAnimationFrame(frame);
     };
   }, [sentinelId, sentinelRef]);

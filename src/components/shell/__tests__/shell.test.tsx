@@ -186,6 +186,26 @@ describe("hotkeys", () => {
     expect(matchesHotkey(new KeyboardEvent("keydown", { key: "Escape" }), "esc")).toBe(true);
   });
 
+  it("matches symbol keys by their physical code, including shifted characters", () => {
+    // Shifted symbol keys never match by `key` (Shift+/ sends key="?"), so the physical code decides.
+    expect(matchesHotkey(new KeyboardEvent("keydown", { key: "?", shiftKey: true, code: "Slash" }), "shift+/")).toBe(true);
+    expect(matchesHotkey(new KeyboardEvent("keydown", { key: "/", code: "Slash" }), "shift+/")).toBe(false);
+    // A different physical key never matches, shifted or not.
+    expect(matchesHotkey(new KeyboardEvent("keydown", { key: "1", shiftKey: true, code: "Digit1" }), "shift+/")).toBe(false);
+    expect(matchesHotkey(new KeyboardEvent("keydown", { key: "1", code: "Digit1" }), "/")).toBe(false);
+    expect(matchesHotkey(new KeyboardEvent("keydown", { key: ".", code: "Period" }), ".")).toBe(true);
+    expect(matchesHotkey(new KeyboardEvent("keydown", { key: ",", code: "Comma" }), ",")).toBe(true);
+    expect(matchesHotkey(new KeyboardEvent("keydown", { key: "-", code: "Minus" }), "-")).toBe(true);
+    expect(matchesHotkey(new KeyboardEvent("keydown", { key: "=", code: "Equal" }), "=")).toBe(true);
+    expect(matchesHotkey(new KeyboardEvent("keydown", { key: "'", code: "Quote" }), "'")).toBe(true);
+    expect(matchesHotkey(new KeyboardEvent("keydown", { key: ";", code: "Semicolon" }), ";")).toBe(true);
+    expect(matchesHotkey(new KeyboardEvent("keydown", { key: "[", code: "BracketLeft" }), "[")).toBe(true);
+    expect(matchesHotkey(new KeyboardEvent("keydown", { key: "]", code: "BracketRight" }), "]")).toBe(true);
+    expect(matchesHotkey(new KeyboardEvent("keydown", { key: "\\", code: "Backslash" }), "\\")).toBe(true);
+    // Unknown symbols without an alias stay dead instead of matching every event.
+    expect(matchesHotkey(new KeyboardEvent("keydown", { key: "!", code: "Digit1" }), "shift+!")).toBe(false);
+  });
+
   function HotkeyProbe({ onHit }: { onHit: () => void }) {
     useHotkey(["mod+k", "/"], onHit);
     return <input aria-label="Query" />;
@@ -281,6 +301,44 @@ describe("CommandPalette", () => {
     fireEvent.click(screen.getByText("Run request"));
     expect(onRun).toHaveBeenCalledTimes(1);
     expect(state.textContent).toBe("closed");
+  });
+
+  it("orders groups by their best match while searching, keeping order without a search", async () => {
+    const onSelectProvider = vi.fn();
+    const onReset = vi.fn();
+    function RankingPalette() {
+      const [open, setOpen] = useState(false);
+      return (
+        <CommandPalette
+          open={open}
+          onOpenChange={setOpen}
+          groups={[
+            {
+              heading: "Actions",
+              // Fuzzy-matches "DeepInfra" through its description, worse than the provider itself.
+              items: [{ id: "reset", label: "Reset conditions", description: "Deep infrastructure diagnostics", onSelect: onReset }],
+            },
+            {
+              heading: "Providers",
+              items: [{ id: "deepinfra", label: "DeepInfra", keywords: ["deepinfra"], onSelect: onSelectProvider }],
+            },
+          ]}
+        />
+      );
+    }
+    render(<RankingPalette />);
+    keydown({ key: "k", metaKey: true });
+    const input = await screen.findByRole("combobox");
+    const headings = () => screen.getAllByText(/^(Actions|Providers)$/).map((heading) => heading.textContent);
+    expect(headings()).toEqual(["Actions", "Providers"]);
+
+    fireEvent.change(input, { target: { value: "DeepInfra" } });
+    await waitFor(() => expect(screen.getByText("DeepInfra")).toBeTruthy());
+    expect(headings()).toEqual(["Providers", "Actions"]);
+
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(onSelectProvider).toHaveBeenCalledTimes(1);
+    expect(onReset).not.toHaveBeenCalled();
   });
 });
 

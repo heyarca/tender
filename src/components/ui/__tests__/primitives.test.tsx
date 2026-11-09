@@ -196,6 +196,25 @@ describe("Table rows and values", () => {
   });
 });
 
+describe("TableSubheadRow", () => {
+  it("renders children directly into the subhead cell, without a wrapper span", () => {
+    render(
+      <Table>
+        <TableBody>
+          <TableSubheadRow colSpan={2}>
+            <span data-testid="subhead-label">Excluded by your policy (2)</span>
+          </TableSubheadRow>
+        </TableBody>
+      </Table>,
+    );
+    const layout = screen.getByTestId("subhead-label").closest("td")?.firstElementChild;
+    expect(layout?.tagName).toBe("DIV");
+    // The label is the first child of the layout row, so callers can make it sticky
+    // without a child-selector hack.
+    expect(layout?.firstElementChild?.getAttribute("data-testid")).toBe("subhead-label");
+  });
+});
+
 describe("CopyButton", () => {
   it("copies and swaps to a check for 1.5 s", async () => {
     vi.useFakeTimers();

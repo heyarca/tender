@@ -53,6 +53,19 @@ export function CommandPalette({
   const [search, setSearch] = React.useState("");
   const inputRef = React.useRef<HTMLInputElement>(null);
 
+  // cmdk ranks items inside each group but never reorders the groups, so while
+  // searching the groups are ordered by their best item score (the same score cmdk
+  // computes through the filter) and the best group's top item wins Enter.
+  const orderedGroups = React.useMemo(() => {
+    if (!search) return groups;
+    const best = groups.map((group, index) => ({
+      index,
+      group,
+      score: Math.max(0, ...group.items.map((item) => defaultFilter(itemKeywords(item).join(" "), search))),
+    }));
+    return best.sort((a, b) => b.score - a.score || a.index - b.index).map((entry) => entry.group);
+  }, [groups, search]);
+
   const setOpen = (next: boolean) => {
     if (!next) setSearch("");
     onOpenChange(next);
@@ -85,7 +98,7 @@ export function CommandPalette({
             <Command.Empty className="px-2 py-8 text-center text-body text-muted-foreground">
               No results for &ldquo;{search}&rdquo;
             </Command.Empty>
-            {groups.map((group) => (
+            {orderedGroups.map((group) => (
               <Command.Group
                 key={group.heading}
                 heading={group.heading}
@@ -95,7 +108,7 @@ export function CommandPalette({
                   <Command.Item
                     key={item.id}
                     value={item.id}
-                    keywords={[item.label, ...(item.description ? [item.description] : []), ...(item.keywords ?? [])]}
+                    keywords={itemKeywords(item)}
                     onSelect={() => {
                       item.onSelect();
                       setOpen(false);
@@ -144,6 +157,11 @@ function filterByKeywords(_value: string, search: string, keywords?: string[]) {
   return defaultFilter(keywords?.join(" ") ?? "", search);
 }
 
+/** The searchable text of an item: label, description, then extra keywords. */
+function itemKeywords(item: CommandPaletteItem): string[] {
+  return [item.label, ...(item.description ? [item.description] : []), ...(item.keywords ?? [])];
+}
+
 function PaletteItemIcon({ item }: { item: CommandPaletteItem }) {
   if (item.icon) {
     return (
@@ -186,6 +204,24 @@ interface ParsedCombo {
 
 const KEY_ALIASES: Record<string, string> = { esc: "escape", return: "enter", space: " ", spacebar: " " };
 
+/**
+ * Physical `event.code` names for symbol keys, mirroring the letter/digit fallback:
+ * Shifted characters never match by `key` (Shift+/ sends key="?"), and non-Latin
+ * layouts keep working because the physical key does not move.
+ */
+const CODE_ALIASES: Record<string, string> = {
+  "/": "Slash",
+  "\\": "Backslash",
+  "[": "BracketLeft",
+  "]": "BracketRight",
+  "'": "Quote",
+  ";": "Semicolon",
+  ",": "Comma",
+  ".": "Period",
+  "-": "Minus",
+  "=": "Equal",
+};
+
 export function parseHotkey(combo: string): ParsedCombo {
   const parts = combo
     .toLowerCase()
@@ -209,7 +245,7 @@ function keyMatches(event: KeyboardEvent, key: string) {
   // Match the physical key so shortcuts work with non-Latin layouts and IMEs.
   if (/^[a-z]$/.test(key)) return event.code === `Key${key.toUpperCase()}`;
   if (/^[0-9]$/.test(key)) return event.code === `Digit${key}`;
-  return false;
+  return CODE_ALIASES[key] !== undefined && event.code === CODE_ALIASES[key];
 }
 
 /** True when the keyboard event matches a combo such as `"mod+k"`, `"shift+/"`, or `"escape"`. */

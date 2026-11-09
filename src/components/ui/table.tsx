@@ -353,7 +353,7 @@ export function TableSubheadRow({ colSpan, action, className, children, ...props
         className={cn("border-b border-border text-caption font-medium text-muted-foreground", cellPadding[density], "py-1.5")}
       >
         <div className="flex items-center gap-1.5">
-          <span>{children}</span>
+          {children}
           {action}
         </div>
       </td>
