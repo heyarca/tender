@@ -49,7 +49,7 @@ export function AgentInstallBanner() {
       <div className="flex min-w-0 flex-col gap-1.5">
         <div className="flex h-11 items-center justify-between gap-3 rounded-lg bg-foreground pr-1.5 pl-4 text-background">
           <code className="truncate font-mono text-[14px]">
-            <span aria-hidden="true" className="mr-2.5 text-primary">
+            <span aria-hidden="true" className="mr-2.5 text-background/50">
               $
             </span>
             {COMMAND}
