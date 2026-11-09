@@ -1,9 +1,26 @@
 import { randomUUID } from "node:crypto";
-import { executeSelection, getMarketDefinition, seedFromString, selectRoute, type MarketId, type MarketReference, type RouteSelection } from "@/lib/tender";
+import { executeSelection, getMarketDefinition, seedFromString, selectRoute, sanitizeConditionsPatch, type ConditionsPatch, type ProviderId, type ProviderConditions, type MarketId, type MarketReference, type RouteSelection } from "@/lib/tender";
 import { quoteFromBid, withX402Payment, type SettlementAmounts } from "@/lib/payments/server";
 import { ApiError, errorResponse, json } from "./http";
 import { requestPolicy } from "./markets";
 import { getPriceReference, getWeatherReference } from "./reference";
+
+/** Trusted in-process inputs only. Public contract routes never parse these from HTTP. */
+export interface ContractOptions {
+  conditions?: Partial<Record<ProviderId, ConditionsPatch>>;
+}
+function conditionOverrides(marketId: MarketId, patches: ContractOptions["conditions"]): Partial<Record<ProviderId, ProviderConditions>> | undefined {
+  if (!patches || typeof patches !== "object" || Array.isArray(patches)) return undefined;
+  const conditions: Partial<Record<ProviderId, ProviderConditions>> = {};
+  // Iterate the bounded market roster, not caller keys. Unknown providers are ignored.
+  for (const provider of getMarketDefinition(marketId).providers) {
+    if (!Object.hasOwn(patches, provider.id)) continue;
+    const patch = patches[provider.id];
+    if (!patch || typeof patch !== "object" || Array.isArray(patch)) continue;
+    conditions[provider.id] = { ...provider.defaults, ...sanitizeConditionsPatch(marketId, patch) };
+  }
+  return conditions;
+}
 
 function validateContract(request: Request, marketId: MarketId) {
   if (request.method !== "GET") throw new ApiError(405, "method_not_allowed", "Use GET for this contract");
@@ -63,13 +80,14 @@ async function serveSelection(selection: RouteSelection, settlement: SettlementA
 }
 
 /** One frozen selection binds x402 quote, recipient, and response; safe for direct buyer dispatch. */
-export async function handleContract(request: Request, marketId: MarketId): Promise<Response> {
+export async function handleContract(request: Request, marketId: MarketId, options: ContractOptions = {}): Promise<Response> {
   let selection: RouteSelection;
   try {
     validateContract(request, marketId);
     const market = getMarketDefinition(marketId);
-    selection = selectRoute(marketId, { policy: requestPolicy(request, market) });
+    selection = selectRoute(marketId, { policy: requestPolicy(request, market), conditions: conditionOverrides(marketId, options.conditions) });
     if (!selection.providerId || selection.bidPrice === null) throw new ApiError(409, "no_eligible_provider", "No eligible provider");
+    if (selection.bidPrice <= 0) throw new ApiError(400, "unsupported_bid", "Paid requests require a provider bid greater than zero");
   } catch (error) { return errorResponse(error); }
   const selected = selection;
   const quote = quoteFromBid(selected.providerId!, selected.bidPrice!, getMarketDefinition(marketId).contract);
