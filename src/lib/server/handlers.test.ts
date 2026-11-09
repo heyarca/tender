@@ -152,7 +152,7 @@ describe("paid contract handlers", () => {
     expect(response.headers.get("PAYMENT-RESPONSE")).toBeNull();
     expect(response.headers.get("Cache-Control")).toBe("private, no-store");
   });
-  it.each(["prices/spot?pair=ETH-USD", "prices/spot?pair=BTC-USD&pair=BTC-USD", "prices/spot?pin=together", "prices/spot?min_success_rate=99.9"])("rejects invalid input %s before payment", async (path) => {
+  it.each(["prices/spot?pair=DOGE-USD", "prices/spot?pair=BTC-USD&pair=BTC-USD", "prices/spot?pin=together", "prices/spot?min_success_rate=99.9"])("rejects invalid input %s before payment", async (path) => {
     expect((await price(req(path))).status).toBe(400);
     expect(payments.calls).toHaveLength(0);
   });

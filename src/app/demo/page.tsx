@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
 import { SimpleHeader } from "@/components/market/page/simple-header";
+import { cn } from "@/lib/utils";
 import { PageContainer } from "@/components/shell/page-container";
 
 const TITLE = "Make APIs compete for your traffic";
@@ -29,9 +31,9 @@ export default function DemoPage() {
           />
           <Link
             href="/landing"
-            className="mt-6 inline-flex items-center gap-1.5 text-body font-medium text-accent-foreground"
+            className={cn(buttonVariants({ variant: "primary", size: "lg" }), "mt-8")}
           >
-            <ArrowLeft size={16} strokeWidth={1.75} aria-hidden /> Back to Tender
+            Try it at tender.heyarca.app <ArrowRight aria-hidden />
           </Link>
         </div>
       </PageContainer>

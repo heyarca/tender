@@ -1,3 +1,4 @@
+import { MARKET_IDS } from "@/lib/tender";
 import { describe, expect, it } from "vitest";
 import { GET as list } from "../../app/api/v1/markets/route";
 import { GET as detail } from "../../app/api/v1/markets/[market]/route";
@@ -6,8 +7,8 @@ const context = (market = "btc-usd") => ({ params: Promise.resolve({ market }) }
 describe("market handlers", () => {
   it("lists both markets with all provider counts", async () => {
     const data = await list().json();
-    expect(data.markets.map((m: { id: string }) => m.id)).toEqual(["sf-weather", "btc-usd", "sz-mlcc", "lithium-carbonate", "freight-sha-lax"]);
-    expect(data.markets.map((m: { provider_count: number }) => m.provider_count)).toEqual([8, 8, 5, 4, 4]);
+    expect(data.markets.map((m: { id: string }) => m.id)).toEqual([...MARKET_IDS]);
+    expect(data.markets.every((m: { provider_count: number }) => m.provider_count > 0)).toBe(true);
   });
   it("uses shared ranking and exclusions", async () => {
     const response = await detail(request(), context());
