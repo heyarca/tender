@@ -70,7 +70,7 @@ function build(spec: Spec): MarketDefinition {
       errorRate: input("Error rate", "%", 0, 20, 0.01, 2, 0.01, "Share of requests that fail."),
     },
     providers: spec.providers,
-    codeSamples: getApiSnippets({ id: spec.id, identifier }, spec.policy),
+    codeSamples: getApiSnippets({ id: spec.id, identifier, dataAgeUnit: "ms" }, spec.policy),
     sampleResponse: JSON.stringify(
       {
         id: "req_000003",

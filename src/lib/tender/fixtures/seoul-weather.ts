@@ -215,6 +215,6 @@ export const SEOUL_WEATHER: MarketDefinition = {
     },
   },
   providers: SEOUL_WEATHER_PROVIDERS,
-  codeSamples: getApiSnippets({ id: "seoul-weather", identifier: "weather/seoul" }, SEOUL_WEATHER_DEFAULT_POLICY),
+  codeSamples: getApiSnippets({ id: "seoul-weather", identifier: "weather/seoul", dataAgeUnit: "min" }, SEOUL_WEATHER_DEFAULT_POLICY),
   sampleResponse,
 };

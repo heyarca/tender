@@ -31,6 +31,7 @@ export type PriceMarketId =
   | "lithium-carbonate"
   | "freight-sha-lax";
 
+/** Markets that serve one indicative quote (value + unit) from a sample index. */
 export type MarketId = WeatherMarketId | PriceMarketId;
 
 /** Provider identifier, unique inside a market (matches `public/providers/<id>.<ext>`). */
@@ -409,7 +410,9 @@ export interface BtcReference {
   priceUsd: number;
 }
 
-/** Reference value of a market: weather conditions or BTC spot price. */
+/** Indicative quote of a quote market (value in the market's unit). */
+/** Upstream quote (true value at `at`) injected by server code. */
+/** Reference value of a market: weather conditions, BTC spot price, or an indicative quote. */
 export type MarketReference = WeatherReference | BtcReference;
 
 interface RequestBase {

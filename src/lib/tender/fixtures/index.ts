@@ -25,6 +25,7 @@ import { FREIGHT_SHA_LAX, LITHIUM_CARBONATE, SZ_MLCC } from "./real-world";
 
 export { BTC_USD, BTC_USD_DEFAULT_POLICY, BTC_USD_PROVIDERS } from "./btc-usd";
 export { SF_WEATHER, SF_WEATHER_DEFAULT_POLICY, SF_WEATHER_PROVIDERS } from "./sf-weather";
+export { FREIGHT_SHA_LAX, LITHIUM_CARBONATE, SZ_MLCC } from "./real-world";
 
 /** Market ids in display order. */
 export const MARKET_IDS = [
@@ -34,6 +35,11 @@ export const MARKET_IDS = [
   "seoul-weather",
   "tokyo-weather",
   "singapore-weather",
+  "sz-mlcc",
+  "lithium-carbonate",
+  "freight-sha-lax",
+  "eur-usd",
+  "gbp-usd",
   "btc-usd",
   "eth-usd",
   "sol-usd",

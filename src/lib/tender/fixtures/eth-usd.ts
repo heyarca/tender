@@ -200,6 +200,6 @@ export const ETH_USD: MarketDefinition = {
     },
   },
   providers: ETH_USD_PROVIDERS,
-  codeSamples: getApiSnippets({ id: "eth-usd", identifier: "prices/eth-usd" }, ETH_USD_DEFAULT_POLICY),
+  codeSamples: getApiSnippets({ id: "eth-usd", identifier: "prices/eth-usd", dataAgeUnit: "ms" }, ETH_USD_DEFAULT_POLICY),
   sampleResponse,
 };

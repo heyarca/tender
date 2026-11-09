@@ -1,3 +1,4 @@
+import { MARKET_IDS } from "@/lib/tender/fixtures";
 import { POLICY_PARAMETERS, PREFERENCES } from "./policy";
 
 const string = { type: "string" };
@@ -80,9 +81,12 @@ export const openapiDocument = {
   servers: [{ url: "/api/v1" }],
   paths: {
     "/markets": { get: { operationId: "listMarkets", summary: "List markets", responses: { "200": { description: "Available markets", content: content("MarketList") }, "405": errors["405"] } }, options: preflightOperation },
-    "/markets/{market}": { get: { operationId: "getMarket", summary: "Provider bids and routing decision", parameters: [{ name: "market", in: "path", required: true, schema: { type: "string", enum: ["sf-weather", "btc-usd"] } }, ...policyParameters], responses: { "200": { description: "Market detail and evaluation", content: content("MarketDetail") }, "400": errors["400"], "404": { description: "Unknown market", content: content("Error") }, "405": errors["405"] } }, options: preflightOperation },
+    "/markets/{market}": { get: { operationId: "getMarket", summary: "Provider bids and routing decision", parameters: [{ name: "market", in: "path", required: true, schema: { type: "string", enum: [...MARKET_IDS] } }, ...policyParameters], responses: { "200": { description: "Market detail and evaluation", content: content("MarketDetail") }, "400": errors["400"], "404": { description: "Unknown market", content: content("Error") }, "405": errors["405"] } }, options: preflightOperation },
     "/weather/current": { get: paidOperation("weatherCurrent", "location", "san-francisco", "WeatherResult"), options: preflightOperation },
     "/prices/spot": { get: paidOperation("pricesSpot", "pair", "BTC-USD", "PriceResult"), options: preflightOperation },
+    "/components/spot": { get: paidOperation("componentsSpot", "part", "MLCC-0402-100NF", "QuoteResult"), options: preflightOperation },
+    "/commodities/spot": { get: paidOperation("commoditiesSpot", "symbol", "LI2CO3-CN", "QuoteResult"), options: preflightOperation },
+    "/freight/rate": { get: paidOperation("freightRate", "lane", "SHA-LAX", "QuoteResult"), options: preflightOperation },
     "/openapi.json": { get: { operationId: "getOpenAPI", summary: "OpenAPI document", responses: { "200": { description: "OpenAPI 3.1 document", content: { "application/json": { schema: { type: "object" } } } }, "405": errors["405"] } }, options: preflightOperation },
   },
   components: { schemas: {
@@ -105,6 +109,7 @@ export const openapiDocument = {
       location: { type: "object", properties: { name: string, latitude: number, longitude: number } }, observed_at: timestamp,
       temperature_f: number, feels_like_f: number, condition: string, humidity_percent: number, wind_mph: number, wind_direction_degrees: number, wind_direction: string, pressure_hpa: number, visibility_mi: number, dew_point_f: number, cloud_cover_percent: number,
     } },
+    QuoteResult: { type: "object", required: [...requiredResult, "symbol", "price", "unit", "indicative", "source_timestamp"], properties: { ...result, symbol: string, price: { type: "number", description: "Indicative quote from a sample index, in USD per `unit`" }, unit: string, currency: { const: "USD" }, indicative: { const: true, description: "Sample index value, not a live exchange or freight feed" }, source_timestamp: timestamp } },
     PriceResult: { type: "object", required: [...requiredResult, "pair", "price", "source_timestamp"], properties: { ...result, pair: { const: "BTC-USD" }, price: { type: "number", description: "BTC spot price in USD, two decimals" }, currency: { const: "USD" }, source_timestamp: timestamp } },
     PaymentRequired: { type: "object", description: "Tender payment challenge body. Standard x402 v2 requirements are encoded in PAYMENT-REQUIRED, including accepts[].extra settlement metadata.", required: ["error", "providerId", "payTo", "price_usd", "settled_usd", "settled_atomic"], properties: { error: { type: "string" }, providerId: string, payTo: string, ...settlement } },
   } },

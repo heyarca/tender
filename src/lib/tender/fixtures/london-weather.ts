@@ -215,6 +215,6 @@ export const LONDON_WEATHER: MarketDefinition = {
     },
   },
   providers: LONDON_WEATHER_PROVIDERS,
-  codeSamples: getApiSnippets({ id: "london-weather", identifier: "weather/london" }, LONDON_WEATHER_DEFAULT_POLICY),
+  codeSamples: getApiSnippets({ id: "london-weather", identifier: "weather/london", dataAgeUnit: "min" }, LONDON_WEATHER_DEFAULT_POLICY),
   sampleResponse,
 };

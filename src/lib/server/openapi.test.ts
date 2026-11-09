@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 import { openapiDocument } from "./openapi";
 import { GET } from "../../app/api/v1/openapi.json/route";
 describe("OpenAPI", () => {
-  it("serves an OpenAPI 3.1 document for all five public routes", async () => {
+  it("serves an OpenAPI 3.1 document for all eight public routes", async () => {
     const response = GET();
     expect(response.status).toBe(200);
     const doc = await response.json();
     expect(doc.openapi).toBe("3.1.0");
-    expect(Object.keys(doc.paths)).toHaveLength(5);
+    expect(Object.keys(doc.paths)).toHaveLength(8);
   });
   it("resolves every schema reference and uses unique operation ids", () => {
     const refs: string[] = [];

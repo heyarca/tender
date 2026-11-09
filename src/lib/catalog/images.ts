@@ -50,4 +50,29 @@ export const CATALOG_IMAGE_PATHS: Record<string, CatalogImagePath> = {
     jpg: "/catalog/translate-en-ko.jpg",
     alt: "Open book with fanned pages against a light background.",
   },
+  "stock-quotes": {
+    avif: "/catalog/stock-quotes.avif",
+    jpg: "/catalog/stock-quotes.jpg",
+    alt: "Abstract candlestick lights on a dark financial display.",
+  },
+  "commodities": {
+    avif: "/catalog/commodities.avif",
+    jpg: "/catalog/commodities.jpg",
+    alt: "Textured metallic gold leaf surface.",
+  },
+  "flight-status": {
+    avif: "/catalog/flight-status.avif",
+    jpg: "/catalog/flight-status.jpg",
+    alt: "Empty airport runway stretching toward distant buildings.",
+  },
+  "air-quality": {
+    avif: "/catalog/air-quality.avif",
+    jpg: "/catalog/air-quality.jpg",
+    alt: "Fog drifting through a dense green forest.",
+  },
+  "sports-scores": {
+    avif: "/catalog/sports-scores.avif",
+    jpg: "/catalog/sports-scores.jpg",
+    alt: "Stadium floodlights glowing through falling snow.",
+  },
 };

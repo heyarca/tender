@@ -55,3 +55,33 @@ These assets are derived from free Unsplash photos. Source pages are retained fo
 - Source page: https://unsplash.com/photos/open-book-with-fanned-pages-JMATuFkXeHU
 - Direct image: https://images.unsplash.com/photo-1591951425600-d09958978584?auto=format&fit=crop&q=60&crop=entropy&cs=srgb&fm=jpg&ixid=NHwxMjA3fDA&ixlib=rb-4.1.0
 - License: [Unsplash License](https://unsplash.com/license)
+
+## `stock-quotes`
+- Photographer: Austin Hervias
+- Source page: https://unsplash.com/photos/candlestick-stock-chart-on-dark-screen-VLpWpv3oDB4
+- Direct image: https://images.unsplash.com/photo-1689732888407-310424e3a372?auto=format&fit=crop&q=60&crop=entropy&cs=srgb&fm=jpg&ixid=NHwxMjA3fDA&ixlib=rb-4.1.0
+- License: [Unsplash License](https://unsplash.com/license)
+
+## `commodities`
+- Photographer: Kier in Sight Archives
+- Source page: https://unsplash.com/photos/textured-gold-leaf-surface-shLU6SZfIQY
+- Direct image: https://images.unsplash.com/photo-1618352357270-ef40d25bcef8?auto=format&fit=crop&q=60&crop=entropy&cs=srgb&fm=jpg&ixid=NHwxMjA3fDA&ixlib=rb-4.1.0
+- License: [Unsplash License](https://unsplash.com/license)
+
+## `flight-status`
+- Photographer: Markus Kammermann
+- Source page: https://unsplash.com/photos/an-empty-airport-runway-with-buildings-in-the-distance-afzMa6khAPY
+- Direct image: https://images.unsplash.com/photo-1773589178149-55ec8437d58e?auto=format&fit=crop&q=60&crop=entropy&cs=srgb&fm=jpg&ixid=NHwxMjA3fDA&ixlib=rb-4.1.0
+- License: [Unsplash License](https://unsplash.com/license)
+
+## `air-quality`
+- Photographer: Markos Mant
+- Source page: https://unsplash.com/photos/a-forest-filled-with-lots-of-trees-covered-in-fog-Ln9wvXBDqr0
+- Direct image: https://images.unsplash.com/photo-1632307941173-5d541ea1d940?auto=format&fit=crop&q=60&crop=entropy&cs=srgb&fm=jpg&ixid=NHwxMjA3fDA&ixlib=rb-4.1.0
+- License: [Unsplash License](https://unsplash.com/license)
+
+## `sports-scores`
+- Photographer: Daniel van den Berg
+- Source page: https://unsplash.com/photos/stadium-floodlights-illuminating-night-snow-29Jx9qyTW14
+- Direct image: https://images.unsplash.com/photo-1509928015542-fcc9b3bcd048?auto=format&fit=crop&q=60&crop=entropy&cs=srgb&fm=jpg&ixid=NHwxMjA3fDA&ixlib=rb-4.1.0
+- License: [Unsplash License](https://unsplash.com/license)

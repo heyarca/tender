@@ -200,6 +200,6 @@ export const XRP_USD: MarketDefinition = {
     },
   },
   providers: XRP_USD_PROVIDERS,
-  codeSamples: getApiSnippets({ id: "xrp-usd", identifier: "prices/xrp-usd" }, XRP_USD_DEFAULT_POLICY),
+  codeSamples: getApiSnippets({ id: "xrp-usd", identifier: "prices/xrp-usd", dataAgeUnit: "ms" }, XRP_USD_DEFAULT_POLICY),
   sampleResponse,
 };
