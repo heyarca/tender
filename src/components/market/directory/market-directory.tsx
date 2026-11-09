@@ -2,6 +2,7 @@
 
 import { LayoutGrid, Search, Table2, X } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -468,6 +469,16 @@ function MarketCard({ row }: { row: DirectoryRow }) {
 }
 
 function DirectoryTable({ rows }: { rows: DirectoryRow[] }) {
+  const router = useRouter();
+  const navigate = (event: React.MouseEvent<HTMLTableRowElement>, href: string) => {
+    if ((event.target as Element).closest("a")) return;
+    router.push(href);
+  };
+  const navigateWithKeyboard = (event: React.KeyboardEvent<HTMLTableRowElement>, href: string) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    router.push(href);
+  };
   return (
     <Table>
       <TableHeader>
@@ -485,7 +496,15 @@ function DirectoryTable({ rows }: { rows: DirectoryRow[] }) {
       </TableHeader>
       <TableBody>
         {rows.map((row) => (
-          <TableRow key={row.id} interactive>
+          <TableRow
+            key={row.id}
+            interactive
+            tabIndex={0}
+            aria-label={`Open ${row.name}`}
+            onClick={(event) => navigate(event, row.href)}
+            onKeyDown={(event) => navigateWithKeyboard(event, row.href)}
+            className="focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
+          >
             <TableRowHeader>
               <Link href={row.href} className="flex min-w-0 items-center gap-2 text-foreground no-underline">
                 <span className="flex size-5 shrink-0 items-center justify-center text-muted-foreground">
