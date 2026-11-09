@@ -53,7 +53,7 @@ async function serveSelection(selection: RouteSelection, settlement: SettlementA
   };
   if (result.marketId === "btc-usd") {
     return json({ ...common, pair: result.payload.pair, price: result.payload.priceUsd, currency: "USD",
-      change_usd: null, source_timestamp: new Date(result.payload.sourceTimestamp).toISOString() });
+      source_timestamp: new Date(result.payload.sourceTimestamp).toISOString() });
   }
   const w = result.payload;
   return json({ ...common, location: w.location, observed_at: new Date(w.observedAt).toISOString(),
@@ -79,7 +79,9 @@ export async function handleContract(request: Request, marketId: MarketId): Prom
       (_request, paidQuote) => serveSelection(selected, paidQuote),
       () => quote,
     )(request);
-  } catch {
+  } catch (error) {
+    // Log only the error identity, never the request, payment headers, or payload.
+    console.error("Tender payment service error", error instanceof Error ? { name: error.name, message: error.message } : { name: "UnknownError" });
     // Fail closed: a facilitator/settlement outage must never produce an unpaid payload.
     response = json({ error: { code: "payment_unavailable", message: "Payment service unavailable" } }, 503);
   }
