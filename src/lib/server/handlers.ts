@@ -106,6 +106,13 @@ export async function handleContract(request: Request, marketId: MarketId, optio
     if (response.status >= 500 && (!providerResponse || providerResponse.status < 400)) {
       response = json({ error: { code: "payment_unavailable", message: "Payment service unavailable" } }, 503);
     }
+    // The SDK's settlement catch also returns a bare 402 with no PAYMENT-REQUIRED header
+    // when settlement throws after the handler already produced a payload. Serving it
+    // would break the documented PaymentRequired shape, hide whether money moved, and
+    // invite a blind PAYMENT-SIGNATURE retry that could pay twice. Normalize it.
+    if (response.status === 402 && providerResponse && providerResponse.status < 400 && !response.headers.has("PAYMENT-REQUIRED")) {
+      response = json({ error: { code: "payment_unavailable", message: "Payment service unavailable" } }, 503);
+    }
   } catch (error) {
     // Log only the error identity, never the request, payment headers, or payload.
     console.error("Tender payment service error", error instanceof Error ? { name: error.name, message: error.message } : { name: "UnknownError" });
@@ -114,6 +121,8 @@ export async function handleContract(request: Request, marketId: MarketId, optio
   }
   for (const [name, value] of Object.entries(routingHeaders(selected))) response.headers.set(name, value);
   response.headers.set("Cache-Control", "private, no-store");
+  // Cross-origin browser clients (x402 wallets, dashboards) read these paid responses.
+  response.headers.set("Access-Control-Allow-Origin", "*");
   const expose = response.headers.get("Access-Control-Expose-Headers");
   response.headers.set("Access-Control-Expose-Headers", [expose, "Tender-Route-Reason", "Tender-Policy-Violation"].filter(Boolean).join(", "));
   return response;
