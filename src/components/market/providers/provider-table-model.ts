@@ -228,7 +228,7 @@ export interface RouteLabel {
   tone: RouteTone;
 }
 
-/** Route column copy: Active, Pinned, Rank #2 standby, Excluded. */
+/** Route column copy: Active, Pinned, #2 standby (rank among qualified providers), Excluded. */
 export function routeLabel(row: Pick<ProviderRow, "role" | "evaluation" | "isPendingTarget">): RouteLabel {
   switch (row.role) {
     case "active":
@@ -239,7 +239,7 @@ export function routeLabel(row: Pick<ProviderRow, "role" | "evaluation" | "isPen
       return { text: "Pinned, failing", tone: "negative" };
     case "standby":
       if (row.isPendingTarget) return { text: "Next route", tone: "warning" };
-      return { text: `Rank #${row.evaluation.rank ?? "–"} standby`, tone: "neutral" };
+      return { text: `#${row.evaluation.rank ?? "–"} standby`, tone: "neutral" };
     case "excluded":
       return { text: "Excluded", tone: "faint" };
   }

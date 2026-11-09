@@ -93,7 +93,7 @@ describe("ProvidersSection", () => {
     expect(row("modal").querySelector("[data-slot=status-badge]")?.textContent).toBe("Stale data");
     expect(row("mistral").querySelector("[data-slot=status-badge]")?.textContent).toBe("Over budget");
     expect(row("nebius").querySelector("[data-slot=status-badge]")?.textContent).toBe("Unavailable");
-    expect(within(row("deepinfra")).getByText("Rank #2 standby")).toBeTruthy();
+    expect(row("deepinfra").querySelector("td:nth-child(8)")?.textContent).toBe("Rank #2 standby");
     expect(screen.getByText(/of 8 qualify/).textContent).toBe("4 of 8 qualify");
     expect(decision().dataset.kind).toBe("routing");
     expect(within(decision()).getByRole("heading", { name: "Routing to Together" })).toBeTruthy();
