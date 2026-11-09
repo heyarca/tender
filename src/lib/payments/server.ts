@@ -56,7 +56,14 @@ export function withX402Payment<T extends PaymentQuote>(
       const response = await handler(request, selected);
       return new NextResponse(response.body, { status: response.status, headers: response.headers });
     }, paymentRouteConfig(selected), resourceServer);
-    const response = await paidHandler(request instanceof NextRequest ? request : new NextRequest(request));
+    // Next 16 Cache Components wraps Request in a proxy. Passing that proxy to
+    // the native Request constructor fails its private-field brand check.
+    const sdkRequest = new NextRequest(request.url, {
+      method: request.method,
+      headers: new Headers(request.headers),
+      ...(request.method === "GET" || request.method === "HEAD" ? {} : { body: await request.clone().arrayBuffer() }),
+    });
+    const response = await paidHandler(sdkRequest);
     response.headers.set("Tender-Provider", selected.providerId);
     response.headers.set("Tender-Price-USD", String(selected.price_usd));
     response.headers.set("Tender-Settled-Atomic", selected.settled_atomic);
