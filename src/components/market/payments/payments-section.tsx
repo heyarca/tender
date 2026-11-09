@@ -24,7 +24,6 @@ import {
   ROUNDING_NOTE,
   shortAddress,
   summarizePayload,
-  usdcToAtomic,
   type PaymentQuoteView,
 } from "./payment-model";
 import { payeeBalance } from "./payment-records";
@@ -130,7 +129,7 @@ export function PaymentsSection({ marketId }: MarketSectionProps) {
   const payer = balances?.payer ?? null;
   const payee = payeeBalance(balances, quote.providerId);
   const payerMissing = payments.balancesStatus === "ready" && balances !== null && payer === null;
-  const payerAtomic = payer ? usdcToAtomic(payer.amountUsd) ?? BigInt(payer.amountAtomic) : null;
+  const payerAtomic = payer ? BigInt(payer.amountAtomic) : null;
   const insufficient =
     payerAtomic !== null && quote.amounts !== null && payerAtomic < BigInt(quote.amounts.settledAtomic);
 
