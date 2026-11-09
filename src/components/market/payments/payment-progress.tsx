@@ -16,7 +16,7 @@ const statusText: Record<StepStatus, string> = {
 
 const barClass: Record<StepStatus, string> = {
   upcoming: "bg-border",
-  current: "bg-primary/40",
+  current: "bg-primary-strong/45",
   complete: "bg-positive",
   failed: "bg-negative",
   skipped: "bg-border",
@@ -26,14 +26,14 @@ function StepIcon({ status, index }: { status: StepStatus; index: number }) {
   const base = "flex size-5 shrink-0 items-center justify-center rounded-full [&_svg]:size-3";
   if (status === "complete") {
     return (
-      <span className={cn(base, "bg-positive text-primary-foreground")}>
+      <span className={cn(base, "bg-positive text-background")}>
         <Check aria-hidden="true" strokeWidth={3} />
       </span>
     );
   }
   if (status === "failed") {
     return (
-      <span className={cn(base, "bg-negative text-primary-foreground")}>
+      <span className={cn(base, "bg-negative text-background")}>
         <X aria-hidden="true" strokeWidth={3} />
       </span>
     );
