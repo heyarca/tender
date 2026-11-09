@@ -1,4 +1,4 @@
-import type { BitcoinQuote, ResultProvider, ResultRequest, WeatherReading } from "@/components/result";
+import type { BitcoinQuote, FieldsReading, ResultProvider, ResultRequest, WeatherReading } from "@/components/result";
 import { providerColor } from "@/components/viz/colors";
 import type { PricePoint, TimelineRequest, VizProviders } from "@/components/viz/types";
 import type {
@@ -131,4 +131,36 @@ export function toTimelineRequests(recent: readonly RequestResult[]): TimelineRe
     });
   }
   return timeline;
+}
+
+/**
+ * Shape of the engine's `FieldsPayload` (shared interface, `src/lib/tender/types.ts`): the result of
+ * every contract other than `weather.current` and `prices.spot`.
+ */
+export interface FieldsPayloadShape {
+  kind: "fields";
+  contractId: string;
+  values: Record<string, unknown>;
+  sourceTimestamp: number;
+  change: number | null;
+}
+
+/** The fields payload of a served request, or `null` for weather and spot-price payloads. */
+export function fieldsPayloadOf(served: ServedRequestResult | null): FieldsPayloadShape | null {
+  const payload = served?.payload as { kind: string } | undefined;
+  return payload && payload.kind === "fields" ? (payload as unknown as FieldsPayloadShape) : null;
+}
+
+/** Normalized fields result of the newest served request, or `null`. */
+export function toFieldsReading(served: ServedRequestResult | null): FieldsReading | null {
+  const payload = fieldsPayloadOf(served);
+  if (!served || !payload) return null;
+  return {
+    contractId: payload.contractId,
+    values: payload.values,
+    sourceTimestamp: payload.sourceTimestamp,
+    change: payload.change,
+    dataAgeMs: served.dataAgeMs,
+    latencyMs: served.latencyMs,
+  };
 }
