@@ -184,7 +184,10 @@ describe("paid contract handlers", () => {
   });
   it("does not accept HEAD/POST as paid contract requests", async () => {
     expect(priceHead().status).toBe(405);
-    expect((await handleContract(new Request("https://tender.example/api/v1/prices/spot", { method: "POST" }), "btc-usd")).status).toBe(405);
+    expect(priceHead().headers.get("Allow")).toBe("GET");
+    const post = await handleContract(new Request("https://tender.example/api/v1/prices/spot", { method: "POST" }), "btc-usd");
+    expect(post.status).toBe(405);
+    expect(post.headers.get("Allow")).toBe("GET");
     expect(payments.calls).toHaveLength(0);
   });
 });

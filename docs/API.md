@@ -16,6 +16,8 @@ Base path: `/api/v1`. All handlers use the Node.js runtime. The OpenAPI 3.1 cont
 Market ids are `sf-weather` and `btc-usd`. Only the listed location and pair are supported.
 Omitting either contract argument uses that endpoint's default. Other values return HTTP 400.
 Unknown markets return HTTP 404. Discovery and OpenAPI do not require payment.
+Every `/api/v1` endpoint accepts GET only; other methods return HTTP 405 with an
+`Allow: GET` header and an `{"error":{"code":"method_not_allowed"}}` body.
 
 ## Routing policy
 
