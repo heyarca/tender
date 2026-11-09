@@ -122,7 +122,7 @@ describe("ClosingSection", () => {
     const links = screen.getAllByRole("link");
     expect(links).toHaveLength(1);
     expect(links[0]?.textContent).toBe("Try Tender");
-    expect(links[0]?.getAttribute("href")).toBe("/markets/btc-usd");
+    expect(links[0]?.getAttribute("href")).toBe("/markets");
     expect(container.textContent ?? "").not.toMatch(BANNED);
   });
 

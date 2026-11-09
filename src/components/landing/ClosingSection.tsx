@@ -34,7 +34,7 @@ export function ClosingSection() {
         <p className={styles.closingBody}>
           Pick any API on Tender or request a new one. Set your requirements and see where Tender routes your next request.
         </p>
-        <ButtonLink href="/markets/btc-usd" variant="primary" size="lg" icon={<ArrowUpRight />} className={styles.closingAction}>
+        <ButtonLink href="/markets" variant="primary" size="lg" icon={<ArrowUpRight />} className={styles.closingAction}>
           Try Tender
         </ButtonLink>
       </div>

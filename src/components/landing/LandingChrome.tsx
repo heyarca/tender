@@ -4,7 +4,7 @@ import { ButtonLink } from "./LandingButton";
 import { TenderWordmark } from "./TenderWordmark";
 import { landingStyles as styles } from "./styles";
 
-export const DEMO_HREF = "/markets/btc-usd";
+export const DEMO_HREF = "/markets";
 
 export function LandingLogo({ large = false }: { large?: boolean }) {
   return <Link href="/landing" className={`${styles.logo} ${large ? styles.logoLarge : ""}`} aria-label="Tender home"><TenderWordmark title={null} /></Link>;

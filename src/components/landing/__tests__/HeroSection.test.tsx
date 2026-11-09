@@ -56,7 +56,7 @@ describe("HeroSection", () => {
         "Compare API providers on price, speed, and data freshness. Set your requirements, and Tender routes requests to a provider that meets them.",
       ),
     ).toBeTruthy();
-    expect(screen.getByRole("link", { name: /Try Tender/ }).getAttribute("href")).toBe("/markets/btc-usd");
+    expect(screen.getByRole("link", { name: /Try Tender/ }).getAttribute("href")).toBe("/markets");
     expect(screen.getByRole("link", { name: /See how it works/ }).getAttribute("href")).toBe("#how-it-works");
     expect(container.textContent).not.toMatch(/simulated|sample|illustrative|demo/i);
   });
