@@ -27,7 +27,7 @@ export default function DemoPage() {
             playsInline
             preload="metadata"
             poster="/demo/tender-demo-poster.jpg"
-            src="/demo.mp4"
+            src="/demo.mp4?v=56d0d729"
           />
           <Link
             href="/landing"
