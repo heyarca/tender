@@ -155,7 +155,7 @@ function ConditionsEditor({
         <span className="inline-flex items-center gap-1.5">
           {provider.name}
           {providerRow.modified ? (
-            <span aria-label="modified" className="size-1.5 shrink-0 rounded-full bg-primary" />
+            <span aria-label="modified" className="size-1.5 shrink-0 rounded-full bg-primary-strong" />
           ) : null}
         </span>
       ),
@@ -318,7 +318,7 @@ function ProviderFields({
             Availability
           </span>
           {row.modifiedFields.includes("available") ? (
-            <span aria-hidden="true" className="ml-0.5 size-1.5 rounded-full bg-primary" />
+            <span aria-hidden="true" className="ml-0.5 size-1.5 rounded-full bg-primary-strong" />
           ) : null}
         </div>
         <label className="flex h-8 cursor-pointer items-center gap-2.5 rounded-md border border-input bg-input-bg px-2.5 text-body text-foreground">

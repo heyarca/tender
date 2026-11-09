@@ -342,7 +342,7 @@ function EligibilityStrip({ view, preview }: { view: MarketView; preview: Return
             {serving ? (
               <span
                 aria-hidden="true"
-                className="absolute -right-0.5 -bottom-0.5 size-2 rounded-full border-[1.5px] border-muted bg-primary"
+                className="absolute -right-0.5 -bottom-0.5 size-2 rounded-full border-[1.5px] border-muted bg-primary-strong"
               />
             ) : null}
           </span>
