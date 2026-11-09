@@ -55,7 +55,7 @@ function SubHeading({ children, info, aside }: { children: ReactNode; info?: Rea
   return (
     <div className="mb-2.5 flex min-h-5 flex-wrap items-center gap-x-2 gap-y-1">
       <h3 className="text-xs font-medium text-foreground">{children}</h3>
-      {info ? <InfoTooltip content={info} iconSize={12} /> : null}
+      {info ? <InfoTooltip content={info} iconSize={12} label={`About ${typeof children === "string" ? children.toLowerCase() : "this"}`} /> : null}
       {aside ? <div className="ml-auto flex items-center gap-2 text-caption text-muted-foreground">{aside}</div> : null}
     </div>
   );

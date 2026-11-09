@@ -72,7 +72,10 @@ export function ReceiptCard({ record, marketId, timeZone, className }: ReceiptCa
           }
         >
           <Amount value={formatUsdcAtomic(receipt.settled_atomic)} unit="USDC" />
-          <span className="block text-caption text-muted-foreground">{atomicUnitsLabel(receipt.settled_atomic)}</span>
+          <span className="block text-caption text-muted-foreground">
+            {atomicUnitsLabel(receipt.settled_atomic)}
+            {rounded ? " · rounded up" : null}
+          </span>
         </Field>
         <Field label="Latency">
           <Amount value={format.latency(receipt.latency_ms)} />
