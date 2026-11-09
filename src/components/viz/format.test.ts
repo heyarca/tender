@@ -46,8 +46,8 @@ describe("formatters", () => {
   });
 
   it("shares the engine formatter outputs (no drift)", () => {
-    // 59_950 ms boundary: 59_980 ms is one minute, not "60.0 s".
-    expect(formatAge(59_980)).toBe("1 min");
+    // 59_950 ms boundary: the engine floors at unit boundaries, so 59_980 ms stays "59.9 s" (never "60.0 s" or "1 min").
+    expect(formatAge(59_980)).toBe("59.9 s");
     expect(formatAge(59_980)).toBe(sharedFormat.dataAge(59_980));
     // 999.6 ms rounds to at least one second, not "1000 ms".
     expect(formatLatency(999.6)).toBe("1 s");
