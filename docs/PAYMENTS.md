@@ -71,6 +71,20 @@ The response is `{ response, receipt }`. `receipt` includes:
 `response` contains the normalized contract payload, including `provider`, `latency_ms` and `data_age_ms`.
 No success receipt is invented when the facilitator fails.
 
+### Optional progress stream
+
+Clients may send `Accept: application/x-ndjson`. Once validation and rate-limit checks pass, the endpoint returns HTTP 200 with newline-delimited events:
+
+- `{"type":"payment-required","providerId":"together","payTo":"0x…","settled_atomic":"18"}` after the real x402 402 challenge is decoded and checked.
+- `{"type":"signed"}` immediately before dispatching the retry that actually carries `PAYMENT-SIGNATURE`.
+- `{"type":"result","result":...}` only after settlement and the contract response are verified.
+- Or `{"type":"error","status":409,"error":"...","details":...}` with the original failure status and structured details.
+
+Pre-stream validation, missing-wallet and rate-limit errors remain ordinary JSON with their HTTP status; 429 includes `Retry-After: 60`.
+Legacy JSON callers are unchanged. A disconnected stream aborts work before authorization/settlement when possible, but never releases the in-flight wallet lock while an already-started settlement is still running.
+
+The client hook exposes `stage: "idle" | "payment-required" | "signed" | "complete" | "failed"` and `failure: { status, message, retryAfterSeconds?, details? } | null`, in addition to the existing `error` string. Status 0 identifies network errors. Non-JSON error pages retain their HTTP status. An interrupted stream without a terminal receipt is a failure, never assumed payment success.
+
 ### `GET /api/payments/balances`
 
 Returns `{ network, asset, tokenAddress, payer, payees }`. Each balance has `id`, `address`, `amountAtomic` and `amountUsd` (decimal string).
@@ -156,7 +170,7 @@ Protected preview smoke can call `/api/payments/demo-request` via `vercel curl` 
 
 - `quoteFromBid(providerId, bidPerMillion, description): ValidatedPaymentQuote` in `quote.ts` / `server.ts`.
 - `withX402Payment<T extends PaymentQuote>(handler, quote, paymentServer?): (request: Request) => Promise<Response>` in `server.ts`. The quote callback runs once; the handler receives the same enriched quote and any routing context carried in `T`.
-- `performPaidRequest(url, transport?): Promise<PaidRequestResult>` in `buyer.ts`.
-- `usePaidRequest(market)` in `client.ts` returns `{ run({ policy?, conditions? }), receipts, pending, error }` (legacy `run(policy)` is also accepted). Receipt history is capped at 50; concurrent clicks do not duplicate payments.
+- `performPaidRequest(url, transport?, callerSignal?, onProgress?): Promise<PaidRequestResult>` in `buyer.ts`.
+- `usePaidRequest(market)` in `client.ts` returns `{ run({ policy?, conditions? }), receipts, pending, error, failure, stage }` (legacy `run(policy)` is also accepted). Receipt history is capped at 50; concurrent clicks do not duplicate payments.
 
 Tests cover bid conversion, rounding disclosure, quote validation, payee lookup, real SDK 402 encoding with a test facilitator, settlement only after success, rate limits, spend caps and policy validation.

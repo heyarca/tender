@@ -8,7 +8,7 @@ import { EXPLORER_URL, PAYMENT_NETWORK, USDC_ADDRESS } from "./config";
 import { assertSafePayment } from "./limits";
 import { settlementAmounts } from "./quote";
 import { getPayerAccount } from "./wallet";
-import type { PaidRequestInput, PaidRequestResult, PaidResponsePayload, PaymentPolicy } from "./types";
+import type { PaidRequestInput, PaidRequestResult, PaidResponsePayload, PaymentPolicy, PaidRequestProgress } from "./types";
 
 export function parsePaidRequestInput(value: unknown): PaidRequestInput {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Expected a JSON object");
@@ -50,7 +50,7 @@ export class PaidRequestError extends Error {
 }
 
 /** Runs the actual x402 challenge/sign/retry flow using HTTP or a local route transport. No automatic re-payment. */
-export async function performPaidRequest(url: URL, transport: typeof fetch = fetch, callerSignal?: AbortSignal): Promise<PaidRequestResult> {
+export async function performPaidRequest(url: URL, transport: typeof fetch = fetch, callerSignal?: AbortSignal, onProgress?: (event: PaidRequestProgress) => void): Promise<PaidRequestResult> {
   const deadline = AbortSignal.timeout(75_000);
   const signal = callerSignal ? AbortSignal.any([deadline, callerSignal]) : deadline;
   signal.throwIfAborted();
@@ -66,18 +66,36 @@ export async function performPaidRequest(url: URL, transport: typeof fetch = fet
     if (typeof exact !== "number" || settlementAmounts(exact).settled_atomic !== selectedRequirements.amount) throw new Error("Invalid settlement quote");
     selected = selectedRequirements;
   });
+  let challengeEmitted = false;
+  let signedEmitted = false;
   const checkedTransport: typeof fetch = async (input, init) => {
+    signal.throwIfAborted();
+    const requestHeaders = new Headers(init?.headers ?? (input instanceof Request ? input.headers : undefined));
+    if (!signedEmitted && requestHeaders.has("PAYMENT-SIGNATURE")) {
+      signedEmitted = true;
+      onProgress?.({ type: "signed" });
+    }
     const result = await transport(input, init);
     const requiredHeader = result.headers.get("PAYMENT-REQUIRED");
     if (result.status === 402 && requiredHeader) {
       const required = decodePaymentRequiredHeader(requiredHeader);
-      if (required.accepts.length === 1) assertSafePayment(required.accepts[0]);
+      if (required.accepts.length === 1) {
+        const requirement = required.accepts[0];
+        assertSafePayment(requirement);
+        if (!challengeEmitted) {
+          challengeEmitted = true;
+          onProgress?.({ type: "payment-required", providerId: String(requirement.extra.providerId), payTo: requirement.payTo, settled_atomic: requirement.amount });
+        }
+      }
     }
     return result;
   };
   const paidFetch = wrapFetchWithPayment(checkedTransport, client);
   const response = await paidFetch(url, { headers: { Accept: "application/json" }, redirect: "error", cache: "no-store", signal });
-  const body: unknown = await response.json();
+  let body: unknown;
+  try { body = await response.json(); } catch {
+    throw new PaidRequestError("Payment service returned an unreadable response. Check balances before trying again.", response.ok ? 502 : response.status);
+  }
   const header = response.headers.get("PAYMENT-RESPONSE");
   if (!response.ok) {
     const failed = header ? decodePaymentResponseHeader(header) : undefined;
