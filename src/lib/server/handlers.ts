@@ -74,11 +74,20 @@ export async function handleContract(request: Request, marketId: MarketId): Prom
   const selected = selection;
   const quote = quoteFromBid(selected.providerId!, selected.bidPrice!, getMarketDefinition(marketId).contract);
   let response: Response;
+  let providerResponse: Response | undefined;
   try {
     response = await withX402Payment(
-      (_request, paidQuote) => serveSelection(selected, paidQuote),
+      async (_request, paidQuote) => {
+        providerResponse = await serveSelection(selected, paidQuote);
+        return providerResponse;
+      },
       () => quote,
     )(request);
+    // The SDK returns some facilitator failures as responses rather than throwing.
+    // Keep provider failures intact, but normalize payment infrastructure failures.
+    if (response.status >= 500 && (!providerResponse || providerResponse.status < 400)) {
+      response = json({ error: { code: "payment_unavailable", message: "Payment service unavailable" } }, 503);
+    }
   } catch (error) {
     // Log only the error identity, never the request, payment headers, or payload.
     console.error("Tender payment service error", error instanceof Error ? { name: error.name, message: error.message } : { name: "UnknownError" });
