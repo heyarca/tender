@@ -1,6 +1,6 @@
 "use client";
 
-import { Command } from "cmdk";
+import { Command, defaultFilter } from "cmdk";
 import { CornerDownLeft, Search } from "lucide-react";
 import Image from "next/image";
 import * as React from "react";
@@ -69,7 +69,7 @@ export function CommandPalette({
         className="max-w-[640px] overflow-hidden"
       >
         <DialogTitle className="sr-only">Search</DialogTitle>
-        <Command label="Search" loop vimBindings={false} className="flex min-h-0 flex-col">
+        <Command label="Search" loop vimBindings={false} filter={filterByKeywords} className="flex min-h-0 flex-col">
           <div className="flex h-12 shrink-0 items-center gap-2.5 border-b border-border px-4">
             <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden />
             <Command.Input
@@ -137,6 +137,11 @@ export function CommandPalette({
       </DialogContent>
     </Dialog>
   );
+}
+
+/** Matches label, description, and keywords only, so item ids never match a query. */
+function filterByKeywords(_value: string, search: string, keywords?: string[]) {
+  return defaultFilter(keywords?.join(" ") ?? "", search);
 }
 
 function PaletteItemIcon({ item }: { item: CommandPaletteItem }) {
