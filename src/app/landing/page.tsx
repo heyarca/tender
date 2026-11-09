@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { AgentBanner } from "@/components/landing/AgentBanner";
-import { ClosingSection } from "@/components/landing/ClosingSection";
+import { ClosingSection, ManifestoSection } from "@/components/landing/ClosingSection";
 import { HeroSection } from "@/components/landing/HeroSection";
 import { LandingFooter, LandingHeader } from "@/components/landing/LandingChrome";
 import { LandingProductProviders } from "@/components/landing/LandingProductProviders";
@@ -10,9 +10,9 @@ import { PriceSection } from "@/components/landing/PriceSection";
 import { RequirementsSection } from "@/components/landing/RequirementsSection";
 import { SwitchSection } from "@/components/landing/SwitchSection";
 
-const TITLE = "Tender — Make APIs compete for your traffic";
+const TITLE = "Tender — Always on the best API";
 const DESCRIPTION =
-  "Compare API providers on price, speed, and data freshness. Set your requirements, and Tender routes each request to a provider that meets them.";
+  "If an API breaks, Tender switches. If a better one shows up, Tender switches. Your app never notices.";
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },
@@ -42,6 +42,7 @@ export default function LandingPage() {
           <SwitchSection />
           <PriceSection />
           <MarketplaceSection />
+          <ManifestoSection />
           <ClosingSection />
         </main>
       </LandingProductProviders>

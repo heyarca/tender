@@ -102,9 +102,9 @@ export function RequirementsSection() {
           titleId="requirements-title"
           title={
             <>
-              Choose what your API
+              Make APIs compete
               <br />
-              providers compete on.
+              for your traffic.
             </>
           }
           lead="Set limits for price, response time, data age, and request success. Tender filters out providers that miss your requirements, then chooses among the remaining options."

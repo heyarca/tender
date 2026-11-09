@@ -1,5 +1,6 @@
 import { ArrowUpRight } from "lucide-react";
 import { ButtonLink } from "./LandingButton";
+import { SectionHeader } from "./SectionHeader";
 import { landingStyles as styles } from "./styles";
 
 /** Pale double tracks that echo the hero lanes; static and decorative. */
@@ -19,6 +20,26 @@ function ClosingTracks() {
       </g>
       <rect className={styles.closingTrackVehicle} x="-9" y="-3.5" width="18" height="7" rx="3.5" transform="translate(272 302) rotate(-31)" />
     </svg>
+  );
+}
+
+/** Manifesto: two lines in the section-heading style, right above the closing call to action. */
+export function ManifestoSection() {
+  return (
+    <section className={styles.section} aria-labelledby="manifesto-title">
+      <div className={styles.container}>
+        <SectionHeader
+          titleId="manifesto-title"
+          title={
+            <>
+              APIs break. Prices change. Better ones appear.
+              <br />
+              Tender keeps every call on the best one.
+            </>
+          }
+        />
+      </div>
+    </section>
   );
 }
 
