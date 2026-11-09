@@ -23,7 +23,7 @@ import { PageContainer } from "@/components/shell/page-container";
 import { cn } from "@/lib/utils";
 import { MarketGlyph } from "@/components/market/page/market-icon";
 import { format, MARKET_IDS, type MarketIcon, type MarketId, type ProviderRow } from "@/lib/tender";
-import { CATALOG_MARKETS } from "@/lib/catalog";
+import { CATALOG_IMAGE_PATHS, CATALOG_MARKETS, type CatalogImagePath } from "@/lib/catalog";
 import { useMarketView } from "@/lib/tender/client";
 
 type Category = string;
@@ -65,6 +65,7 @@ interface DirectoryRow {
   mode: "auto" | "pinned" | "demo";
   logos: { name: string; logo?: string }[];
   thumbnail: string;
+  image?: CatalogImagePath;
 }
 
 function qualified(providers: readonly ProviderRow[]): ProviderRow[] {
@@ -102,6 +103,7 @@ function useDirectoryRows(): DirectoryRow[] {
         mode: view.policy.mode.kind,
         logos: view.providers.slice(0, 5).map((p) => ({ name: p.identity.name, logo: p.identity.logo })),
         thumbnail: thumbnailFor(index),
+        image: CATALOG_IMAGE_PATHS[view.id],
       } satisfies DirectoryRow;
     });
     const catalogRows = CATALOG_MARKETS.map((market, index) => {
@@ -130,6 +132,7 @@ function useDirectoryRows(): DirectoryRow[] {
         mode: "demo" as const,
         logos: providers.map((provider) => ({ name: provider.name, logo: provider.logo })),
         thumbnail: thumbnailFor(liveRows.length + index),
+        image: CATALOG_IMAGE_PATHS[market.id],
       } satisfies DirectoryRow;
     });
     return [...liveRows, ...catalogRows];
@@ -408,13 +411,20 @@ function MarketCard({ row }: { row: DirectoryRow }) {
       href={row.href}
       className="group flex items-start gap-4 rounded-lg border border-border bg-card p-4 no-underline transition-colors hover:border-primary-strong/40 hover:bg-card-hover"
     >
-      <img
-        src={row.thumbnail}
-        alt=""
-        width={64}
-        height={64}
-        className="size-16 shrink-0 rounded-md border border-border object-cover"
-      />
+      {row.image ? (
+        <picture className="size-16 shrink-0 overflow-hidden rounded-md border border-border bg-muted">
+          <source srcSet={row.image.avif} type="image/avif" />
+          <img src={row.image.jpg} alt={row.image.alt} width={64} height={64} className="size-full object-cover" />
+        </picture>
+      ) : (
+        <img
+          src={row.thumbnail}
+          alt=""
+          width={64}
+          height={64}
+          className="size-16 shrink-0 rounded-md border border-border object-cover"
+        />
+      )}
       <div className="min-w-0 flex-1">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
