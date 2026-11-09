@@ -26,8 +26,7 @@ function demoProviders(seed: number): readonly CatalogProviderDemo[] {
 type MarketSeed = Omit<CatalogMarketDemo, "category" | "providers">;
 type CategorySeed = Omit<CatalogCategory, "markets"> & { markets: readonly MarketSeed[] };
 
-const RESULT_NOTICE = "Static demo result. Not live data.";
-const result = (data: Record<string, unknown>): Record<string, unknown> => ({ demo: true, notice: RESULT_NOTICE, data });
+const result = (data: Record<string, unknown>): Record<string, unknown> => data;
 
 const CATEGORY_SEEDS = [
   {
