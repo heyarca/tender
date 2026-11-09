@@ -264,11 +264,12 @@ function ProviderTableRow({ row, view, selected, onSelect, layoutKey, reduceMoti
         muted={excluded}
         className={cn(
           // Small screens: the provider column stays in view while the metrics scroll, and tags wrap under the name.
-          "max-md:sticky max-md:left-0 max-md:z-[1] max-md:max-w-44 max-md:bg-card max-md:whitespace-normal",
+          // Wider screens: tags wrap under the name only when the table runs out of room.
+          "whitespace-normal max-md:sticky max-md:left-0 max-md:z-[1] max-md:max-w-44 max-md:bg-card",
           selected && "shadow-[inset_2px_0_0_var(--primary)]",
         )}
       >
-        <div className="flex min-w-0 items-center gap-2 max-md:flex-wrap max-md:gap-y-1">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           <button
             type="button"
             aria-pressed={selected}
@@ -276,7 +277,7 @@ function ProviderTableRow({ row, view, selected, onSelect, layoutKey, reduceMoti
             className="flex min-w-0 cursor-pointer items-center gap-2.5 rounded-sm text-left outline-none focus-visible:ring-1 focus-visible:ring-ring"
           >
             <ProviderLogo src={row.logo} name={row.name} className={cn(excluded && "opacity-75")} />
-            <span className={cn("truncate text-xs", excluded ? "text-muted-foreground" : "text-foreground")}>
+            <span className={cn("truncate text-xs whitespace-nowrap", excluded ? "text-muted-foreground" : "text-foreground")}>
               {row.name}
             </span>
           </button>
@@ -349,7 +350,7 @@ function ProviderTags({ row }: { row: ProviderRow }) {
   const tags = providerTags(row);
   if (!tags.length) return null;
   return (
-    <span className="flex shrink-0 items-center gap-1.5">
+    <span className="flex shrink-0 items-center gap-1.5 whitespace-nowrap">
       {tags.map((tag) => {
         switch (tag) {
           case "active":
@@ -492,7 +493,12 @@ function RouteText({ route }: { route: ReturnType<typeof routeLabel> }) {
     case "warning":
       return <span className="text-warning-text">{route.text}</span>;
     case "neutral":
-      return <span className="text-muted-foreground">{route.text}</span>;
+      return (
+        <span className="text-muted-foreground">
+          <span className="sr-only">Rank </span>
+          {route.text}
+        </span>
+      );
     case "faint":
       return <span className="text-faint">{route.text}</span>;
   }
