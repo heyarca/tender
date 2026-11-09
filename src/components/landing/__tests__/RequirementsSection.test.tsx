@@ -51,7 +51,7 @@ describe("RequirementsSection", () => {
   it("renders the approved copy and the real routing policy form", () => {
     setup();
     const section = document.getElementById("how-it-works")!;
-    expect(within(section).getByRole("heading", { level: 2, name: "Choose what your APIproviders compete on." })).toBeTruthy();
+    expect(within(section).getByRole("heading", { level: 2, name: "Make APIs competefor your traffic." })).toBeTruthy();
     expect(within(section).getByText(/^Set limits for price, response time, data age, and request success\./)).toBeTruthy();
     expect(triggers().map((trigger) => trigger.textContent)).toEqual([
       "Pay within your budget.",
