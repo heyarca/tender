@@ -1,7 +1,12 @@
-import { redirect } from "next/navigation";
-import { DEFAULT_MARKET_ID } from "@/lib/tender";
+import type { Metadata } from "next";
+import { MarketDirectory } from "@/components/market/directory/market-directory";
 
-/** `/markets` opens the default market. */
+export const metadata: Metadata = {
+  title: "Markets",
+  description: "APIs where providers compete on price, latency, freshness, and reliability.",
+};
+
+/** `/markets` lists every API market, like OpenRouter's model directory. */
 export default function MarketsIndex() {
-  redirect(`/markets/${DEFAULT_MARKET_ID}`);
+  return <MarketDirectory />;
 }
