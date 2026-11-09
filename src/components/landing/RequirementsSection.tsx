@@ -6,7 +6,10 @@ import { MarketSwitcher } from "@/components/market/page/market-header";
 import type { PolicyField } from "@/components/market/policy/policy-helpers";
 import { RoutingPolicySection } from "@/components/market/policy/routing-policy-section";
 import { ProviderLogo } from "@/components/ui/provider-logo";
-import type { MarketId } from "@/lib/tender";
+import { type MarketId } from "@/lib/tender";
+
+/** A short, representative set for this illustration — the live switcher has many more markets. */
+const LANDING_DEMO_MARKET_IDS: readonly MarketId[] = ["btc-usd", "sf-weather", "eth-usd", "sz-mlcc"];
 import { useMarketView, usePendingSwitch } from "@/lib/tender/client";
 import { useLandingMarket } from "./LandingProductProviders";
 import { SectionHeader } from "./SectionHeader";
@@ -154,7 +157,7 @@ export function RequirementsSection() {
           <div className={styles.reqPanel} data-requirement={active} onFocus={onPanelFocus}>
             <div className={`${styles.window} ${styles.reqWindow}`}>
               <div className={styles.reqWindowBar}>
-                <MarketSwitcher marketId={marketId} onSwitchMarket={setMarketId} />
+                <MarketSwitcher marketId={marketId} onSwitchMarket={setMarketId} marketIds={LANDING_DEMO_MARKET_IDS} />
               </div>
               <div className={`${styles.productUi} ${styles.reqProduct}`}>
                 <RoutingPolicySection marketId={marketId} />

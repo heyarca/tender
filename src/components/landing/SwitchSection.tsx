@@ -10,6 +10,9 @@ import { MarketOverview } from "@/components/market/page/market-overview";
 import { ProvidersSection } from "@/components/market/providers/providers-section";
 import { ProviderLogo } from "@/components/ui/provider-logo";
 import { fromDisplayValue, type ConditionsPatch, type MarketId, type MarketView, type NumericInputSpec } from "@/lib/tender";
+
+/** A short, representative set for this illustration — the live switcher has many more markets. */
+const LANDING_DEMO_MARKET_IDS: readonly MarketId[] = ["btc-usd", "sf-weather", "eth-usd", "sz-mlcc"];
 import { useMarketView, usePendingSwitch, useTenderActions } from "@/lib/tender/client";
 import { Button } from "./LandingButton";
 import { useLandingMarket } from "./LandingProductProviders";
@@ -216,7 +219,7 @@ export function SwitchSection() {
                 </span>
                 <span className={styles.switchBarMarket}>{view.definition.name}</span>
               </div>
-              <MarketSwitcher marketId={marketId} onSwitchMarket={switchMarket} />
+              <MarketSwitcher marketId={marketId} onSwitchMarket={switchMarket} marketIds={LANDING_DEMO_MARKET_IDS} />
             </div>
             <div ref={scrollerRef} className={styles.switchScroller} onScroll={updateFade}>
               <div className={`${styles.productUi} ${styles.switchProduct}`}>

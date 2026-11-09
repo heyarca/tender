@@ -14,25 +14,29 @@ import { MarketGlyph, MarketIconCircle } from "./market-icon";
 /** Id of the title block. The sticky bar appears once it scrolls under the TopNav. */
 export const MARKET_TITLE_ID = "market-title";
 
-const SWITCHER_ITEMS = MARKET_IDS.map((id) => ({
-  value: id,
-  label: MARKETS[id].name,
-  icon: <MarketGlyph icon={MARKETS[id].icon} />,
-}));
+function switcherItems(ids: readonly MarketId[]) {
+  return ids.map((id) => ({
+    value: id,
+    label: MARKETS[id].name,
+    icon: <MarketGlyph icon={MARKETS[id].icon} />,
+  }));
+}
 
 export interface MarketSwitcherProps {
   marketId: MarketId;
   onSwitchMarket: (marketId: MarketId) => void;
   className?: string;
+  /** Markets to show. Default every market; a caller with limited width should pass a short list. */
+  marketIds?: readonly MarketId[];
 }
 
 /** Segmented market switcher above the title. Each market keeps its own state. */
-export function MarketSwitcher({ marketId, onSwitchMarket, className }: MarketSwitcherProps) {
+export function MarketSwitcher({ marketId, onSwitchMarket, className, marketIds = MARKET_IDS }: MarketSwitcherProps) {
   return (
     <SegmentedControl
       aria-label="Market"
       size="md"
-      items={SWITCHER_ITEMS}
+      items={switcherItems(marketIds)}
       value={marketId}
       onValueChange={onSwitchMarket}
       className={cn("max-sm:w-full", className)}
