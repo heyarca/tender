@@ -90,12 +90,11 @@ export function HeroSection() {
       <HeroTracks />
       <div className={`${styles.container} ${styles.heroIntro}`}>
         <h1 id="hero-title" className={styles.heroTitle}>
-          <span className={styles.heroTitleLine}>Make APIs compete</span>{" "}
-          <span className={styles.heroTitleLine}>for your traffic.</span>
+          <span className={styles.heroTitleLine}>Always on the</span>{" "}
+          <span className={styles.heroTitleLine}>best API.</span>
         </h1>
         <p className={styles.heroLead}>
-          Compare API providers on price, speed, and data freshness. Set your requirements, and Tender routes requests to a
-          provider that meets them.
+          If an API breaks, Tender switches. If a better one shows up, Tender switches. Your app never notices.
         </p>
         <div className={styles.heroActions}>
           <ButtonLink href={DEMO_HREF} size="lg" fluid icon={<ArrowUpRight size={20} />}>

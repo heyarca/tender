@@ -50,11 +50,9 @@ describe("HeroSection", () => {
   it("renders the only h1, the approved copy, and the calls to action", () => {
     const { container } = render(<HeroSection />);
     expect(container.querySelectorAll("h1")).toHaveLength(1);
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Make APIs compete for your traffic.");
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Always on the best API.");
     expect(
-      screen.getByText(
-        "Compare API providers on price, speed, and data freshness. Set your requirements, and Tender routes requests to a provider that meets them.",
-      ),
+      screen.getByText("If an API breaks, Tender switches. If a better one shows up, Tender switches. Your app never notices."),
     ).toBeTruthy();
     expect(screen.getByRole("link", { name: /Try Tender/ }).getAttribute("href")).toBe("/markets");
     expect(screen.getByRole("link", { name: /See how it works/ }).getAttribute("href")).toBe("#how-it-works");
