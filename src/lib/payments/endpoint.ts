@@ -1,7 +1,7 @@
 import { contractUrl, parsePaidRequestInput, PaidRequestError, performPaidRequest } from "./buyer";
 import { paymentRateLimiter, PaymentSafetyError } from "./limits";
 import { getPayerAccount } from "./wallet";
-import type { PaymentMarket } from "./types";
+import type { PaymentMarket, PaidRequestEvent, PaidRequestProgress } from "./types";
 import type { ContractOptions } from "@/lib/server/handlers";
 
 type ContractHandler = (request: Request, market: PaymentMarket, options?: ContractOptions) => Promise<Response>;
@@ -39,7 +39,12 @@ export function createPaidRequestEndpoint(handleContract: ContractHandler) {
     }
     const release = paymentRateLimiter.acquire();
     if (!release) return Response.json({ error: "Payment request limit reached" }, { status: 429, headers: { ...headers, "Retry-After": "60" } });
-    try {
+    const failureEvent = (error: unknown): Extract<PaidRequestEvent, { type: "error" }> => {
+      if (error instanceof PaymentSafetyError) return { type: "error", error: error.message, status: 422 };
+      if (error instanceof PaidRequestError) return { type: "error", error: error.message, details: error.details, status: error.status };
+      return { type: "error", error: "Payment request failed. Check balances before trying again.", status: 502 };
+    };
+    const execute = async (signal: AbortSignal, onProgress?: (event: PaidRequestProgress) => void) => {
       const url = contractUrl("https://tender.internal", input);
       const transport: typeof fetch = async (target, init) => {
         const contractRequest = new Request(target, init);
@@ -47,13 +52,34 @@ export function createPaidRequestEndpoint(handleContract: ContractHandler) {
         if (contractRequest.url !== url.href || contractRequest.method !== "GET") throw new Error("Unexpected payment target");
         return handleContract(contractRequest, input.market, { conditions: input.conditions });
       };
-      const result = await performPaidRequest(url, transport, request.signal);
-      return Response.json(result, { headers });
+      return performPaidRequest(url, transport, signal, onProgress);
+    };
+    if (request.headers.get("Accept")?.split(",").some((part) => part.trim().split(";")[0] === "application/x-ndjson")) {
+      const cancelled = new AbortController();
+      const signal = AbortSignal.any([request.signal, cancelled.signal]);
+      const encoder = new TextEncoder();
+      let closed = false;
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          const emit = (event: PaidRequestEvent) => {
+            if (closed) return;
+            try { controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`)); } catch { closed = true; }
+          };
+          void execute(signal, emit).then((result) => emit({ type: "result", result })).catch((error: unknown) => emit(failureEvent(error))).finally(() => {
+            // A disconnected client must not unlock a still-running settlement.
+            release();
+            if (!closed) { closed = true; controller.close(); }
+          });
+        },
+        cancel() { closed = true; cancelled.abort(); },
+      });
+      return new Response(stream, { headers: { ...headers, "Content-Type": "application/x-ndjson", "X-Content-Type-Options": "nosniff" } });
+    }
+    try {
+      return Response.json(await execute(request.signal), { headers });
     } catch (error) {
-      if (error instanceof PaymentSafetyError) return Response.json({ error: error.message }, { status: 422, headers });
-      if (error instanceof PaidRequestError) return Response.json({ error: error.message, details: error.details }, { status: error.status, headers });
-      // Do not expose wallet, signature or transport internals in errors.
-      return Response.json({ error: "Payment request failed. Check balances before trying again." }, { status: 502, headers });
+      const { status, error: message, details } = failureEvent(error);
+      return Response.json({ error: message, ...(details === undefined ? {} : { details }) }, { status, headers });
     } finally { release(); }
   };
 }
