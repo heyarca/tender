@@ -1,6 +1,7 @@
 "use client";
 
 import { Menu } from "@base-ui/react/menu";
+import { useRef } from "react";
 import { Ellipsis, Pin, PinOff, SlidersHorizontal, Zap } from "lucide-react";
 
 import { focusSection } from "@/components/market/market-ui";
@@ -27,6 +28,8 @@ export interface ProviderRowMenuProps {
 export function ProviderRowMenu({ marketId, row, mode, onSelect }: ProviderRowMenuProps) {
   const { setRoutingMode } = useTenderActions();
   const pinnedHere = mode.kind === "pinned" && mode.providerId === row.id;
+  // "Edit conditions" moves focus to the conditions heading; keep it there when the menu closes.
+  const focusMoved = useRef(false);
 
   return (
     <Menu.Root>
@@ -44,6 +47,13 @@ export function ProviderRowMenu({ marketId, row, mode, onSelect }: ProviderRowMe
         <Menu.Positioner side="bottom" align="end" sideOffset={4} className="z-50 outline-none">
           <Menu.Popup
             onClick={(event) => event.stopPropagation()}
+            finalFocus={() => {
+              if (!focusMoved.current) return true;
+              focusMoved.current = false;
+              // Scroll now; Base UI focuses the returned heading once the menu has closed.
+              focusSection("conditions");
+              return document.getElementById("conditions-title") ?? true;
+            }}
             className={cn(
               "min-w-52 rounded-lg bg-popover p-1 text-popover-foreground shadow-popover outline-none",
               "origin-(--transform-origin) transition-[opacity,scale] duration-quick ease-smooth-out",
@@ -55,7 +65,7 @@ export function ProviderRowMenu({ marketId, row, mode, onSelect }: ProviderRowMe
               className={itemClass}
               onClick={() => {
                 onSelect(row.id);
-                focusSection("conditions");
+                focusMoved.current = true;
               }}
             >
               <SlidersHorizontal aria-hidden="true" />
