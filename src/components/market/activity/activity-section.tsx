@@ -225,7 +225,8 @@ function ActivityRow({
       className={cn(
         "relative flex gap-3 border-b border-border px-4 py-2.5 last:border-b-0",
         "transition-[opacity,translate] duration-fast ease-smooth-out starting:-translate-y-1 starting:opacity-0 motion-reduce:transition-none",
-        isSwitch && "bg-accent-subtle before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-primary-strong",
+        isSwitch &&
+          "bg-accent-subtle before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-primary-strong",
         entry.kind === "no-eligible" &&
           "bg-negative-bg/50 before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-negative",
         entry.kind === "pin-violation" &&
