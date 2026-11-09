@@ -145,6 +145,8 @@ export function TableFooter({ className, ...props }: React.ComponentProps<"tfoot
 export interface TableRowProps extends React.ComponentProps<"tr"> {
   /** Selected wash (`bg-selected`), exposed as `data-state="selected"`. */
   selected?: boolean;
+  /** Muted background (`bg-muted`), like OpenRouter's `or-table__row--muted`. */
+  muted?: boolean;
   /** Pointer cursor for clickable rows. */
   interactive?: boolean;
   /** Disable the hover wash. */
@@ -153,6 +155,7 @@ export interface TableRowProps extends React.ComponentProps<"tr"> {
 
 export function TableRow({
   selected = false,
+  muted = false,
   interactive = false,
   static: isStatic = false,
   className,
@@ -166,6 +169,7 @@ export function TableRow({
       className={cn(
         "transition-colors duration-quick",
         part === "body" && !isStatic && "hover:bg-card-hover",
+        muted && "bg-muted hover:bg-muted",
         selected && "bg-selected hover:bg-selected",
         interactive && "cursor-pointer",
         className,
@@ -309,17 +313,20 @@ export function TableCell({ align, numeric = false, strong = false, wrap = false
 
 export interface TableRowHeaderProps extends Omit<React.ComponentProps<"th">, "align"> {
   align?: TableAlign;
+  /** Muted text and regular weight, for excluded or inactive rows. */
+  muted?: boolean;
 }
 
 /** Row label cell (`<th scope="row">`): foreground, medium weight. */
-export function TableRowHeader({ align = "left", className, ...props }: TableRowHeaderProps) {
+export function TableRowHeader({ align = "left", muted = false, className, ...props }: TableRowHeaderProps) {
   const density = React.useContext(DensityContext);
   return (
     <th
       scope="row"
       data-slot="table-row-header"
       className={cn(
-        "border-b border-border align-middle font-medium whitespace-nowrap text-foreground",
+        "border-b border-border align-middle whitespace-nowrap",
+        muted ? "font-normal text-muted-foreground" : "font-medium text-foreground",
         cellPadding[density],
         alignClass[align],
         className,
@@ -369,10 +376,15 @@ export interface TableValueProps extends React.ComponentProps<"span"> {
   unit?: React.ReactNode;
   /** Render the number muted too (default: foreground number, muted unit). */
   muted?: boolean;
+  /**
+   * Invisible trailing zeros so that right-aligned values line up on the decimal point,
+   * like OpenRouter's price columns (`$0.50` + 2 hidden zeros next to `$0.0065`).
+   */
+  pad?: number;
 }
 
 /** Tabular number with a muted unit: `210` + ` ms`. */
-export function TableValue({ unit, muted = false, className, children, ...props }: TableValueProps) {
+export function TableValue({ unit, muted = false, pad = 0, className, children, ...props }: TableValueProps) {
   return (
     <span
       data-slot="table-value"
@@ -380,6 +392,11 @@ export function TableValue({ unit, muted = false, className, children, ...props 
       {...props}
     >
       {children}
+      {pad > 0 ? (
+        <span aria-hidden="true" className="invisible select-none">
+          {"0".repeat(pad)}
+        </span>
+      ) : null}
       {unit !== undefined && unit !== null ? <span className="text-muted-foreground">{unit}</span> : null}
     </span>
   );

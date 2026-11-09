@@ -10,8 +10,19 @@ import { EmptyState } from "../empty-state";
 import { ProviderLogo } from "../provider-logo";
 import { Section } from "../section";
 import { SegmentedControl } from "../segmented-control";
+import { Skeleton } from "../skeleton";
 import { StatCard } from "../stat-card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableSubheadRow } from "../table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableRowHeader,
+  TableSubheadRow,
+  TableValue,
+} from "../table";
 
 afterEach(() => {
   cleanup();
@@ -158,6 +169,33 @@ describe("Table", () => {
   });
 });
 
+describe("Table rows and values", () => {
+  it("mutes excluded rows and pads values for decimal alignment", () => {
+    render(
+      <Table>
+        <TableBody>
+          <TableRow muted>
+            <TableRowHeader muted>Nebius</TableRowHeader>
+            <TableCell numeric>
+              <TableValue pad={2} unit=" /M">
+                $0.50
+              </TableValue>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>,
+    );
+    const head = screen.getByRole("rowheader", { name: "Nebius" });
+    expect(head.className).toContain("text-muted-foreground");
+    expect(head.closest("tr")?.className).toContain("bg-muted");
+    const value = screen.getByText("$0.50");
+    const padding = value.querySelector('[aria-hidden="true"]');
+    expect(padding?.textContent).toBe("00");
+    expect(padding?.className).toContain("invisible");
+    expect(value.textContent).toBe("$0.5000 /M");
+  });
+});
+
 describe("CopyButton", () => {
   it("copies and swaps to a check for 1.5 s", async () => {
     vi.useFakeTimers();
@@ -208,6 +246,14 @@ describe("Display primitives", () => {
     const region = screen.getByRole("region", { name: "Providers" });
     expect(region.id).toBe("providers");
     expect(region.querySelector('[data-slot="section-body"]')?.textContent).toBe("body");
+  });
+
+  it("Skeleton is a decorative pulse block", () => {
+    const { container } = render(<Skeleton className="h-8 w-24" />);
+    const block = container.firstElementChild;
+    expect(block?.getAttribute("aria-hidden")).toBe("true");
+    expect(block?.className).toContain("animate-pulse");
+    expect(block?.className).toContain("h-8");
   });
 
   it("EmptyState shows title and description", () => {
