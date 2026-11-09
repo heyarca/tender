@@ -27,6 +27,14 @@ describe("format", () => {
     expect(format.dataAge(60 * 60_000)).toBe("1 h");
   });
 
+  it("floors data age at unit boundaries", () => {
+    expect(format.dataAge(59_960)).toBe("59.9 s"); // sub-minute, never "1 min" or "1 h"
+    expect(format.dataAge(3_584_000)).toBe("59 min"); // 59.73 min, never "1 h"
+    expect(format.dataAge(3_599_000)).toBe("59 min"); // 59.98 min
+    expect(format.dataAge(3_600_000)).toBe("1 h"); // exactly 60 min
+    expect(format.dataAge(60_000)).toBe("1 min"); // exactly 60 s
+  });
+
   it("formats percents, temperature, and compass", () => {
     expect(format.percent(0.9994)).toBe("99.94%");
     expect(format.errorRate(0.0006)).toBe("0.06%");

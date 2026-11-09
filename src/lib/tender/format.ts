@@ -101,6 +101,12 @@ function seconds(ms: number): string {
   return `${trimZeros((ms / 1000).toFixed(1), 0)} s`;
 }
 
+function floorSeconds(ms: number): string {
+  // Like `seconds`, but floored at one decimal so an age never displays as the
+  // next unit: 59_960 → "59.9 s" (never "60 s").
+  return `${trimZeros((Math.floor(ms / 100) / 10).toFixed(1), 0)} s`;
+}
+
 /** Latency: "210 ms"; from 1,000 ms "1.2 s". */
 export function latency(ms: number): string {
   const rounded = Math.round(ms);
@@ -112,8 +118,10 @@ export function latency(ms: number): string {
 export function dataAge(ms: number): string {
   const value = Math.max(0, ms);
   if (Math.round(value) < 1000) return `${Math.round(value)} ms`;
-  if (value < 59_950) return seconds(value);
-  const minutes = Math.round(value / 60_000);
+  // Floor at unit boundaries: only a full minute/hour shows the larger unit,
+  // so 59_960 ms stays "59.9 s" and 3_599_000 ms stays "59 min".
+  if (value < 60_000) return floorSeconds(value);
+  const minutes = Math.floor(value / 60_000);
   if (minutes < 60) return `${minutes} min`;
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
