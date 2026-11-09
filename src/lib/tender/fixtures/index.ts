@@ -44,11 +44,6 @@ export const MARKET_IDS = [
   "eth-usd",
   "sol-usd",
   "xrp-usd",
-  "eur-usd",
-  "gbp-usd",
-  "sz-mlcc",
-  "lithium-carbonate",
-  "freight-sha-lax",
 ] as const satisfies readonly MarketId[];
 
 /** Market definitions by id. */
