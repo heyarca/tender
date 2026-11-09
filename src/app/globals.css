@@ -1,26 +1,245 @@
 @import "tailwindcss";
 
+/*
+ * ESCAPE design tokens — mirrors OpenRouter's light design system
+ * (see docs/DESIGN.md). Light theme only.
+ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+
+  /* Brand */
+  --ink: #03080a;
+  --cloud: #fcfcfe;
+  --grape: #7624f4;
+
+  /* Surfaces & text */
+  --background: #fcfcfe;
+  --foreground: #03080a;
+  --card: #ffffff;
+  --card-foreground: #03080a;
+  --popover: #ffffff;
+  --popover-foreground: #03080a;
+  --surface: #ffffff;
+  --muted: #03080a08;
+  --muted-foreground: #03080ab0;
+  --text-faint: #03080a70;
+  --border: #03080a14;
+  --input: #03080a14;
+  --input-bg: #ffffff;
+  --card-hover: #03080a05;
+  --selected-bg: #03080a08;
+
+  /* Primary (grape) */
+  --primary: #7624f4;
+  --primary-foreground: #fcfcfe;
+  --accent: #7624f414;
+  --accent-foreground: #7624f4;
+  --accent-subtle: #7624f408;
+  --accent-border: #7624f420;
+  --accent-hover: #7624f4e0;
+  --ring: #7624f4;
+  --focus-border: #03080a4d;
+
+  /* Semantic */
+  --destructive: #e11d48;
+  --destructive-foreground: #fcfcfe;
+  --positive: #00bf6f;
+  --positive-text: #007544;
+  --positive-bg: #00bf6f14;
+  --negative: #ff2d55;
+  --negative-text: #bf0024;
+  --negative-bg: #ff2d5514;
+  --warning: #e5a000;
+  --warning-text: #8a6000;
+  --warning-bg: #e5a00014;
+  --info: #035ade;
+  --info-text: #0352c9;
+  --info-bg: #035ade14;
+
+  /* Tier tags */
+  --tier-flex-text: #218358;
+  --tier-flex-bg: #e6f6eb;
+  --tier-priority-text: #6550b9;
+  --tier-priority-bg: #f4f0fe;
+  --tier-ultrafast-text: #cc4e00;
+  --tier-ultrafast-bg: #ffefd6;
+
+  /* Charts */
+  --chart-1: #0088fe;
+  --chart-2: #00c49f;
+  --chart-3: #ffbb28;
+  --chart-4: #ff8042;
+  --chart-5: #ff6347;
+  --chart-6: #4682b4;
+  --chart-7: #9acd32;
+  --chart-8: #da70d6;
+
+  --navbar-height: 3.5rem;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@media not all and (min-width: 40rem) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --navbar-height: 3rem;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@theme inline {
+  --font-sans: var(--font-jakarta), "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-surface: var(--surface);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-faint: var(--text-faint);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-bg: var(--input-bg);
+  --color-card-hover: var(--card-hover);
+  --color-selected: var(--selected-bg);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-subtle: var(--accent-subtle);
+  --color-accent-border: var(--accent-border);
+  --color-accent-hover: var(--accent-hover);
+  --color-ring: var(--ring);
+  --color-focus-border: var(--focus-border);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-positive: var(--positive);
+  --color-positive-text: var(--positive-text);
+  --color-positive-bg: var(--positive-bg);
+  --color-negative: var(--negative);
+  --color-negative-text: var(--negative-text);
+  --color-negative-bg: var(--negative-bg);
+  --color-warning: var(--warning);
+  --color-warning-text: var(--warning-text);
+  --color-warning-bg: var(--warning-bg);
+  --color-info: var(--info);
+  --color-info-text: var(--info-text);
+  --color-info-bg: var(--info-bg);
+  --color-tier-flex: var(--tier-flex-text);
+  --color-tier-flex-bg: var(--tier-flex-bg);
+  --color-tier-priority: var(--tier-priority-text);
+  --color-tier-priority-bg: var(--tier-priority-bg);
+  --color-tier-ultrafast: var(--tier-ultrafast-text);
+  --color-tier-ultrafast-bg: var(--tier-ultrafast-bg);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-chart-7: var(--chart-7);
+  --color-chart-8: var(--chart-8);
+
+  /* Type scale — mirrors OpenRouter's overrides (text-xs and text-sm are 14px). */
+  --text-xs: 14px;
+  --text-xs--line-height: 1.625;
+  --text-sm: 14px;
+  --text-sm--line-height: 1.35;
+  --text-base: 16px;
+  --text-base--line-height: 1.35;
+  --text-lg: 16px;
+  --text-lg--line-height: 1.35;
+  --text-xl: 20px;
+  --text-xl--line-height: 1.2;
+  --text-2xl: 24px;
+  --text-2xl--line-height: 1.2;
+  --text-3xl: 30px;
+  --text-3xl--line-height: 1.2;
+  --text-4xl: 36px;
+  --text-4xl--line-height: 1.2;
+
+  /* Semantic sizes (OpenRouter names) */
+  --text-body: 14px;
+  --text-body--line-height: 1.625;
+  --text-button: 14px;
+  --text-caption: 12px;
+  --text-caption--line-height: 1.35;
+  --text-overline: 12px;
+  --text-overline--line-height: 1.35;
+  --text-micro: 10px;
+  --text-2xs: 10px;
+  --text-2xs--line-height: 1rem;
+  --text-title: 20px;
+  --text-title--line-height: 1.2;
+  --text-display: 24px;
+  --text-display--line-height: 1.2;
+  --text-section: 16px;
+  --text-section--line-height: 1.35;
+  --text-heading: 16px;
+  --text-heading--line-height: 1.35;
+
+  --font-weight-normal: 450;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  --shadow-focus: 0 0 0 3px #03080a0f;
+  --shadow-popover: 0 8px 24px -8px #03080a29, 0 0 0 1px #03080a14;
+
+  --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-smooth-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@utility duration-micro {
+  transition-duration: 80ms;
+}
+@utility duration-quick {
+  transition-duration: 150ms;
+}
+@utility duration-fast {
+  transition-duration: 250ms;
+}
+
+@layer base {
+  *,
+  ::after,
+  ::before {
+    border-color: var(--border);
+  }
+
+  html {
+    background: var(--background);
+  }
+
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-weight: 450;
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1 {
+    font-size: var(--text-title);
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  ::selection {
+    background: #7624f42e;
+  }
 }
