@@ -32,7 +32,7 @@ export function ClosingSection() {
           <span>Find a better provider</span> <span>for your next request.</span>
         </h2>
         <p className={styles.closingBody}>
-          Pick any API on Tender or request a new one. Set your requirements and see where Tender routes your next request.
+          Pick one of Tender’s markets or let your AI agent create a new one. Set your requirements and see where Tender routes your next request.
         </p>
         <ButtonLink href="/markets" variant="primary" size="lg" icon={<ArrowUpRight />} className={styles.closingAction}>
           Try Tender

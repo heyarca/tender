@@ -30,7 +30,7 @@ const MARKET_CARDS: readonly MarketCard[] = [
   },
 ];
 
-/** #markets: the two markets as tall cards, each with the product's own result at the bottom. */
+/** #markets: two example markets as tall cards, each with the product's own result at the bottom. */
 export function MarketsSection() {
   return (
     <section id="markets" className={styles.section} aria-labelledby="markets-title">
@@ -44,7 +44,7 @@ export function MarketsSection() {
               the data your app needs.
             </>
           }
-          lead="Every API on Tender is its own market, and anyone can request a new one. Compare the providers in each market, set your requirements, and see which one gets the next request."
+          lead="Tender runs multiple markets, from weather and crypto prices to currencies, and AI agents can create more. Compare the providers in each market, set your requirements, and see which one gets the next request."
         />
         <div className={styles.marketGrid}>
           {MARKET_CARDS.map(({ id, title, description, href, Visual }) => (

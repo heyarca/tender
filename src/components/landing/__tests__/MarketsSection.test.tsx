@@ -35,7 +35,7 @@ describe("MarketsSection", () => {
     expect(section.getAttribute("aria-labelledby")).toBe(heading.id);
     expect(
       within(section).getByText(
-        "Every API on Tender is its own market, and anyone can request a new one. Compare the providers in each market, set your requirements, and see which one gets the next request.",
+        "Tender runs multiple markets, from weather and crypto prices to currencies, and AI agents can create more. Compare the providers in each market, set your requirements, and see which one gets the next request.",
       ),
     ).toBeTruthy();
   });
