@@ -100,4 +100,29 @@ export const CATALOG_IMAGE_PATHS: Record<string, CatalogImagePath> = {
     jpg: "/catalog/company-data.jpg",
     alt: "Glass-walled office corridor.",
   },
+  "contact-verification": {
+    avif: "/catalog/contact-verification.avif",
+    jpg: "/catalog/contact-verification.jpg",
+    alt: "Three blank white mail envelopes.",
+  },
+  "kyc-screening": {
+    avif: "/catalog/kyc-screening.avif",
+    jpg: "/catalog/kyc-screening.jpg",
+    alt: "Passport silhouette against an airplane window.",
+  },
+  "llm-chat": {
+    avif: "/catalog/llm-chat.avif",
+    jpg: "/catalog/llm-chat.jpg",
+    alt: "Abstract neon lights in a dark field.",
+  },
+  "embeddings": {
+    avif: "/catalog/embeddings.avif",
+    jpg: "/catalog/embeddings.jpg",
+    alt: "Abstract lines and shapes on black.",
+  },
+  "speech-to-text": {
+    avif: "/catalog/speech-to-text.avif",
+    jpg: "/catalog/speech-to-text.jpg",
+    alt: "Studio condenser microphone and pop filter.",
+  },
 };

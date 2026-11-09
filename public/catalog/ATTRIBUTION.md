@@ -115,3 +115,33 @@ These assets are derived from free Unsplash photos. Source pages are retained fo
 - Source page: https://unsplash.com/photos/hallway-between-glass-panel-doors-yWwob8kwOCk
 - Direct image: https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&q=60&crop=entropy&cs=srgb&fm=jpg&ixid=NHwxMjA3fDA&ixlib=rb-4.1.0
 - License: [Unsplash License](https://unsplash.com/license)
+
+## `contact-verification`
+- Photographer: Diana Light
+- Source page: https://unsplash.com/photos/three-white-mail-envelops-iZCHv8ViRdw
+- Direct image: https://images.unsplash.com/photo-1567794636765-5e4869f627e1?auto=format&fit=crop&q=60&crop=entropy&cs=srgb&fm=jpg&ixid=NHwxMjA3fDA&ixlib=rb-4.1.0
+- License: [Unsplash License](https://unsplash.com/license)
+
+## `kyc-screening`
+- Photographer: Blake Guidry
+- Source page: https://unsplash.com/photos/silhouette-of-passport-booklet-with-airplane-window-background-jXxdtXFEjcc
+- Direct image: https://images.unsplash.com/photo-1530469525856-cf37954301f7?auto=format&fit=crop&q=60&crop=entropy&cs=srgb&fm=jpg&ixid=NHwxMjA3fDA&ixlib=rb-4.1.0
+- License: [Unsplash License](https://unsplash.com/license)
+
+## `llm-chat`
+- Photographer: Bruce Barrow
+- Source page: https://unsplash.com/photos/blurry-abstract-neon-lights-in-the-dark-76MPkaAS9Zw
+- Direct image: https://images.unsplash.com/photo-1764515836350-639a387a0350?auto=format&fit=crop&q=60&crop=entropy&cs=srgb&fm=jpg&ixid=NHwxMjA3fDA&ixlib=rb-4.1.0
+- License: [Unsplash License](https://unsplash.com/license)
+
+## `embeddings`
+- Photographer: Pawel Czerwinski
+- Source page: https://unsplash.com/photos/a-black-background-with-lines-and-shapes-JycBD2jrOb8
+- Direct image: https://images.unsplash.com/photo-1714548529197-537c1f0b6aa7?auto=format&fit=crop&q=60&crop=entropy&cs=srgb&fm=jpg&ixid=NHwxMjA3fDA&ixlib=rb-4.1.0
+- License: [Unsplash License](https://unsplash.com/license)
+
+## `speech-to-text`
+- Photographer: Leo Wieling
+- Source page: https://unsplash.com/photos/grayscale-photo-of-condenser-microphone-beside-pop-filter-bG8U3kaZltE
+- Direct image: https://images.unsplash.com/photo-1531651008558-ed1740375b39?auto=format&fit=crop&q=60&crop=entropy&cs=srgb&fm=jpg&ixid=NHwxMjA3fDA&ixlib=rb-4.1.0
+- License: [Unsplash License](https://unsplash.com/license)
