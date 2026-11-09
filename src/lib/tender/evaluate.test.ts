@@ -26,7 +26,7 @@ describe("default statuses", () => {
       modal: "stale-data",
       mistral: "over-budget",
       nebius: "unavailable",
-      the-zone-bio: "eligible",
+      "the-zone-bio": "eligible",
       "arca-labs": "eligible",
       coreweave: "eligible",
       baseten: "eligible",

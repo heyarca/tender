@@ -8,7 +8,7 @@ describe("paid provider conditions", () => {
     expect(input.conditions?.together?.errorRate).toBeLessThanOrEqual(1);
   });
   it.each([
-    { the-zone-bio: { bidPrice: 1 } }, { unknown: {} }, { together: [] },
+    { "the-zone-bio": { bidPrice: 1 } }, { unknown: {} }, { together: [] },
     { together: { bidPrice: "45" } }, { together: { available: "false" } },
     { together: { url: "https://evil.test" } }, { together: { bidPrice: Infinity } },
     Object.fromEntries(Array.from({ length: 17 }, (_, index) => [`provider-${index}`, {}])),
