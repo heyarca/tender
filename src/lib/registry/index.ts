@@ -101,7 +101,12 @@ export function validateRegistry(): string[] {
       if (!field.optional && readField(contract.sample, field.key) === undefined) errors.push(`contract ${contract.id}: sample misses ${field.key}`);
     }
   }
+  const bindings = new Map<string, string>();
   for (const market of MARKET_SPECS) {
+    const binding = `${market.contractId}?${new URLSearchParams(Object.entries(market.params).sort(([a], [b]) => a.localeCompare(b))).toString()}`;
+    const other = bindings.get(binding);
+    if (other) errors.push(`markets ${other} and ${market.id}: same contract and params (${binding})`);
+    bindings.set(binding, market.id);
     const contract = getContract(market.contractId);
     if (!getCategory(market.categoryId)) errors.push(`market ${market.id}: unknown category ${market.categoryId}`);
     if (!contract) {

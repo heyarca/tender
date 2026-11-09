@@ -2678,7 +2678,8 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     "categoryId": "speech-to-text",
     "contractId": "speech.transcribe",
     "params": {
-      "language": "en"
+      "language": "en",
+      "diarize": "false"
     },
     "name": "English Transcription",
     "shortName": "STT EN",
@@ -2718,7 +2719,8 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     "categoryId": "speech-to-text",
     "contractId": "speech.transcribe",
     "params": {
-      "language": "ko"
+      "language": "ko",
+      "diarize": "false"
     },
     "name": "Korean Transcription",
     "shortName": "STT KO",
@@ -2761,7 +2763,8 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     "categoryId": "speech-to-text",
     "contractId": "speech.transcribe",
     "params": {
-      "language": "en"
+      "language": "en",
+      "diarize": "true"
     },
     "name": "Multi-speaker Transcription",
     "shortName": "STT speakers",

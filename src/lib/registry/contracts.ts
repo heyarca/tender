@@ -1053,6 +1053,16 @@ export const CONTRACTS: readonly ContractSpec[] = [
         "label": "Language",
         "type": "string",
         "example": "en"
+      },
+      {
+        "key": "diarize",
+        "label": "Speaker labels",
+        "type": "enum",
+        "values": [
+          "false",
+          "true"
+        ],
+        "example": "false"
       }
     ],
     "output": [
