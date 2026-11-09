@@ -31,8 +31,9 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-function Unit({ children }: { children: ReactNode }) {
-  return <span className="ml-0.5 font-normal text-muted-foreground">{children}</span>;
+/** Unit after a value. Symbols (`%`, `°F`) attach directly; words (`mph`, `hPa`) get a space. */
+function Unit({ children, attached = false }: { children: ReactNode; attached?: boolean }) {
+  return <span className={cn("font-normal text-muted-foreground", !attached && "ml-1")}>{children}</span>;
 }
 
 /**
@@ -106,7 +107,7 @@ export function WeatherResult({
       >
         <Field label="Humidity">
           {reading ? formatNumber(reading.humidityPct) : "–"}
-          <Unit>%</Unit>
+          <Unit attached>%</Unit>
         </Field>
         <Field label="Wind">
           {reading ? formatNumber(reading.windMph) : "–"}
@@ -123,11 +124,11 @@ export function WeatherResult({
         </Field>
         <Field label="Dew point">
           {reading ? formatNumber(reading.dewPointF) : "–"}
-          <Unit>°F</Unit>
+          <Unit attached>°F</Unit>
         </Field>
         <Field label="Cloud cover">
           {reading ? formatNumber(reading.cloudCoverPct) : "–"}
-          <Unit>%</Unit>
+          <Unit attached>%</Unit>
         </Field>
       </dl>
 

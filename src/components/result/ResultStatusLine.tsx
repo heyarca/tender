@@ -6,7 +6,7 @@ import type { ResultRequest } from "./types";
 export interface ResultStatusLineProps {
   /** Latest request. Failed and rejected requests replace `children` with a message. */
   request?: ResultRequest | null;
-  /** Whether an earlier successful result is still on screen (adds "Showing the previous result"). */
+  /** Whether an earlier successful result is still on screen (adds "Showing previous result"). */
   hasPrevious?: boolean;
   /** Content for successful requests, e.g. the meta row. */
   children?: ReactNode;
@@ -37,7 +37,7 @@ export function ResultStatusLine({ request, hasPrevious = false, children, class
           <CircleAlert aria-hidden="true" className="size-3.5 shrink-0" strokeWidth={2} />
           <span className="truncate">
             {failureMessage(request)}
-            {hasPrevious && <span className="text-muted-foreground"> · Showing the previous result</span>}
+            {hasPrevious && <span className="text-muted-foreground"> · Showing previous result</span>}
           </span>
         </p>
       ) : status === "rejected" ? (
@@ -45,7 +45,7 @@ export function ResultStatusLine({ request, hasPrevious = false, children, class
           <TriangleAlert aria-hidden="true" className="size-3.5 shrink-0" strokeWidth={2} />
           <span className="truncate">
             No eligible provider — request not sent
-            {hasPrevious && <span className="text-muted-foreground"> · Showing the previous result</span>}
+            {hasPrevious && <span className="text-muted-foreground"> · Showing previous result</span>}
           </span>
         </p>
       ) : (
