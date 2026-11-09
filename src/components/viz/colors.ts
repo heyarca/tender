@@ -46,7 +46,7 @@ export function providerColorMap(ids: readonly string[]): Record<string, ChartCo
 export type VizTone = "active" | "neutral" | "muted" | "positive" | "warning" | "negative";
 
 export const TONE_COLORS: Record<VizTone, string> = {
-  active: "var(--primary)",
+  active: "var(--primary-strong)",
   neutral: "var(--muted-foreground)",
   muted: "var(--text-faint)",
   positive: "var(--positive)",

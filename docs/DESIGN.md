@@ -1,4 +1,4 @@
-# Tender design system (OpenRouter-aligned)
+# Tender design system (OpenRouter-aligned, Tender brand)
 
 Tender uses **OpenRouter's current light design system** as the primary reference
 (https://openrouter.ai/deepseek/deepseek-v4.1-flash-1017#providers). Stripe is only a secondary reference
@@ -9,8 +9,9 @@ hard-code hex colors in components.
 
 ## Foundations
 
-- Font: **Plus Jakarta Sans** (`font-sans`, loaded with `next/font` as `--font-jakarta`), body weight **450**,
-  `tabular-nums` everywhere. Mono: Geist Mono (`font-mono`). Do not use OpenRouter's licensed "gordita" font or its logo.
+- Font: **PP Mori** (`font-sans`, loaded with `next/font/local` from `src/fonts/pp-mori.ts` as `--font-pp-mori`;
+  weights 375 Book, 400 Regular, 600 Semibold), body weight **400**, `tabular-nums` everywhere. Mono: Geist Mono
+  (`font-mono`). PP Mori is the only UI typeface: do not add another font or use OpenRouter's "gordita" or its logo.
 - Type scale mirrors OpenRouter. **`text-xs` and `text-sm` are 14px.** Use:
   - `text-body` 14px/1.625 (default UI text), `text-button` 14px (buttons, weight 500)
   - `text-caption` / `text-overline` 12px (labels, segmented items, tags), `text-micro` / `text-2xs` 10px (units in table headers, struck prices)
@@ -19,8 +20,12 @@ hard-code hex colors in components.
 - Colors (light only):
   - `bg-background` #fcfcfe page, `bg-card` / `bg-surface` #fff, `text-foreground` ink #03080a
   - `text-muted-foreground` ink/69%, `text-faint` ink/44%, `border-border` ink/7.8%, `bg-muted` ink/3%
-  - Primary grape `bg-primary` #7624f4 + `text-primary-foreground`; hover `hover:bg-accent-hover`
-  - Accent wash `bg-accent` (grape/8%) + `text-accent-foreground` (grape) for active nav/selected states; `bg-accent-subtle` for hover
+  - Brand: **lime `#C8FF00`** is a FILL only (`bg-primary`), always with ink text (`text-primary-foreground`, 17:1);
+    hover `bg-primary-hover` #B8F000, active `bg-primary-active` #A8DD00, border on light surfaces `border-primary-border` #A6D600.
+    Never use lime as text, icons, thin lines, or borders on light surfaces (1.18:1 on white).
+  - **Olive `#4A6000`** (`text-primary-strong`, `text-accent-foreground`, `ring-ring`) for accent text, icons, strokes,
+    chart lines, and focus rings on light surfaces (7.1:1 on white). Lime text is fine on dark surfaces.
+  - Accent wash `bg-accent` (lime/25%) + `text-accent-foreground` (olive) for active nav/selected states; `bg-accent-subtle` for hover
   - Status: `text-positive-text` / `bg-positive-bg` / `bg-positive` (green), `text-negative-text` / `bg-negative-bg` / `bg-negative` (red),
     `text-warning-text` / `bg-warning-bg` / `bg-warning` (amber), `text-info-text` / `bg-info-bg` (blue)
   - Tier tags: `bg-tier-priority-bg text-tier-priority` (violet), `bg-tier-flex-bg text-tier-flex` (green), `bg-tier-ultrafast-bg text-tier-ultrafast` (orange)
@@ -55,14 +60,14 @@ hard-code hex colors in components.
 
 ## Components
 
-- **Buttons**: primary (grape), outline (border-input, bg-background), ghost (muted text, accent-subtle hover),
+- **Buttons**: primary (lime fill, ink text), outline (border-input, bg-background), ghost (muted text, accent-subtle hover),
   dashed chip (`h-8 rounded-md border border-dashed border-border px-2.5 text-body text-muted-foreground hover:border-solid hover:bg-accent hover:text-foreground`),
   destructive outline for resets. Heights: 28 (`h-7`), 32 (`h-8`, default), 36 (`h-9`). Icons 16px.
 - **Segmented control**: `inline-flex items-center gap-0.5 rounded-md border border-border bg-muted p-0.5`; items
   `h-6 px-2 rounded-sm text-overline font-medium`; active `bg-background text-accent-foreground shadow-sm`;
   inactive `text-muted-foreground hover:text-accent-foreground`. Animated indicator optional (250 ms).
 - **Badges / tags**: `rounded-sm px-1.5 py-0.5 text-overline leading-none font-medium`.
-  - Active route: grape (`bg-accent text-accent-foreground`), Eligible: neutral or green text,
+  - Active route: lime wash + olive text (`bg-accent text-accent-foreground`), Eligible: neutral or green text,
     Too slow / Stale data / Over budget: amber (`bg-warning-bg text-warning-text`),
     Unavailable / Unreliable / pinned-failing: red (`bg-negative-bg text-negative-text`),
     Best price: green text like OpenRouter's "51% off" (`text-xs font-medium text-positive-text`).
@@ -76,7 +81,7 @@ hard-code hex colors in components.
   A muted sub-header row (`bg-muted text-caption text-muted-foreground`) separates excluded providers, like
   OpenRouter's "Not used in Standard routing".
 - **Uptime/success bars**: three `h-3.5 w-1.5` bars with `gap-px` (`bg-positive`; amber/red when failing) + `w-16 text-right` percentage.
-- **Sparkline**: 1.5px stroke, no axes, 72–96 × 20–24 px, muted stroke when excluded, grape when active;
+- **Sparkline**: 1.5px stroke, no axes, 72–96 × 20–24 px, muted stroke when excluded, olive when active;
   optional dashed policy-limit line.
 - **Charts**: card `rounded-lg border p-4`, title `text-sm font-medium`, thin lines (1.5px), faint horizontal guides,
   axis labels 11–12px muted, legend rows "● Name  Avg 0.26 s".

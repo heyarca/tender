@@ -10,7 +10,7 @@ export interface TenderLogoProps extends React.ComponentProps<"span"> {
 }
 
 /**
- * Tender lockup: grape mark + lowercase "tender" wordmark (Plus Jakarta Sans 700,
+ * Tender lockup: lime mark + lowercase "tender" wordmark (PP Mori Semibold,
  * tight tracking), 24px tall like OpenRouter's nav lockup.
  */
 export function TenderLogo({ className, markClassName, markOnly = false, ...props }: TenderLogoProps) {
@@ -18,7 +18,7 @@ export function TenderLogo({ className, markClassName, markOnly = false, ...prop
     <span className={cn("inline-flex h-6 shrink-0 items-center gap-2 text-foreground", className)} {...props}>
       <TenderMark title={markOnly ? "Tender" : null} className={cn("size-6", markClassName)} />
       {markOnly ? null : (
-        <span className="-translate-y-px font-sans text-[20px] leading-none font-bold tracking-[-0.045em]">
+        <span className="-translate-y-px font-sans text-[20px] leading-none font-semibold tracking-[-0.04em]">
           tender
         </span>
       )}

@@ -45,7 +45,7 @@ const STICKY =
 
 /**
  * Left column (lg+): the two markets, then "On this page" with scroll-spy. The current market
- * gets a quiet style so only the current section carries the grape wash. Below lg, one
+ * gets a quiet style so only the current section carries the lime wash. Below lg, one
  * dropdown (`SidebarNavMenu`) holds both groups.
  */
 export function MarketSidebar({ marketId, activeProviders, onSwitchMarket }: MarketSidebarProps) {
