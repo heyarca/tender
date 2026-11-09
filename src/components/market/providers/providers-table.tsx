@@ -102,6 +102,8 @@ export function ProvidersTable({ view, selectedId, onSelect }: ProvidersTablePro
       data-slot="providers-table"
       // OpenRouter's `or-table--tight-x`: 10px inner cell padding, 16px at the row edges.
       className="[&_td]:px-2.5 [&_th]:px-2.5"
+      // The provider column is sticky on small screens, so do not fade the start edge there.
+      scrollClassName="max-md:data-overflow-start:mask-none"
     >
       <TableHeader>
         <TableRow>
@@ -161,15 +163,18 @@ export function ProvidersTable({ view, selectedId, onSelect }: ProvidersTablePro
             transition={LAYOUT_TRANSITION}
             colSpan={COLUMN_COUNT}
             data-slot="excluded-divider"
-            action={
+            // Let the sticky label below take the full-width cell as its containing block.
+            className="[&>td>div>span:first-child]:contents"
+          >
+            {/* Sticky on small screens so the label stays beside the sticky provider column while scrolling. */}
+            <span className="flex items-center gap-1.5 max-md:sticky max-md:left-4">
+              Excluded by your policy ({excluded.length})
               <InfoTooltip
                 label="Why providers are excluded"
                 iconSize={12}
                 content="These providers fail at least one requirement in your routing policy. Automatic routing never sends them requests."
               />
-            }
-          >
-            Excluded by your policy ({excluded.length})
+            </span>
           </MotionSubheadRow>
         ) : null}
         {excluded.map(renderRow)}
@@ -254,11 +259,12 @@ function ProviderTableRow({ row, view, selected, onSelect, layoutKey, reduceMoti
       <TableRowHeader
         muted={excluded}
         className={cn(
-          "max-md:sticky max-md:left-0 max-md:z-[1] max-md:bg-card",
+          // Small screens: the provider column stays in view while the metrics scroll, and tags wrap under the name.
+          "max-md:sticky max-md:left-0 max-md:z-[1] max-md:max-w-44 max-md:bg-card max-md:whitespace-normal",
           selected && "shadow-[inset_2px_0_0_var(--primary)]",
         )}
       >
-        <div className="flex min-w-0 items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2 max-md:flex-wrap max-md:gap-y-1">
           <button
             type="button"
             aria-pressed={selected}
