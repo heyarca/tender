@@ -53,6 +53,19 @@ export function CommandPalette({
   const [search, setSearch] = React.useState("");
   const inputRef = React.useRef<HTMLInputElement>(null);
 
+  // cmdk ranks items inside each group but never reorders the groups, so while
+  // searching the groups are ordered by their best item score (the same score cmdk
+  // computes through the filter) and the best group's top item wins Enter.
+  const orderedGroups = React.useMemo(() => {
+    if (!search) return groups;
+    const best = groups.map((group, index) => ({
+      index,
+      group,
+      score: Math.max(0, ...group.items.map((item) => defaultFilter(itemKeywords(item).join(" "), search))),
+    }));
+    return best.sort((a, b) => b.score - a.score || a.index - b.index).map((entry) => entry.group);
+  }, [groups, search]);
+
   const setOpen = (next: boolean) => {
     if (!next) setSearch("");
     onOpenChange(next);
@@ -85,7 +98,7 @@ export function CommandPalette({
             <Command.Empty className="px-2 py-8 text-center text-body text-muted-foreground">
               No results for &ldquo;{search}&rdquo;
             </Command.Empty>
-            {groups.map((group) => (
+            {orderedGroups.map((group) => (
               <Command.Group
                 key={group.heading}
                 heading={group.heading}
@@ -95,7 +108,7 @@ export function CommandPalette({
                   <Command.Item
                     key={item.id}
                     value={item.id}
-                    keywords={[item.label, ...(item.description ? [item.description] : []), ...(item.keywords ?? [])]}
+                    keywords={itemKeywords(item)}
                     onSelect={() => {
                       item.onSelect();
                       setOpen(false);
@@ -142,6 +155,11 @@ export function CommandPalette({
 /** Matches label, description, and keywords only, so item ids never match a query. */
 function filterByKeywords(_value: string, search: string, keywords?: string[]) {
   return defaultFilter(keywords?.join(" ") ?? "", search);
+}
+
+/** The searchable text of an item: label, description, then extra keywords. */
+function itemKeywords(item: CommandPaletteItem): string[] {
+  return [item.label, ...(item.description ? [item.description] : []), ...(item.keywords ?? [])];
 }
 
 function PaletteItemIcon({ item }: { item: CommandPaletteItem }) {

@@ -302,6 +302,44 @@ describe("CommandPalette", () => {
     expect(onRun).toHaveBeenCalledTimes(1);
     expect(state.textContent).toBe("closed");
   });
+
+  it("orders groups by their best match while searching, keeping order without a search", async () => {
+    const onSelectProvider = vi.fn();
+    const onReset = vi.fn();
+    function RankingPalette() {
+      const [open, setOpen] = useState(false);
+      return (
+        <CommandPalette
+          open={open}
+          onOpenChange={setOpen}
+          groups={[
+            {
+              heading: "Actions",
+              // Fuzzy-matches "DeepInfra" through its description, worse than the provider itself.
+              items: [{ id: "reset", label: "Reset conditions", description: "Deep infrastructure diagnostics", onSelect: onReset }],
+            },
+            {
+              heading: "Providers",
+              items: [{ id: "deepinfra", label: "DeepInfra", keywords: ["deepinfra"], onSelect: onSelectProvider }],
+            },
+          ]}
+        />
+      );
+    }
+    render(<RankingPalette />);
+    keydown({ key: "k", metaKey: true });
+    const input = await screen.findByRole("combobox");
+    const headings = () => screen.getAllByText(/^(Actions|Providers)$/).map((heading) => heading.textContent);
+    expect(headings()).toEqual(["Actions", "Providers"]);
+
+    fireEvent.change(input, { target: { value: "DeepInfra" } });
+    await waitFor(() => expect(screen.getByText("DeepInfra")).toBeTruthy());
+    expect(headings()).toEqual(["Providers", "Actions"]);
+
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(onSelectProvider).toHaveBeenCalledTimes(1);
+    expect(onReset).not.toHaveBeenCalled();
+  });
 });
 
 describe("toast", () => {
