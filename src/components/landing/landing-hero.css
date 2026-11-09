@@ -27,8 +27,9 @@
 
 /* Intro */
 .tenderLanding_heroIntro { display: flex; flex-direction: column; align-items: center; text-align: center; }
-.tenderLanding_heroTitle { font-size: 64px; font-weight: 400; line-height: 1; letter-spacing: -0.035em; color: var(--lp-ink); }
-.tenderLanding_heroTitleLine { display: block; }
+.tenderLanding_heroTitle { font-size: 64px; font-weight: 400; line-height: 1; letter-spacing: -0.035em; color: var(--lp-ink); white-space: nowrap; }
+/* Desktop: one line. Tablet and mobile break after "Always on the". */
+.tenderLanding_heroTitleLine { display: inline; }
 .tenderLanding_heroIntro .tenderLanding_heroLead { max-width: 540px; margin-top: 24px; font-size: 18px; line-height: 1.5; color: var(--lp-ink-2); text-wrap: balance; }
 .tenderLanding_heroActions { display: flex; justify-content: center; gap: 12px; margin-top: 32px; }
 .tenderLanding_heroHowLink { display: inline-flex; align-items: center; gap: 6px; margin-top: 18px; color: var(--lp-ink-2); font-size: 15px; line-height: 20px; text-decoration: none; transition: color 0.2s var(--lp-ease); }
@@ -92,7 +93,8 @@
 }
 @media (max-width: 1023px) {
   .tenderLanding_hero { padding-top: 200px; }
-  .tenderLanding_heroTitle { font-size: 56px; }
+  .tenderLanding_heroTitle { font-size: 56px; white-space: normal; }
+  .tenderLanding_heroTitleLine { display: block; }
   .tenderLanding_heroMediaWrap { margin-top: 64px; }
   .tenderLanding_heroMedia { aspect-ratio: auto; min-height: 640px; }
   .tenderLanding_heroStage { display: flex; flex-direction: column; justify-content: space-between; align-items: center; gap: 24px; padding: 32px 32px 88px; }
