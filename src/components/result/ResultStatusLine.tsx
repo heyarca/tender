@@ -13,6 +13,8 @@ export interface ResultStatusLineProps {
   className?: string;
 }
 
+const REJECTED_MESSAGE = "No eligible provider — request not sent";
+
 /** Text of the failure message, e.g. `Together failed: 503 Service Unavailable`. */
 export function failureMessage(request: ResultRequest): string {
   const who = request.provider?.name ?? "Provider";
@@ -26,30 +28,46 @@ export function failureMessage(request: ResultRequest): string {
  */
 export function ResultStatusLine({ request, hasPrevious = false, children, className }: ResultStatusLineProps) {
   const status = request?.status ?? "ok";
+  const message =
+    status === "failed" && request ? failureMessage(request) : status === "rejected" ? REJECTED_MESSAGE : null;
+  const previousNote = hasPrevious && (
+    <span className="text-muted-foreground"> · Showing previous result</span>
+  );
   return (
     <div
-      className={cn("flex h-5 min-w-0 items-center text-caption", className)}
-      role={status === "ok" ? undefined : "status"}
+      // One line in wide containers, two reserved lines in narrow ones, so items wrap instead of
+      // all truncating and the height never depends on the state.
+      className={cn(
+        "flex h-10 min-w-0 items-start text-caption leading-5 @md:h-5 @md:items-center",
+        className,
+      )}
       data-status={status}
     >
-      {status === "failed" && request ? (
-        <p className="flex min-w-0 items-center gap-1.5 text-negative-text">
-          <CircleAlert aria-hidden="true" className="size-3.5 shrink-0" strokeWidth={2} />
-          <span className="truncate">
-            {failureMessage(request)}
-            {hasPrevious && <span className="text-muted-foreground"> · Showing previous result</span>}
-          </span>
-        </p>
-      ) : status === "rejected" ? (
-        <p className="flex min-w-0 items-center gap-1.5 text-warning-text">
-          <TriangleAlert aria-hidden="true" className="size-3.5 shrink-0" strokeWidth={2} />
-          <span className="truncate">
-            No eligible provider — request not sent
-            {hasPrevious && <span className="text-muted-foreground"> · Showing previous result</span>}
+      <span className="sr-only" aria-live="polite">
+        {message ?? ""}
+      </span>
+      {message !== null ? (
+        <p
+          className={cn(
+            "flex min-w-0 items-start gap-1.5 @md:items-center",
+            status === "failed" ? "text-negative-text" : "text-warning-text",
+          )}
+          aria-hidden="true"
+        >
+          {status === "failed" ? (
+            <CircleAlert className="mt-[3px] size-3.5 shrink-0 @md:mt-0" strokeWidth={2} />
+          ) : (
+            <TriangleAlert className="mt-[3px] size-3.5 shrink-0 @md:mt-0" strokeWidth={2} />
+          )}
+          <span className="line-clamp-2 @md:line-clamp-none @md:truncate">
+            {message}
+            {previousNote}
           </span>
         </p>
       ) : (
-        <div className="flex min-w-0 items-center gap-1.5 truncate text-muted-foreground">{children}</div>
+        <div className="flex max-h-full min-w-0 flex-wrap items-center gap-x-1.5 overflow-hidden text-muted-foreground @md:flex-nowrap">
+          {children}
+        </div>
       )}
     </div>
   );
