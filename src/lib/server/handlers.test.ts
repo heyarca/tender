@@ -1,11 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PaymentQuote, SettlementAmounts } from "@/lib/payments/types";
-const payments = vi.hoisted(() => ({ calls: [] as PaymentQuote[], fail: false }));
+const payments = vi.hoisted(() => ({ calls: [] as PaymentQuote[], fail: false, failureResponse: false }));
 vi.mock("node:crypto", () => ({ randomUUID: () => "84d53c30-6de2-4439-b910-67ff8b1fc974" }));
 vi.mock("@/lib/payments/server", async () => {
   const { quoteFromBid } = await import("@/lib/payments/quote");
   return { quoteFromBid, withX402Payment: (handler: (r: Request, q: PaymentQuote & SettlementAmounts) => Promise<Response>, quote: (r: Request) => PaymentQuote) => async (request: Request) => {
     if (payments.fail) throw new Error("Facilitator unavailable");
+    if (payments.failureResponse) return Response.json({ error: "Internal Server Error" }, { status: 500 });
     const q = quote(request);
     payments.calls.push(q);
     if (!request.headers.has("PAYMENT-SIGNATURE")) return Response.json({ error: "payment_required", ...q }, { status: 402 });
@@ -19,11 +20,11 @@ import { clearReferenceCache } from "./reference";
 
 const req = (path: string, paid = true, headers?: HeadersInit) => new Request(`https://tender.example/api/v1/${path}`, { headers: { ...(paid ? { "PAYMENT-SIGNATURE": "test-only" } : {}), ...headers } });
 beforeEach(() => {
-  payments.calls = []; payments.fail = false; clearReferenceCache();
+  payments.calls = []; payments.fail = false; payments.failureResponse = false; clearReferenceCache();
   vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(new Date("2026-11-09T18:30:05Z"));
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ bid: "75000", ask: "75002", time: "2026-11-09T18:30:00Z" })));
 });
-afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
+afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); vi.restoreAllMocks(); });
 
 describe("paid contract handlers", () => {
   it("quotes once and serves the same provider with explicit sub-unit settlement", async () => {
@@ -38,6 +39,7 @@ describe("paid contract handlers", () => {
     expect(data.data_age_ms).toBeLessThanOrEqual(264);
     expect(Date.now() - Date.parse(data.source_timestamp)).toBe(data.data_age_ms);
     expect(data.price).toBeGreaterThan(74000);
+    expect(data).not.toHaveProperty("change_usd");
   });
   it("does not load upstream values before payment", async () => {
     const response = await price(req("prices/spot", false));
@@ -92,6 +94,15 @@ describe("paid contract handlers", () => {
   });
   it("fails closed when the payment service fails", async () => {
     payments.fail = true;
+    const logger = vi.spyOn(console, "error").mockImplementation(() => {});
+    const response = await price(req("prices/spot"));
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ error: { code: "payment_unavailable", message: "Payment service unavailable" } });
+    expect(logger).toHaveBeenCalledWith("Tender payment service error", { name: "Error", message: "Facilitator unavailable" });
+    expect(fetch).not.toHaveBeenCalled();
+  });
+  it("normalizes SDK-returned facilitator failures without serving a payload", async () => {
+    payments.failureResponse = true;
     const response = await price(req("prices/spot"));
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({ error: { code: "payment_unavailable", message: "Payment service unavailable" } });
