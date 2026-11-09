@@ -1,6 +1,6 @@
 # Tender engine (`src/lib/tender`)
 
-The engine behind every market page: fixtures, evaluation, the routing state
+The engine behind every market page: market definitions built from the registry (`@/lib/registry`), evaluation, the routing state
 machine, deterministic request execution, monitoring, activity copy, formatting,
 persistence, and the client store. This file is the API reference; `docs/SPEC.md`
 §5 is synced from it.
@@ -51,12 +51,13 @@ Props: `{ children: ReactNode; store?: TenderStore }` (`store` for tests/preview
 
 | Hook | Returns | Re-renders |
 | --- | --- | --- |
-| `useMarketView(marketId)` | `MarketView` (memoized per market state) | When that market changes (actions, 5 s monitor), **not** on the 1 s clock. |
+| `useMarketView(marketId)` | `MarketView` (memoized per market state). Watches the market while mounted. | When that market changes (actions, 5 s monitor), **not** on the 1 s clock. |
+| `useWatchMarket(marketId)` | `void`: keeps the market in the 5 s monitor while mounted (ref-counted). Only watched markets and markets on auto-run are sampled; an idle market catches up its history when watched again. | Never. |
 | `useNow()` | `number` store clock (ms) | Every second. Use it only where relative times/countdowns render. |
 | `useTenderActions()` | `TenderActions` (stable object) | Never. |
 | `useRouteEvents(marketId, onEvent)` | `void` | Never. Calls `onEvent(event: RouteEvent)` once per new route switch, no-eligible, or pinned violation (for toasts). Existing entries and entries written while restoring saved policies are not reported. `onEvent` may change between renders. |
 | `usePendingSwitch(marketId)` | `{ providerId, providerName, executeAt, secondsRemaining, label } \| null` — `label` is "Switching to Cloudflare in 7 s — switch cooldown" | Every second while a switch is pending. |
-| `useMarketIds()` | `readonly MarketId[]` (`["sf-weather", "btc-usd"]`) | Never. |
+| `useMarketIds()` | `readonly MarketId[]` (all 75 registry markets, registry order) | Never. |
 | `useTenderSelector(selector)` | Raw `TenderState` selection (return a stable slice or primitive) | When the selection changes. |
 | `useTenderStore()` | `TenderStore` | Never. |
 
@@ -161,16 +162,19 @@ Route switch details state the trigger (failing check with value vs limit) and
 why the replacement qualifies (all four checks with value vs limit).
 
 `RequestResult` is discriminated by `status` (`"ok" | "failed" | "rejected"`), then
-by `marketId` for the payload (`WeatherPayload` | `BtcPayload`).
+by `payload.kind`: `"weather"` (`weather.current`), `"btc"` (`prices.spot`), or `"fields"`
+(`FieldsPayload`: `contractId`, schema-shaped `values`, `sourceTimestamp`, `change`) for every other contract.
+The chart value is `seriesValue(result)`: temperature, spot price, or `values[definition.seriesField]`
+(`null` when the contract has no series field, so the market has no chart).
 
 ---
 
 ## Server-safe: `@/lib/tender`
 
-### Markets and fixtures
+### Markets (built from the registry)
 
 ```ts
-MARKET_IDS: readonly ["sf-weather", "btc-usd"]
+MARKET_IDS: readonly MarketId[]           // registry order (MARKET_SPECS)
 MARKETS: Record<MarketId, MarketDefinition>
 DEFAULT_MARKET_ID: "sf-weather"
 isMarketId(value: unknown): value is MarketId
@@ -183,12 +187,19 @@ fromDisplayValue(spec: NumericInputSpec, display): number
 SF_WEATHER, BTC_USD, *_DEFAULT_POLICY, *_PROVIDERS
 ```
 
-`MarketDefinition`: `id`, `name`, `shortName`, `identifier` (`weather/san-francisco`),
-`contract`, `description`, `timeZone` (`America/Los_Angeles` | `UTC`), `timeZoneLabel`,
-`icon` (`cloud` | `bitcoin`), `units`, `priceDefinition?` (BTC), `resultFields`,
-`defaultPolicy`, `policyInputs` / `conditionInputs` (`NumericInputSpec`: `label`,
-`prefix?`, `unit`, `min`, `max`, `step`, `decimals`, `factor`, `hint`; weather data
-age in minutes, BTC in milliseconds), `providers`, `codeSamples`, `sampleResponse`.
+`MarketDefinition`: `id`, `contractId`, `categoryId`, `name`, `shortName`, `identifier`
+(`{namespace}/{market id}`, e.g. `weather/sf-weather`), `contract` (`weather.current({ location: "san-francisco" })`),
+`contractUrl`, `description`, `timeZone` (IANA), `timeZoneLabel`, `icon` (lucide name: market icon, else
+category icon), `units` (`dataAge` from `contract.freshness.unit`), `seriesField` (chart field or `null`),
+`priceDefinition?` (price-view contracts), `resultFields` (contract output), `defaultPolicy`,
+`policyInputs` / `conditionInputs` (`NumericInputSpec`: `label`, `prefix?`, `unit`, `min`, `max`, `step`,
+`decimals`, `factor`, `hint`; minute-unit contracts use the weather template, millisecond-unit contracts the
+spot template, widened to fit the listings), `providers` (registry listings), `codeSamples`, `sampleResponse`.
+
+Default policy: the fifteen markets that ran before the registry keep theirs (`POLICY_OVERRIDES` in
+`markets.ts`). Others: max price = nice ≥ 1.5 × median bid, max P95 = nice ≥ 1.5 × median P95,
+max data age = nice ≥ 2 × median data age, min success 99.5% (99.9% for `prices.spot`), lowest cost, automatic.
+`latencyStepMs(id)` / `dataDelayStepMs(id)`: scenario steps (300 ms / 15 min for minute-unit markets, else 100 ms / 1 s).
 
 ### Evaluation
 
@@ -224,7 +235,7 @@ executeSelection(selection, options: {
   now: number; seed: number; requestId?: string;
   reference?: MarketReference | null;   // upstream SF conditions / BTC spot; default: deterministic signal
   signalOrigin?: number;                // default FIXTURE_EPOCH
-  previousPriceUsd?: number | null;     // BTC changeUsd
+  previousValue?: number | null;        // spot changeUsd / fields change
 }): SelectionExecution   // { selection, result: RequestResult, rng, reference: { source: "upstream" | "signal", at, value } }
 
 routeRequest(marketId, selectOptions & executeOptions): SelectionExecution
@@ -244,7 +255,7 @@ Payload `observedAt` / `sourceTimestamp` are always the provider observation tim
 
 ```ts
 sampleRequest(input: RequestSampleInput): { result: RequestResult; rng: number }
-  // { marketId, providerId | null, conditions?, requestId, now, seed, routingMode?, signalOrigin?, previousPriceUsd?, reference? }
+  // { marketId, providerId | null, conditions?, requestId, now, seed, routingMode?, signalOrigin?, previousValue?, reference? }
 sampleLatency(rng, p95LatencyMs): number    // ~95% ≤ P95, rest ≤ 1.35×, median ≈ 0.6×
 sampleDataAge(rng, dataAgeMs, marketId): number   // ± 20%
 weatherPayload(observedAt, origin, bias, reference?, referenceAt?): WeatherPayload
@@ -287,7 +298,7 @@ itself; violations are logged and notified once per distinct set of failing chec
 
 ```ts
 POLICIES_STORAGE_KEY = "tender:v1:policies"
-serializePolicies(state): string            // { version: 1, policies: Record<MarketId, RoutingPolicy> } — policies only
+serializePolicies(state): string            // { version: 1, policies: Partial<Record<MarketId, RoutingPolicy>> } — changed policies only
 parsePersistedPolicies(raw): Partial<Record<MarketId, RoutingPolicy>>   // invalid input → {}
 policiesChanged(a, b): boolean
 sanitizePolicy(marketId, value: unknown): RoutingPolicy | null          // missing/invalid fields → defaults
@@ -320,8 +331,9 @@ format.countdown(at, now)                // "7 s"
 ```ts
 providerName(marketId, providerId), pinViolationText(marketId, providerId, reasons)
 recommendedSummaryText(preference, name), NO_ELIGIBLE_TEXT
-getApiSnippets({ id, identifier }, policy): CodeSample[]     // TypeScript + Python with the current policy
-getResponseJson({ id, identifier }, result): string          // JSON body for a RequestResult
+getApiSnippets({ id }, policy): CodeSample[]     // TypeScript (@heyarca/tender) + Python (HTTP) with the current policy
+getResponseJson({ id }, result): string          // JSON body for a RequestResult, in the HTTP API shape
+resultData(result), resultField(result, key)     // contract-shaped `data` of a served result
 ```
 
 ### Constants
@@ -340,11 +352,11 @@ getResponseJson({ id, identifier }, result): string          // JSON body for a 
 | `types.ts` | All domain, state, and view types |
 | `constants.ts` | Timing, caps, storage key |
 | `random.ts` | Seeded PRNG (mulberry32), hashes |
-| `fixtures/` | Market definitions and providers (SPEC §3) |
+| `markets.ts` | Market definitions from the registry: providers, inputs, default policies (legacy overrides) |
 | `evaluate.ts` | Qualification, reasons, ranking, best price |
 | `router.ts` | Routing state machine |
 | `requests.ts` | Request sampling, payloads, reference anchoring |
-| `signals.ts` | Deterministic BTC walk and SF weather drift |
+| `signals.ts` | Deterministic BTC walk, weather drift, and per-market series drift (baselines from registry samples) |
 | `monitor.ts` | Monitor samples and history |
 | `activity.ts` | Activity entry builders (final copy) |
 | `context.ts` | Per-step id counters |

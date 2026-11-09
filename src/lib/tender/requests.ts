@@ -7,15 +7,25 @@ import { FIXTURE_EPOCH, LATENCY_LIMIT, REQUEST_LOG_LIMIT, SERIES_LIMIT } from ".
 import { nextRequestId, pushActivity, type StepContext } from "./context";
 import { compass } from "./format";
 import { createRng, type Rng } from "./random";
-import { conditionLabel, pairFor, priceAtFor, weatherAtFor, weatherLocationFor, type WeatherState } from "./signals";
-import { getProviderFixture, MARKETS } from "./fixtures";
+import { getContract, getMarketSpec, readField, sampleFor, type ContractSpec, type FieldSpec } from "@/lib/registry";
+import {
+  conditionLabel,
+  pairFor,
+  priceAtFor,
+  priceBiasScaleFor,
+  priceDecimalsFor,
+  seriesMoveAt,
+  weatherAtFor,
+  weatherLocationFor,
+  type WeatherState,
+} from "./signals";
+import { getProviderFixture, MARKETS } from "./markets";
 import type {
   BtcPayload,
   BtcReference,
+  FieldsPayload,
   MarketId,
   MarketReference,
-  PriceMarketId,
-  WeatherMarketId,
   MarketState,
   ProviderConditions,
   ProviderId,
@@ -52,9 +62,15 @@ export function sampleDataAge(rng: Rng, dataAgeMs: number, marketId: MarketId): 
   return isWeatherMarket(marketId) ? Math.round(value / 1000) * 1000 : Math.max(0, Math.round(value));
 }
 
-/** Weather-style markets report data age in minutes; price markets in milliseconds. */
+/** Minute-unit markets timestamp their data to the second. */
 function isWeatherMarket(marketId: MarketId): boolean {
-  return MARKETS[marketId].units.dataAge === "min";
+  return MARKETS[marketId]?.units.dataAge === "min";
+}
+
+/** Result payload kind of a market: `weather.current` → weather, `prices.spot` → btc, else fields. */
+export function payloadKindOf(marketId: MarketId): "weather" | "btc" | "fields" {
+  const contractId = MARKETS[marketId]?.contractId;
+  return contractId === "weather.current" ? "weather" : contractId === "prices.spot" ? "btc" : "fields";
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
@@ -172,17 +188,7 @@ export function anchoredBtcPriceAt(
   return reference.priceUsd + (priceAtFor(marketId, at, origin) - priceAtFor(marketId, anchor, origin));
 }
 
-/** Decimals a market's price is reported with. */
-function priceDecimals(marketId: MarketId): number {
-  return pairFor(marketId).endsWith("-USD") && (marketId === "eur-usd" || marketId === "gbp-usd") ? 4 : 2;
-}
-
-/** Provider bias scales with the price level so small-priced pairs stay realistic. */
-function priceBiasScale(marketId: MarketId): number {
-  return marketId === "eur-usd" || marketId === "gbp-usd" ? 0.0001 : marketId === "xrp-usd" ? 0.002 : marketId === "sol-usd" ? 0.1 : marketId === "eth-usd" ? 0.5 : 1;
-}
-
-/** BTC price a provider reports for the source time `sourceTimestamp` (true price + bias ≤ $1.50). */
+/** Spot price a provider reports for the source time `sourceTimestamp` (true price + bias; BTC: ≤ $1.50). */
 export function btcProviderPrice(
   sourceTimestamp: number,
   origin: number,
@@ -191,16 +197,143 @@ export function btcProviderPrice(
   referenceAt?: number,
   marketId: MarketId = "btc-usd",
 ): number {
-  const scale = marketId === "btc-usd" ? 1 : priceBiasScale(marketId);
-  return round(anchoredBtcPriceAt(sourceTimestamp, origin, reference, referenceAt, marketId) + bias * 1.5 * scale, priceDecimals(marketId));
+  const scale = priceBiasScaleFor(marketId);
+  return round(anchoredBtcPriceAt(sourceTimestamp, origin, reference, referenceAt, marketId) + bias * 1.5 * scale, priceDecimalsFor(marketId));
+}
+
+// ---------------------------------------------------------------------------
+// Fields payloads (every contract besides weather.current and prices.spot)
+// ---------------------------------------------------------------------------
+
+/** Timestamp fields that carry the source time ("as of", "updated", "observed"). */
+const SOURCE_TIME_KEYS = new Set(["observedAt", "sourceTimestamp", "asOf", "updatedAt"]);
+
+interface FieldsModel {
+  contract: ContractSpec;
+  sample: Record<string, unknown>;
+  series: FieldSpec | null;
+  /** Money fields that move with the series field (same unit), e.g. bid and ask with last. */
+  linked: FieldSpec[];
+  sourceTimeKeys: string[];
+}
+
+const fieldsModels = new Map<MarketId, FieldsModel | null>();
+
+function fieldsModel(marketId: MarketId): FieldsModel | null {
+  if (fieldsModels.has(marketId)) return fieldsModels.get(marketId)!;
+  const spec = getMarketSpec(marketId);
+  const contract = spec ? getContract(spec.contractId) : undefined;
+  let model: FieldsModel | null = null;
+  if (spec && contract) {
+    const series = contract.output.find((field) => field.series) ?? null;
+    model = {
+      contract,
+      sample: sampleFor(spec),
+      series,
+      linked:
+        series?.type === "money"
+          ? contract.output.filter((field) => field !== series && field.type === "money" && field.unit === series.unit)
+          : [],
+      sourceTimeKeys: contract.output
+        .filter((field) => field.type === "timestamp" && SOURCE_TIME_KEYS.has(field.key.split(".").pop() ?? ""))
+        .map((field) => field.key),
+    };
+  }
+  fieldsModels.set(marketId, model);
+  return model;
+}
+
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+/** Set a dotted key, copying the objects on the path (the sample stays untouched). */
+function setField(target: Record<string, unknown>, key: string, value: unknown): void {
+  const parts = key.split(".");
+  let node = target;
+  for (const part of parts.slice(0, -1)) {
+    const child = node[part];
+    const copy: Record<string, unknown> = isPlainObject(child) ? { ...child } : {};
+    node[part] = copy;
+    node = copy;
+  }
+  node[parts[parts.length - 1]] = value;
+}
+
+const decimalsOf = (value: number) => {
+  const text = String(value);
+  const dot = text.indexOf(".");
+  return dot === -1 || text.includes("e") ? 0 : text.length - dot - 1;
+};
+
+/** Decimals a numeric field is reported with: integers 0, money ≥ 2 (≥ 4 below 10), other numbers ≥ 1. */
+function fieldDecimals(field: FieldSpec, base: number): number {
+  if (field.type === "integer") return 0;
+  const minimum = field.type === "money" ? (Math.abs(base) < 10 ? 4 : 2) : 1;
+  return Math.min(6, Math.max(minimum, decimalsOf(base)));
+}
+
+/** Value of the series field at `sourceTimestamp` (unrounded), or `null` when the contract has none. */
+function seriesValueAt(model: FieldsModel, marketId: MarketId, sourceTimestamp: number, origin: number, bias: number): number | null {
+  const field = model.series;
+  const base = field ? readField(model.sample, field.key) : undefined;
+  if (!field || typeof base !== "number" || !Number.isFinite(base)) return null;
+  // Money moves gently like prices; counts and scores a few percent. Providers report a small bias.
+  const biasMove = bias * (field.type === "money" ? 0.0002 : 0.01);
+  return base * (1 + seriesMoveAt(marketId, sourceTimestamp, origin) + biasMove);
+}
+
+/**
+ * Fields payload a provider reports for data at `sourceTimestamp`: the registry sample with the
+ * series field drifted by the market signal (linked money fields move with it), source-time
+ * timestamps set to `sourceTimestamp`, and the change vs `previousValue`.
+ */
+export function fieldsPayload(
+  marketId: MarketId,
+  sourceTimestamp: number,
+  origin: number,
+  bias: number,
+  previousValue: number | null = null,
+): FieldsPayload {
+  const model = fieldsModel(marketId);
+  if (!model) return { kind: "fields", contractId: "", values: {}, sourceTimestamp, change: null };
+  const values: Record<string, unknown> = { ...model.sample };
+  let change: number | null = null;
+  const field = model.series;
+  const raw = seriesValueAt(model, marketId, sourceTimestamp, origin, bias);
+  if (field && raw !== null) {
+    const base = readField(model.sample, field.key) as number;
+    const decimals = fieldDecimals(field, base);
+    const value = round(Math.max(0, raw), decimals);
+    setField(values, field.key, value);
+    const ratio = base === 0 ? 1 : raw / base;
+    for (const linked of model.linked) {
+      const current = readField(model.sample, linked.key);
+      if (typeof current === "number") setField(values, linked.key, round(Math.max(0, current * ratio), fieldDecimals(linked, current)));
+    }
+    if (previousValue !== null && Number.isFinite(previousValue)) change = round(value - previousValue, decimals);
+  }
+  const at = new Date(sourceTimestamp).toISOString();
+  for (const key of model.sourceTimeKeys) setField(values, key, at);
+  return { kind: "fields", contractId: model.contract.id, values, sourceTimestamp, change };
+}
+
+/** Rewrite the source-time fields of a fields payload after its `sourceTimestamp` moved (rebase). */
+export function shiftFieldsPayload(payload: FieldsPayload, delta: number, marketId: MarketId): FieldsPayload {
+  const sourceTimestamp = payload.sourceTimestamp + delta;
+  const values: Record<string, unknown> = { ...payload.values };
+  const at = new Date(sourceTimestamp).toISOString();
+  for (const key of fieldsModel(marketId)?.sourceTimeKeys ?? []) setField(values, key, at);
+  return { ...payload, values, sourceTimestamp };
 }
 
 /**
  * Deterministic reference value of a market at `at` (the fallback when no
- * upstream value is available).
+ * upstream value is available). `null` for `fields` markets.
  */
-export function signalReference(marketId: MarketId, at: number, origin: number = FIXTURE_EPOCH): MarketReference {
-  if (!isWeatherMarket(marketId)) return { kind: "btc", at, priceUsd: round(priceAtFor(marketId, at, origin), priceDecimals(marketId)) };
+export function signalReference(marketId: MarketId, at: number, origin: number = FIXTURE_EPOCH): MarketReference | null {
+  const kind = payloadKindOf(marketId);
+  if (kind === "fields") return null;
+  if (kind === "btc") return { kind: "btc", at, priceUsd: round(priceAtFor(marketId, at, origin), priceDecimalsFor(marketId)) };
   const w = weatherAtFor(marketId, at, origin);
   return {
     kind: "weather",
@@ -223,9 +356,21 @@ const FAILURES = [
   { code: 504, message: "Gateway Timeout" },
 ] as const;
 
-/** Value plotted in the market chart for a served result. */
-export function seriesValue(result: ServedRequestResult): number {
-  return result.payload.kind === "btc" ? result.payload.priceUsd : result.payload.temperatureF;
+/**
+ * Value plotted in the market chart for a served result: temperature, spot price, or the
+ * contract's series field. `null` when the market has no chart.
+ */
+export function seriesValue(result: ServedRequestResult): number | null {
+  return seriesValueOf(result.marketId, result.payload);
+}
+
+/** `seriesValue` for a payload of the given market. */
+export function seriesValueOf(marketId: MarketId, payload: ServedRequestResult["payload"]): number | null {
+  if (payload.kind === "btc") return payload.priceUsd;
+  if (payload.kind === "weather") return payload.temperatureF;
+  const key = MARKETS[marketId]?.seriesField;
+  const value = key ? readField(payload.values, key) : undefined;
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 /** Input of `sampleRequest`: everything a single request depends on. */
@@ -245,8 +390,8 @@ export interface RequestSampleInput {
   routingMode?: RoutingMode["kind"];
   /** Origin of the deterministic market signal (default `FIXTURE_EPOCH`). */
   signalOrigin?: number;
-  /** BTC and quote markets: value of the previous served request, for the change. */
-  previousPriceUsd?: number | null;
+  /** Spot and fields markets: series value of the previous served request, for the change. */
+  previousValue?: number | null;
   /**
    * Upstream reference value (live SF conditions or BTC spot). Ignored when it
    * does not match the market. Default: the deterministic signal.
@@ -337,21 +482,23 @@ export function sampleRequest(input: RequestSampleInput): { result: RequestResul
     dataAgeMs,
     cost: c.bidPrice / 1e6,
   };
-  if (isWeatherMarket(marketId)) {
-    return {
-      result: { ...base, marketId: marketId as WeatherMarketId, payload: weatherPayload(
-          now - dataAgeMs,
-          origin,
-          fixture.bias,
-          reference?.kind === "weather" ? reference : undefined,
-          reference?.at ?? now,
-          marketId,
-        ),
-      },
-      rng: rng.state,
-    };
-  }
   const sourceTimestamp = now - dataAgeMs;
+  const previous = input.previousValue ?? null;
+  const kind = payloadKindOf(marketId);
+  if (kind === "weather") {
+    const payload = weatherPayload(
+      sourceTimestamp,
+      origin,
+      fixture.bias,
+      reference?.kind === "weather" ? reference : undefined,
+      reference?.at ?? now,
+      marketId,
+    );
+    return { result: { ...base, marketId, payload }, rng: rng.state };
+  }
+  if (kind === "fields") {
+    return { result: { ...base, marketId, payload: fieldsPayload(marketId, sourceTimestamp, origin, fixture.bias, previous) }, rng: rng.state };
+  }
   const priceUsd = btcProviderPrice(
     sourceTimestamp,
     origin,
@@ -360,8 +507,7 @@ export function sampleRequest(input: RequestSampleInput): { result: RequestResul
     now,
     marketId,
   );
-  const previous = input.previousPriceUsd ?? null;
-  const changeUsd = previous !== null ? round(priceUsd - previous, priceDecimals(marketId)) : null;
+  const changeUsd = previous !== null ? round(priceUsd - previous, priceDecimalsFor(marketId)) : null;
   const payload: BtcPayload = {
     kind: "btc",
     pair: pairFor(marketId),
@@ -370,7 +516,7 @@ export function sampleRequest(input: RequestSampleInput): { result: RequestResul
     changePct: previous !== null && changeUsd !== null ? round((changeUsd / previous) * 100, 4) : null,
     sourceTimestamp,
   };
-  return { result: { ...base, marketId: marketId as PriceMarketId, payload }, rng: rng.state };
+  return { result: { ...base, marketId, payload }, rng: rng.state };
 }
 
 /**
@@ -395,7 +541,7 @@ export function executeRequest(
     seed: market.rng,
     routingMode: market.policy.mode.kind,
     signalOrigin: market.signalOrigin,
-    previousPriceUsd: previous && previous.payload.kind !== "weather" ? seriesValue(previous) : null,
+    previousValue: previous && previous.payload.kind !== "weather" ? seriesValue(previous) : null,
   });
 }
 
@@ -423,10 +569,11 @@ function applyResult(market: MarketState, ctx: StepContext, result: RequestResul
     });
   }
   let series = market.series;
-  if (result.status === "ok") {
+  const value = result.status === "ok" ? seriesValue(result) : null;
+  if (result.status === "ok" && value !== null) {
     series = [
       ...market.series,
-      { at: result.requestedAt, value: seriesValue(result), providerId: result.providerId, requestId: result.requestId },
+      { at: result.requestedAt, value, providerId: result.providerId, requestId: result.requestId },
     ].slice(-SERIES_LIMIT);
   }
   const next: MarketState = {

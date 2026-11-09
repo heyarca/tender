@@ -2,13 +2,15 @@
  * Activity entry builders with final product copy (SPEC §4.2–4.4).
  * Builders return `EntryFields`; `pushActivity` stamps ids and timestamps.
  */
+import { getContract, readField } from "@/lib/registry";
 import type { EntryFields } from "./context";
 import { CHECK_LABELS, PREFERENCE_LABELS, qualificationLines, STATUS_LABELS } from "./evaluate";
-import { getProviderFixture, MARKETS } from "./fixtures";
+import { getProviderFixture, MARKETS } from "./markets";
 import * as format from "./format";
 import type {
   ConditionChange,
   ExclusionReason,
+  FieldsPayload,
   MarketId,
   PolicyChange,
   ProviderConditions,
@@ -442,6 +444,31 @@ export function pinRecoveredEntry(marketId: MarketId, providerId: ProviderId): E
 // Requests
 // ---------------------------------------------------------------------------
 
+const MAX_SUMMARY = 80;
+
+/** Primary field of a fields result: "Price $3.42", "AQI 61 US AQI", "Status scheduled". */
+export function fieldsSummary(payload: FieldsPayload): string {
+  const field = getContract(payload.contractId)?.output.find((f) => f.primary);
+  if (!field) return "";
+  const value = readField(payload.values, field.key);
+  let text: string;
+  if (typeof value === "number") {
+    text =
+      field.type === "money" && field.unit === "USD"
+        ? format.usd(value)
+        : `${format.number(value, field.type === "integer" ? 0 : Math.min(4, (String(value).split(".")[1] ?? "").length))}${field.unit ? ` ${field.unit}` : ""}`;
+  } else if (typeof value === "string") {
+    text = value.length > MAX_SUMMARY ? `${value.slice(0, MAX_SUMMARY - 1)}…` : value;
+  } else if (typeof value === "boolean") {
+    text = value ? "Yes" : "No";
+  } else if (Array.isArray(value)) {
+    text = `${value.length} ${value.length === 1 ? "item" : "items"}`;
+  } else {
+    text = "—";
+  }
+  return `${field.label} ${text}`;
+}
+
 /** Served / failed / rejected request line. */
 export function requestEntry(result: RequestResult): EntryFields {
   if (result.status === "rejected") {
@@ -470,7 +497,9 @@ export function requestEntry(result: RequestResult): EntryFields {
   const value =
     result.payload.kind === "weather"
       ? `${format.temperature(result.payload.temperatureF)}, ${result.payload.condition}`
-      : `${result.payload.pair} ${format.usd(result.payload.priceUsd)}`;
+      : result.payload.kind === "btc"
+        ? `${result.payload.pair} ${format.usd(result.payload.priceUsd)}`
+        : fieldsSummary(result.payload);
   return {
     kind: "request-served",
     requestId: result.requestId,

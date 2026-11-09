@@ -16,5 +16,6 @@ export {
   useTenderActions,
   useTenderSelector,
   useTenderStore,
+  useWatchMarket,
 } from "./store";
 export type { CreateTenderStoreOptions, TenderActions, TenderProviderProps, TenderStore } from "./store";

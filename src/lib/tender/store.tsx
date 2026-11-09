@@ -8,9 +8,10 @@ import { createContext, useContext, useEffect, useEffectEvent, useState, type Re
 import { useStore } from "zustand";
 import { createStore, type StoreApi } from "zustand/vanilla";
 import { CLOCK_TICK_MS, MONITOR_INTERVAL_MS, POLICIES_STORAGE_KEY } from "./constants";
-import { createInitialState, reduce, type TenderAction } from "./engine";
-import { MARKET_IDS } from "./fixtures";
+import { reduce, type TenderAction } from "./engine";
+import { MARKET_IDS } from "./markets";
 import { parsePersistedPolicies, policiesChanged, serializePolicies } from "./persistence";
+import { getInitialState } from "./sample-state";
 import { formatPendingSwitch, pendingSecondsRemaining, selectMarketView } from "./selectors";
 import type {
   ConditionsPatch,
@@ -47,6 +48,13 @@ export interface TenderStore {
   actions: TenderActions;
   /** Wall clock used for actions (default `Date.now`). Only called outside render. */
   clock: () => number;
+  /**
+   * Mark a market as in view (ref-counted). Watched markets and markets on auto-run get the 5 s
+   * monitor; others stay idle and catch up when watched again. Returns the release function.
+   */
+  watch(marketId: MarketId): () => void;
+  /** Markets currently in view. */
+  watchedMarketIds(): MarketId[];
 }
 
 export interface CreateTenderStoreOptions {
@@ -57,7 +65,8 @@ export interface CreateTenderStoreOptions {
 
 /** Create a store. `<TenderProvider>` does this once; use directly in tests. */
 export function createTenderStore(options: CreateTenderStoreOptions = {}): TenderStore {
-  const api = createStore<TenderState>()(() => options.initialState ?? createInitialState());
+  // The default initial state is immutable and shared (built once per process).
+  const api = createStore<TenderState>()(() => options.initialState ?? getInitialState());
   const clock = options.clock ?? (() => Date.now());
   const dispatch = (action: TenderAction) => {
     const current = api.getState();
@@ -69,6 +78,20 @@ export function createTenderStore(options: CreateTenderStoreOptions = {}): Tende
     // Actions before the mount rebase would mix fixture time and wall time.
     if (!api.getState().rebased) dispatch({ type: "rebase", now });
     dispatch(build(now));
+  };
+  const watchers = new Map<MarketId, number>();
+  const watch = (marketId: MarketId) => {
+    const count = watchers.get(marketId) ?? 0;
+    watchers.set(marketId, count + 1);
+    if (count === 0 && api.getState().markets[marketId]) act((now) => ({ type: "wake", marketId, now }));
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      const left = (watchers.get(marketId) ?? 1) - 1;
+      if (left > 0) watchers.set(marketId, left);
+      else watchers.delete(marketId);
+    };
   };
   const actions: TenderActions = {
     runRequest: (marketId) => act((now) => ({ type: "run-request", marketId, now })),
@@ -82,7 +105,7 @@ export function createTenderStore(options: CreateTenderStoreOptions = {}): Tende
     resetConditions: (marketId) => act((now) => ({ type: "reset-conditions", marketId, now })),
     switchToRecommended: (marketId) => act((now) => ({ type: "switch-to-recommended", marketId, now })),
   };
-  return { api, dispatch, actions, clock };
+  return { api, dispatch, actions, clock, watch, watchedMarketIds: () => [...watchers.keys()] };
 }
 
 function readStoredPolicies(): string | null {
@@ -107,7 +130,7 @@ function writeStoredPolicies(value: string) {
  * switches on time. Returns a cleanup function. Called by `<TenderProvider>`.
  */
 export function startTenderRuntime(store: TenderStore): () => void {
-  const { api, dispatch, clock } = store;
+  const { api, dispatch, clock, watchedMarketIds } = store;
   dispatch({ type: "rebase", now: clock() });
   dispatch({ type: "hydrate-policies", policies: parsePersistedPolicies(readStoredPolicies()), now: clock() });
 
@@ -116,7 +139,7 @@ export function startTenderRuntime(store: TenderStore): () => void {
   const schedulePending = (state: TenderState) => {
     let next: number | null = null;
     for (const id of MARKET_IDS) {
-      const pending = state.markets[id].route.pending;
+      const pending = state.markets[id]?.route.pending;
       if (pending && (next === null || pending.executeAt < next)) next = pending.executeAt;
     }
     if (next === pendingAt) return;
@@ -136,7 +159,8 @@ export function startTenderRuntime(store: TenderStore): () => void {
     if (state.markets !== prev.markets) schedulePending(state);
   });
   const clockTimer = setInterval(() => dispatch({ type: "tick", now: clock() }), CLOCK_TICK_MS);
-  const monitorTimer = setInterval(() => dispatch({ type: "monitor", now: clock() }), MONITOR_INTERVAL_MS);
+  // Only markets in view (and markets on auto-run) are sampled, so 75 markets stay cheap.
+  const monitorTimer = setInterval(() => dispatch({ type: "monitor", now: clock(), marketIds: watchedMarketIds() }), MONITOR_INTERVAL_MS);
 
   return () => {
     unsubscribe();
@@ -180,10 +204,20 @@ export function useTenderSelector<T>(selector: (state: TenderState) => T): T {
 }
 
 /**
+ * Keep a market in view while the component is mounted: the monitor samples it every 5 s.
+ * `useMarketView` does this for you.
+ */
+export function useWatchMarket(marketId: MarketId): void {
+  const store = useTenderStore();
+  useEffect(() => store.watch(marketId), [store, marketId]);
+}
+
+/**
  * Derived view of a market. Re-renders only when that market's state changes
- * (not on clock ticks). The same state yields the same object.
+ * (not on clock ticks). The same state yields the same object. Watches the market.
  */
 export function useMarketView(marketId: MarketId): MarketView {
+  useWatchMarket(marketId);
   const market = useTenderSelector((state) => state.markets[marketId]);
   return selectMarketView(market);
 }
@@ -235,7 +269,7 @@ export function useRouteEvents(marketId: MarketId, onEvent: (event: RouteEvent) 
     let lastSeq = store.api.getState().nextActivitySeq - 1;
     return store.api.subscribe((state, prev) => {
       const market = state.markets[marketId];
-      if (market === prev.markets[marketId]) {
+      if (!market || market === prev.markets[marketId]) {
         lastSeq = state.nextActivitySeq - 1;
         return;
       }

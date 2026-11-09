@@ -26,7 +26,7 @@ import {
 import { SWITCH_COOLDOWN_MS } from "./constants";
 import { pushActivity, type EntryFields, type StepContext } from "./context";
 import { evaluateMarket } from "./evaluate";
-import { getProviderFixture } from "./fixtures";
+import { getProviderFixture } from "./markets";
 import type { MarketEvaluation, MarketState, ProviderId, RouteState, RouteTrigger } from "./types";
 
 /** Why the route is being reconciled. */

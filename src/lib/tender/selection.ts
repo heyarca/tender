@@ -9,7 +9,7 @@
 import { NO_ELIGIBLE_TEXT, pinViolationText, recommendedSummaryText } from "./activity";
 import { formatRequestId } from "./context";
 import { evaluateMarket, qualificationLines, STATUS_LABELS, statusPriority, compareProviders } from "./evaluate";
-import { getDefaultPolicy, getProviderFixture, MARKETS } from "./fixtures";
+import { getDefaultPolicy, getProviderFixture, MARKETS } from "./markets";
 import { sampleRequest, signalReference } from "./requests";
 import type {
   ExclusionReason,
@@ -225,8 +225,8 @@ export interface ExecuteSelectionOptions {
   reference?: MarketReference | null;
   /** Origin of the deterministic signal (default `FIXTURE_EPOCH`). */
   signalOrigin?: number;
-  /** BTC only: previous served price, for `changeUsd`. */
-  previousPriceUsd?: number | null;
+  /** Spot and fields markets: previous served series value, for the change. */
+  previousValue?: number | null;
 }
 
 /** Result of executing a selection. */
@@ -237,11 +237,11 @@ export interface SelectionExecution {
   rng: number;
   /**
    * Reference the payload was derived from. `source: "upstream"` echoes the
-   * injected value and its own time; `"signal"` is the deterministic fallback at `now`.
-   * Payload timestamps (`observedAt` / `sourceTimestamp`) are the provider's
+   * injected value and its own time; `"signal"` is the deterministic market signal at `now`
+   * (`value` is `null` for fields markets). Payload timestamps are the provider's
    * observation time (`now − dataAgeMs`), never the upstream time.
    */
-  reference: { source: "upstream" | "signal"; at: number; value: MarketReference };
+  reference: { source: "upstream" | "signal"; at: number; value: MarketReference | null };
 }
 
 /**
@@ -250,7 +250,7 @@ export interface SelectionExecution {
  */
 export function executeSelection(selection: RouteSelection, options: ExecuteSelectionOptions): SelectionExecution {
   const reference =
-    options.reference && options.reference.kind === signalReference(selection.marketId, 0).kind ? options.reference : null;
+    options.reference && options.reference.kind === signalReference(selection.marketId, 0)?.kind ? options.reference : null;
   const { result, rng } = sampleRequest({
     marketId: selection.marketId,
     providerId: selection.providerId,
@@ -260,7 +260,7 @@ export function executeSelection(selection: RouteSelection, options: ExecuteSele
     seed: options.seed,
     routingMode: selection.policy.mode.kind,
     signalOrigin: options.signalOrigin,
-    previousPriceUsd: options.previousPriceUsd,
+    previousValue: options.previousValue,
     reference,
   });
   return {

@@ -1,9 +1,11 @@
 /**
  * Deterministic market signals: the "true" value of each market at any time.
  * Pure functions of `(time − signalOrigin)`, so rebasing all timestamps by the
- * same delta keeps every value unchanged.
+ * same delta keeps every value unchanged. Baselines come from the registry
+ * (`sampleFor(market)`); San Francisco and BTC/USD keep their original signals.
  */
-import { hashNormal } from "./random";
+import { getContract, getMarketSpec, sampleFor as sampleOf, type MarketSpec } from "@/lib/registry";
+import { hashNormal, seedFromString } from "./random";
 import type { MarketId } from "./types";
 
 /** Baseline BTC/USD price at the signal origin. */
@@ -148,112 +150,185 @@ export function conditionLabel(cloudCoverPct: number): string {
   return "Mostly clear";
 }
 
-/** Location and baseline conditions for every weather market besides San Francisco. */
-export const WEATHER_MARKETS: Partial<Record<MarketId, { location: MarketLocation; baseline: WeatherState }>> = {
-  "ny-weather": {
-    location: { name: "New York, NY", latitude: 40.7128, longitude: -74.006 },
-    baseline: {
-      temperatureF: 52,
-      humidityPct: 68,
-      windMph: 12,
-      windDirectionDeg: 250,
-      pressureHpa: 1015,
-      visibilityMi: 8,
-      dewPointF: 42,
-      cloudCoverPct: 55,
-    },
-  },
-  "london-weather": {
-    location: { name: "London, UK", latitude: 51.5074, longitude: -0.1278 },
-    baseline: {
-      temperatureF: 48,
-      humidityPct: 78,
-      windMph: 14,
-      windDirectionDeg: 220,
-      pressureHpa: 1009,
-      visibilityMi: 6,
-      dewPointF: 42,
-      cloudCoverPct: 85,
-    },
-  },
-  "seoul-weather": {
-    location: { name: "Seoul, South Korea", latitude: 37.5665, longitude: 126.978 },
-    baseline: {
-      temperatureF: 41,
-      humidityPct: 55,
-      windMph: 7,
-      windDirectionDeg: 300,
-      pressureHpa: 1022,
-      visibilityMi: 9,
-      dewPointF: 27,
-      cloudCoverPct: 20,
-    },
-  },
-  "tokyo-weather": {
-    location: { name: "Tokyo, Japan", latitude: 35.6762, longitude: 139.6503 },
-    baseline: {
-      temperatureF: 57,
-      humidityPct: 60,
-      windMph: 9,
-      windDirectionDeg: 340,
-      pressureHpa: 1016,
-      visibilityMi: 11,
-      dewPointF: 44,
-      cloudCoverPct: 35,
-    },
-  },
-  "singapore-weather": {
-    location: { name: "Singapore", latitude: 1.3521, longitude: 103.8198 },
-    baseline: {
-      temperatureF: 86,
-      humidityPct: 82,
-      windMph: 6,
-      windDirectionDeg: 190,
-      pressureHpa: 1010,
-      visibilityMi: 6,
-      dewPointF: 78,
-      cloudCoverPct: 70,
-    },
-  },
+/** Coordinates and wind direction of weather locations (registry samples carry the rest). */
+const WEATHER_PLACES: Readonly<Record<string, { latitude: number; longitude: number; windDirectionDeg: number }>> = {
+  "san-francisco": { latitude: 37.7749, longitude: -122.4194, windDirectionDeg: 278 },
+  "new-york": { latitude: 40.7128, longitude: -74.006, windDirectionDeg: 250 },
+  london: { latitude: 51.5074, longitude: -0.1278, windDirectionDeg: 220 },
+  seoul: { latitude: 37.5665, longitude: 126.978, windDirectionDeg: 300 },
+  tokyo: { latitude: 35.6762, longitude: 139.6503, windDirectionDeg: 340 },
+  singapore: { latitude: 1.3521, longitude: 103.8198, windDirectionDeg: 190 },
 };
+
+const COMPASS = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
+
+const num = (value: unknown, fallback: number) => (typeof value === "number" && Number.isFinite(value) ? value : fallback);
+
+interface WeatherMarket {
+  location: MarketLocation;
+  baseline: WeatherState;
+}
+
+const weatherCache = new Map<MarketId, WeatherMarket>();
+
+/** Location and baseline conditions of a weather market, from its registry sample. */
+function weatherMarket(marketId: MarketId): WeatherMarket {
+  const cached = weatherCache.get(marketId);
+  if (cached) return cached;
+  const spec = getMarketSpec(marketId);
+  const sample = spec ? sampleForSpec(spec) : {};
+  const place = WEATHER_PLACES[spec?.params.location ?? ""];
+  const compassIndex = COMPASS.indexOf(String(sample.windDirection ?? ""));
+  const location = sample.location as { name?: unknown } | undefined;
+  const value: WeatherMarket = {
+    location: {
+      name: typeof location?.name === "string" ? location.name : (spec?.name ?? SF_LOCATION.name),
+      latitude: place?.latitude ?? 0,
+      longitude: place?.longitude ?? 0,
+    },
+    baseline: {
+      temperatureF: num(sample.temperatureF, SF_BASELINE.temperatureF),
+      humidityPct: num(sample.humidityPct, SF_BASELINE.humidityPct),
+      windMph: num(sample.windMph, SF_BASELINE.windMph),
+      windDirectionDeg: place?.windDirectionDeg ?? (compassIndex >= 0 ? compassIndex * 22.5 : SF_BASELINE.windDirectionDeg),
+      pressureHpa: num(sample.pressureHpa, SF_BASELINE.pressureHpa),
+      visibilityMi: num(sample.visibilityMi, SF_BASELINE.visibilityMi),
+      dewPointF: num(sample.dewPointF, SF_BASELINE.dewPointF),
+      cloudCoverPct: num(sample.cloudCoverPct, SF_BASELINE.cloudCoverPct),
+    },
+  };
+  weatherCache.set(marketId, value);
+  return value;
+}
 
 /** True conditions at `at` for any weather market; `sf-weather` is byte-identical to `weatherAt`. */
 export function weatherAtFor(marketId: MarketId, at: number, origin: number): WeatherState {
-  const other = WEATHER_MARKETS[marketId];
-  return other ? weatherAtWithBaseline(other.baseline, at, origin) : weatherAt(at, origin);
+  return marketId === "sf-weather" ? weatherAt(at, origin) : weatherAtWithBaseline(weatherMarket(marketId).baseline, at, origin);
 }
 
 /** Result location for any weather market; `sf-weather` is `SF_LOCATION`. */
 export function weatherLocationFor(marketId: MarketId): MarketLocation {
-  return WEATHER_MARKETS[marketId]?.location ?? SF_LOCATION;
+  return marketId === "sf-weather" ? SF_LOCATION : weatherMarket(marketId).location;
+}
+
+/** Relative volatility of spot pairs vs BTC/USD (1 = same percentage moves). */
+const SPOT_SENSITIVITY: Readonly<Record<string, number>> = {
+  "ETH-USD": 1.2,
+  "SOL-USD": 1.6,
+  "XRP-USD": 1.8,
+  "EUR-USD": 0.08,
+  "GBP-USD": 0.09,
+};
+
+interface SpotMarket {
+  pair: string;
+  basePrice: number;
+  sensitivity: number;
+}
+
+const spotCache = new Map<MarketId, SpotMarket>();
+
+/** Pair, base price (registry sample), and relative volatility of a `prices.spot` market. */
+function spotMarket(marketId: MarketId): SpotMarket {
+  const cached = spotCache.get(marketId);
+  if (cached) return cached;
+  const spec = getMarketSpec(marketId);
+  const sample = spec ? sampleForSpec(spec) : {};
+  const pair = String(spec?.params.pair ?? sample.pair ?? "BTC-USD").toUpperCase();
+  const value: SpotMarket = {
+    pair,
+    basePrice: num(sample.priceUsd, BTC_BASELINE_PRICE),
+    sensitivity: SPOT_SENSITIVITY[pair] ?? (spec?.categoryId === "currencies" ? 0.08 : 1),
+  };
+  spotCache.set(marketId, value);
+  return value;
+}
+
+/** True price at `at` for any `prices.spot` market; `btc-usd` is byte-identical to `btcPriceAt`. */
+export function priceAtFor(marketId: MarketId, at: number, origin: number): number {
+  if (marketId === "btc-usd") return btcPriceAt(at, origin);
+  const spot = spotMarket(marketId);
+  // Percentage moves of the BTC walk, scaled by this market's relative volatility.
+  const relativeMove = anchoredNoise((at - origin) / 1000, BTC_OCTAVES) / BTC_BASELINE_PRICE;
+  return spot.basePrice * (1 + spot.sensitivity * relativeMove);
+}
+
+/** Pair label of a `prices.spot` market; `btc-usd` is `"BTC-USD"`. */
+export function pairFor(marketId: MarketId): string {
+  return marketId === "btc-usd" ? "BTC-USD" : spotMarket(marketId).pair;
+}
+
+/** Provider bias scale per pair (BTC/USD: bias × $1.50). */
+const SPOT_BIAS_SCALE: Readonly<Record<string, number>> = {
+  "BTC-USD": 1,
+  "ETH-USD": 0.5,
+  "SOL-USD": 0.1,
+  "XRP-USD": 0.002,
+  "EUR-USD": 0.0001,
+  "GBP-USD": 0.0001,
+};
+
+const isCurrency = (marketId: MarketId) => getMarketSpec(marketId)?.categoryId === "currencies";
+
+/** Decimals a spot price is reported with: 4 for currencies, else 2. */
+export function priceDecimalsFor(marketId: MarketId): number {
+  return isCurrency(marketId) ? 4 : 2;
+}
+
+/** Provider bias scale of a spot market, so small-priced pairs stay realistic. */
+export function priceBiasScaleFor(marketId: MarketId): number {
+  const pair = pairFor(marketId);
+  const known = SPOT_BIAS_SCALE[pair];
+  if (known !== undefined) return known;
+  return isCurrency(marketId) ? 0.0001 : Math.max(0.0001, spotMarket(marketId).basePrice / 10_000);
+}
+
+// ---------------------------------------------------------------------------
+// Series drift of `fields` markets
+// ---------------------------------------------------------------------------
+
+/** Relative volatility of the series field by market (legacy real-world goods keep their values). */
+const SERIES_SENSITIVITY: Readonly<Record<string, number>> = {
+  "sz-mlcc": 0.15,
+  "lithium-carbonate": 0.1,
+  "freight-sha-lax": 0.12,
+};
+
+const octaveCache = new Map<MarketId, readonly Octave[]>();
+
+/** BTC-shaped octaves with a per-market seed, so markets do not move in lockstep. */
+function marketOctaves(marketId: MarketId): readonly Octave[] {
+  let list = octaveCache.get(marketId);
+  if (!list) {
+    const seed = seedFromString(marketId);
+    list = BTC_OCTAVES.map((octave, index) => ({ ...octave, seed: (seed + index * 7919) >>> 0 }));
+    octaveCache.set(marketId, list);
+  }
+  return list;
 }
 
 /**
- * Baseline price and relative volatility (1 = same percentage moves as BTC/USD) for every price
- * market besides BTC/USD.
+ * Relative volatility of a market's series field: money fields move like prices (gentle for data
+ * measured in minutes), other numbers (AQI, minutes, scores) a few percent.
  */
-export const PRICE_MARKETS: Partial<Record<MarketId, { pair: string; basePrice: number; sensitivity: number }>> = {
-  "eth-usd": { pair: "ETH-USD", basePrice: 3180.4, sensitivity: 1.2 },
-  "sol-usd": { pair: "SOL-USD", basePrice: 148.25, sensitivity: 1.6 },
-  "xrp-usd": { pair: "XRP-USD", basePrice: 2.14, sensitivity: 1.8 },
-  "eur-usd": { pair: "EUR-USD", basePrice: 1.0812, sensitivity: 0.08 },
-  "gbp-usd": { pair: "GBP-USD", basePrice: 1.2734, sensitivity: 0.09 },
-  // Sample indexes for real-world goods, not live feeds.
-  "sz-mlcc": { pair: "MLCC-0402-100NF", basePrice: 3.42, sensitivity: 0.15 },
-  "lithium-carbonate": { pair: "LI2CO3-CN", basePrice: 10_480, sensitivity: 0.1 },
-  "freight-sha-lax": { pair: "SHA-LAX-40FT", basePrice: 2_315, sensitivity: 0.12 },
-};
-
-/** True price at `at` for any price market; `btc-usd` is byte-identical to `btcPriceAt`. */
-export function priceAtFor(marketId: MarketId, at: number, origin: number): number {
-  const other = PRICE_MARKETS[marketId];
-  if (!other) return btcPriceAt(at, origin);
-  // Percentage moves of the BTC walk, scaled by this market's relative volatility.
-  const relativeMove = anchoredNoise((at - origin) / 1000, BTC_OCTAVES) / BTC_BASELINE_PRICE;
-  return other.basePrice * (1 + other.sensitivity * relativeMove);
+export function seriesSensitivity(marketId: MarketId): number {
+  const legacy = SERIES_SENSITIVITY[marketId];
+  if (legacy !== undefined) return legacy;
+  const spec = getMarketSpec(marketId);
+  const contract = spec ? getContract(spec.contractId) : undefined;
+  const field = contract?.output.find((f) => f.series);
+  if (!contract || !field) return 0;
+  if (field.type === "money") return contract.freshness.unit === "ms" ? 0.6 : 0.12;
+  return contract.freshness.unit === "ms" ? 6 : 10;
 }
 
-/** Pair label for any price market; `btc-usd` is `"BTC-USD"`. */
-export function pairFor(marketId: MarketId): string {
-  return PRICE_MARKETS[marketId]?.pair ?? "BTC-USD";
+/** Relative move of a market's series field at `at` (0 at the signal origin), e.g. 0.0012 = +0.12%. */
+export function seriesMoveAt(marketId: MarketId, at: number, origin: number): number {
+  const relative = anchoredNoise((at - origin) / 1000, marketOctaves(marketId)) / BTC_BASELINE_PRICE;
+  return seriesSensitivity(marketId) * relative;
+}
+
+/** Registry sample of a market (contract template merged with the market's overrides). */
+function sampleForSpec(spec: MarketSpec): Record<string, unknown> {
+  return sampleOf(spec);
 }

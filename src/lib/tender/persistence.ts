@@ -2,22 +2,33 @@
  * Policy persistence (SPEC §4.6). Only policies (including mode) are stored;
  * provider conditions, requests, and activity are not.
  */
-import { MARKET_IDS } from "./fixtures";
+import { getDefaultPolicy, MARKET_IDS } from "./markets";
 import { sanitizePolicy } from "./sanitize";
 import type { MarketId, RoutingPolicy, TenderState } from "./types";
 
 export { POLICIES_STORAGE_KEY } from "./constants";
 
-/** Shape stored under `POLICIES_STORAGE_KEY`. */
+/** Shape stored under `POLICIES_STORAGE_KEY`. Markets on their default policy are omitted. */
 export interface PersistedPolicies {
   version: 1;
-  policies: Record<MarketId, RoutingPolicy>;
+  policies: Partial<Record<MarketId, RoutingPolicy>>;
 }
 
-/** Serialize the policies of every market (nothing else). */
+const POLICY_KEYS = ["maxPrice", "maxP95LatencyMs", "maxDataAgeMs", "minSuccessRate", "preference"] as const;
+
+function isDefaultPolicy(marketId: MarketId, policy: RoutingPolicy): boolean {
+  const defaults = getDefaultPolicy(marketId);
+  if (POLICY_KEYS.some((key) => policy[key] !== defaults[key])) return false;
+  return policy.mode.kind === "auto" && defaults.mode.kind === "auto";
+}
+
+/** Serialize the policies that differ from their market's default (nothing else). */
 export function serializePolicies(state: TenderState): string {
-  const policies = {} as Record<MarketId, RoutingPolicy>;
-  for (const id of MARKET_IDS) policies[id] = state.markets[id].policy;
+  const policies: Partial<Record<MarketId, RoutingPolicy>> = {};
+  for (const id of MARKET_IDS) {
+    const policy = state.markets[id]?.policy;
+    if (policy && !isDefaultPolicy(id, policy)) policies[id] = policy;
+  }
   const payload: PersistedPolicies = { version: 1, policies };
   return JSON.stringify(payload);
 }
@@ -47,5 +58,5 @@ export function parsePersistedPolicies(raw: string | null | undefined): Partial<
 
 /** Whether any market's policy object changed between two states. */
 export function policiesChanged(a: TenderState, b: TenderState): boolean {
-  return MARKET_IDS.some((id) => a.markets[id].policy !== b.markets[id].policy);
+  return MARKET_IDS.some((id) => a.markets[id]?.policy !== b.markets[id]?.policy);
 }

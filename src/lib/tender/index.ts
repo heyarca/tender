@@ -1,6 +1,6 @@
 /**
- * Server-safe entry point of the Tender engine: types, static market
- * definitions, formatting, evaluation, the pure reducer, selectors, and
+ * Server-safe entry point of the Tender engine: types, market definitions
+ * (built from `@/lib/registry`), formatting, evaluation, the pure reducer, selectors, and
  * stateless route selection for Route Handlers. Never imports React or zustand.
  * Client hooks live in `@/lib/tender/client`. Reference: `./README.md`.
  */
@@ -11,19 +11,25 @@ export {
   BTC_USD,
   BTC_USD_DEFAULT_POLICY,
   BTC_USD_PROVIDERS,
+  buildMarketDefinition,
+  dataDelayStepMs,
   DEFAULT_MARKET_ID,
   fromDisplayValue,
   getDefaultPolicy,
   getMarketDefinition,
   getProviderFixture,
   isMarketId,
+  latencyStepMs,
   MARKET_IDS,
   MARKETS,
+  niceCeil,
+  seriesFieldOf,
   SF_WEATHER,
   SF_WEATHER_DEFAULT_POLICY,
   SF_WEATHER_PROVIDERS,
+  timeZoneLabel,
   toDisplayValue,
-} from "./fixtures";
+} from "./markets";
 export * as format from "./format";
 export {
   CHECK_LABELS,
@@ -44,8 +50,8 @@ export {
   successRateOf,
 } from "./evaluate";
 export type { RankableProvider } from "./evaluate";
-export { NO_ELIGIBLE_TEXT, pinViolationText, providerName, recommendedSummaryText } from "./activity";
-export { createInitialState, rebaseState, reduce } from "./engine";
+export { fieldsSummary, NO_ELIGIBLE_TEXT, pinViolationText, providerName, recommendedSummaryText } from "./activity";
+export { createInitialState, marketSeed, rebaseState, reduce, seriesStepMs } from "./engine";
 export type { InitialStateOptions, TenderAction } from "./engine";
 export { evaluateMarketState } from "./router";
 export {
@@ -60,7 +66,7 @@ export {
 export { parsePersistedPolicies, policiesChanged, serializePolicies } from "./persistence";
 export type { PersistedPolicies } from "./persistence";
 export { sanitizeConditionsPatch, sanitizeMode, sanitizePolicy, sanitizePolicyPatch } from "./sanitize";
-export { getApiSnippets, getResponseJson } from "./snippets";
+export { getApiSnippets, getResponseJson, resultData, resultField, sampleResponseJson } from "./snippets";
 export { getInitialMarketView, getInitialState } from "./sample-state";
 export { BTC_BASELINE_PRICE, btcPriceAt, conditionLabel, SF_BASELINE, SF_LOCATION, weatherAt } from "./signals";
 export type { WeatherState } from "./signals";
@@ -69,9 +75,13 @@ export {
   anchoredWeatherAt,
   btcProviderPrice,
   dewPointF,
+  fieldsPayload,
+  payloadKindOf,
   sampleDataAge,
   sampleLatency,
   sampleRequest,
+  seriesValue,
+  seriesValueOf,
   signalReference,
   weatherPayload,
 } from "./requests";

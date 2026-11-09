@@ -9,46 +9,20 @@
 // Markets
 // ---------------------------------------------------------------------------
 
-/** Identifier of a market. */
-/** Weather markets (normalized `WeatherPayload` result). */
-export type WeatherMarketId =
-  | "sf-weather"
-  | "ny-weather"
-  | "london-weather"
-  | "seoul-weather"
-  | "tokyo-weather"
-  | "singapore-weather";
-
-/** Price markets (normalized `BtcPayload` result). */
-export type PriceMarketId =
-  | "btc-usd"
-  | "eth-usd"
-  | "sol-usd"
-  | "xrp-usd"
-  | "eur-usd"
-  | "gbp-usd"
-  | "sz-mlcc"
-  | "lithium-carbonate"
-  | "freight-sha-lax";
-
-/** Markets that serve one indicative quote (value + unit) from a sample index. */
-export type MarketId = WeatherMarketId | PriceMarketId;
+/**
+ * Identifier of a market: a registry market id (`"sf-weather"`, `"translate-en-ko"`).
+ * `isMarketId(id)` is true exactly for registry market ids.
+ */
+export type MarketId = string;
 
 /** Provider identifier, unique inside a market (matches `public/providers/<id>.<ext>`). */
 export type ProviderId = string;
 
-/** Display time zone of a market. */
-export type MarketTimeZone =
-  | "America/Los_Angeles"
-  | "America/New_York"
-  | "Europe/London"
-  | "Asia/Seoul"
-  | "Asia/Tokyo"
-  | "Asia/Singapore"
-  | "UTC";
+/** IANA time zone of a market (registry `MarketSpec.timeZone`). */
+export type MarketTimeZone = string;
 
-/** Icon hint for a market (the UI maps it to an icon). */
-export type MarketIcon = "cloud" | "bitcoin" | "coins" | "euro" | "pound" | "cpu" | "pickaxe" | "ship";
+/** lucide-react icon name in kebab-case (registry market icon, else its category icon). */
+export type MarketIcon = string;
 
 /**
  * Spec for one numeric input (policy control or provider condition).
@@ -127,29 +101,37 @@ export interface ProviderFixture extends ProviderIdentity {
 /** Static definition of a market. */
 export interface MarketDefinition {
   id: MarketId;
+  /** Registry contract id, e.g. "weather.current". */
+  contractId: string;
+  /** Registry category id, e.g. "weather". */
+  categoryId: string;
   /** "San Francisco Weather" */
   name: string;
   /** "SF Weather" */
   shortName: string;
-  /** "weather/san-francisco" */
+  /** "weather/sf-weather": contract namespace / market id. */
   identifier: string;
   /** `weather.current({ location: "san-francisco" })` */
   contract: string;
+  /** Contract URL with the market's params bound: "/api/v1/weather/current?location=san-francisco". */
+  contractUrl: string;
   description: string;
   timeZone: MarketTimeZone;
-  /** "PT" | "UTC" */
+  /** "PT", "UTC", … */
   timeZoneLabel: string;
   icon: MarketIcon;
   /** Unit hints for result values. */
   units: {
     /** Bid unit suffix: "/M req". */
     price: string;
-    /** Data age input unit: "min" (weather) or "ms" (BTC). */
+    /** Data age input unit (registry `contract.freshness.unit`). */
     dataAge: "min" | "ms";
-    /** Primary result unit: "°F" or "USD". */
+    /** Unit of the primary result field: "°F", "USD", "US AQI", … ("" when it has none). */
     value: string;
   };
-  /** Price definition shared by every provider (BTC only). */
+  /** Result field plotted in the chart (contract `series` field), or `null` when the market has no chart. */
+  seriesField: string | null;
+  /** Price definition shared by every provider (price markets only). */
   priceDefinition?: string;
   /** Normalized result fields. */
   resultFields: ResultFieldSpec[];
@@ -379,6 +361,18 @@ export interface BtcPayload {
   sourceTimestamp: number;
 }
 
+/** Result of every contract other than `weather.current` and `prices.spot`. */
+export interface FieldsPayload {
+  kind: "fields";
+  contractId: string;
+  /** Schema-shaped result: registry `sampleFor(market)` with the contract's `series` field drifted by the signal. */
+  values: Record<string, unknown>;
+  /** ms epoch of the source data (now − dataAge). */
+  sourceTimestamp: number;
+  /** Change of the series field vs the previous served request, or null. */
+  change: number | null;
+}
+
 /**
  * Upstream San Francisco conditions (true values at `at`) injected by server
  * code. Missing fields fall back to the deterministic signal. Providers report
@@ -410,9 +404,7 @@ export interface BtcReference {
   priceUsd: number;
 }
 
-/** Indicative quote of a quote market (value in the market's unit). */
-/** Upstream quote (true value at `at`) injected by server code. */
-/** Reference value of a market: weather conditions, BTC spot price, or an indicative quote. */
+/** Reference value of a market: weather conditions or a spot price. */
 export type MarketReference = WeatherReference | BtcReference;
 
 interface RequestBase {
@@ -434,13 +426,18 @@ interface ServedBase extends RequestBase {
 }
 
 export interface ServedWeatherResult extends ServedBase {
-  marketId: WeatherMarketId;
+  marketId: MarketId;
   payload: WeatherPayload;
 }
 
 export interface ServedBtcResult extends ServedBase {
-  marketId: PriceMarketId;
+  marketId: MarketId;
   payload: BtcPayload;
+}
+
+export interface ServedFieldsResult extends ServedBase {
+  marketId: MarketId;
+  payload: FieldsPayload;
 }
 
 export interface FailedRequestResult extends RequestBase {
@@ -461,9 +458,9 @@ export interface RejectedRequestResult extends RequestBase {
   cost: 0;
 }
 
-export type ServedRequestResult = ServedWeatherResult | ServedBtcResult;
+export type ServedRequestResult = ServedWeatherResult | ServedBtcResult | ServedFieldsResult;
 
-/** Result of `runRequest`. Discriminate on `status`, then on `marketId` for the payload. */
+/** Result of `runRequest`. Discriminate on `status`, then on `payload.kind`. */
 export type RequestResult = ServedRequestResult | FailedRequestResult | RejectedRequestResult;
 
 export type RequestStatus = RequestResult["status"];
@@ -491,7 +488,7 @@ export interface LatencySample {
   ok: boolean;
 }
 
-/** One point of the market's recent-value chart (BTC price or temperature °F). */
+/** One point of the market's recent-value chart (value of the contract's series field). */
 export interface SeriesPoint {
   at: number;
   value: number;
