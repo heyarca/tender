@@ -1,5 +1,5 @@
 export { Sparkline, type SparklineProps, type SparklineTone } from "./Sparkline";
-export { SuccessBars, type SuccessBarsProps } from "./SuccessBars";
+export { SuccessBars, SuccessBars as UptimeBars, type SuccessBarsProps } from "./SuccessBars";
 export { PriceChart, type PriceChartProps } from "./PriceChart";
 export { LatencyStrip, LatencyStrip as RequestTimeline, type LatencyStripProps } from "./LatencyStrip";
 export { Delta, type DeltaProps } from "./Delta";
