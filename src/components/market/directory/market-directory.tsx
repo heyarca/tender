@@ -28,6 +28,9 @@ import { useMarketView } from "@/lib/tender/client";
 
 type Category = string;
 
+/** Fixture ids stay stable in data; the directory shows reader-facing category labels. */
+const CATALOG_CATEGORY_LABELS = new Map(DEMO_CATALOG_CATEGORIES.map((category) => [category.id, category.label]));
+
 function categoryFor(icon: MarketIcon): Category {
   if (icon === "cloud") return "Weather";
   if (icon === "euro" || icon === "pound") return "Currencies";
