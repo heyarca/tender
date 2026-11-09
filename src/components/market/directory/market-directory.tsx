@@ -137,6 +137,24 @@ function useDirectoryRows(): DirectoryRow[] {
 }
 
 type SortKey = "recommended" | "price" | "latency" | "freshness" | "providers";
+
+/** Lead with tangible supply-chain and broadly useful agent APIs, then sort the remaining offers. */
+const FEATURED_MARKET_IDS = [
+  "sz-mlcc",
+  "lithium-carbonate",
+  "freight-sha-lax",
+  "web-search",
+  "chat-general",
+  "company-profile",
+  "ip-risk",
+  "ocr-invoice",
+  "translate-en-ko",
+] as const;
+const featuredRank = (id: string) => {
+  const index = FEATURED_MARKET_IDS.indexOf(id as (typeof FEATURED_MARKET_IDS)[number]);
+  return index === -1 ? FEATURED_MARKET_IDS.length : index;
+};
+
 const SORT_OPTIONS: SelectOption<SortKey>[] = [
   { value: "recommended", label: "Recommended" },
   { value: "price", label: "Lowest price" },
@@ -145,7 +163,7 @@ const SORT_OPTIONS: SelectOption<SortKey>[] = [
   { value: "providers", label: "Most providers" },
 ];
 const sorters: Record<SortKey, (a: DirectoryRow, b: DirectoryRow) => number> = {
-  recommended: (a, b) => b.qualifiedCount - a.qualifiedCount || (a.bestPrice ?? Infinity) - (b.bestPrice ?? Infinity),
+  recommended: (a, b) => featuredRank(a.id) - featuredRank(b.id) || b.qualifiedCount - a.qualifiedCount || (a.bestPrice ?? Infinity) - (b.bestPrice ?? Infinity),
   price: (a, b) => (a.bestPrice ?? Infinity) - (b.bestPrice ?? Infinity),
   latency: (a, b) => (a.bestP95 ?? Infinity) - (b.bestP95 ?? Infinity),
   freshness: (a, b) => (a.freshestDataAgeMs ?? Infinity) - (b.freshestDataAgeMs ?? Infinity),
