@@ -1,6 +1,6 @@
 export { WeatherResult, type WeatherResultProps } from "./WeatherResult";
 export { BitcoinResult, quoteChange, type BitcoinResultProps } from "./BitcoinResult";
-export { FieldsResult, ReadingMeta, seriesFormatter, type FieldsResultProps } from "./FieldsResult";
+export { FieldsResult, ReadingMeta, seriesFormatter, seriesTickFormatter, type FieldsResultProps } from "./FieldsResult";
 export { PriceFieldsResult, type PriceFieldsResultProps } from "./PriceFieldsResult";
 export { FieldGrid, FieldValue, type FieldGridProps } from "./FieldGrid";
 export { ResultMeta, type ResultMetaProps } from "./ResultMeta";

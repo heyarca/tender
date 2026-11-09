@@ -2,6 +2,7 @@ import type { ContractSpec } from "@/lib/registry";
 import { readField } from "@/lib/registry";
 import { cn } from "@/lib/utils";
 import { Delta } from "@/components/viz/Delta";
+import { formatUsd } from "@/components/viz/format";
 import { PriceChart } from "@/components/viz/PriceChart";
 import type { PricePoint, VizProviders } from "@/components/viz/types";
 import { formatMoney, type FormatContext } from "./field-format";
@@ -66,6 +67,8 @@ export function PriceFieldsResult({
   const base = price !== null && change !== null ? price - change : 0;
   const changePct = change !== null && base !== 0 ? change / base : null;
   const format = (value: number) => formatMoney(value, primary?.unit);
+  const formatChange = (value: number) =>
+    primary?.unit && primary.unit !== "USD" ? formatMoney(value, primary.unit) : formatUsd(value, price !== null && Math.abs(price) < 1 ? 4 : 2);
   const rest = contract.output.filter((field) => field !== primary && field !== unitField);
 
   return (
@@ -81,7 +84,7 @@ export function PriceFieldsResult({
           </div>
           {change !== null && (
             <span className="inline-flex items-center gap-1.5 text-caption">
-              <Delta value={change} format={format} percent={changePct} percentDecimals={3} />
+              <Delta value={change} format={formatChange} percent={changePct} percentDecimals={3} />
               <span className="text-muted-foreground">vs previous</span>
             </span>
           )}

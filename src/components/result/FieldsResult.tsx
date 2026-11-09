@@ -5,7 +5,7 @@ import { Delta } from "@/components/viz/Delta";
 import { formatAge, formatClock, formatLatency } from "@/components/viz/format";
 import { PriceChart } from "@/components/viz/PriceChart";
 import type { PricePoint, VizProviders } from "@/components/viz/types";
-import { displayUnit, formatPlainNumber, formatScalar, isAttachedUnit, type FormatContext } from "./field-format";
+import { displayUnit, formatMoney, formatPlainNumber, formatScalar, isAttachedUnit, type FormatContext } from "./field-format";
 import { FieldGrid, FieldUnit, ListValue, ObjectValue, ResultLink } from "./FieldGrid";
 import { ResultMeta } from "./ResultMeta";
 import { ResultStatusLine } from "./ResultStatusLine";
@@ -34,13 +34,18 @@ export interface FieldsResultProps {
   className?: string;
 }
 
-/** Number formatter for a series field (chart ticks and tooltip). */
+/** Tooltip format for a series value: up to two decimals with the field's unit (`61.4 US AQI`, `$228.42`). */
 export function seriesFormatter(field: FieldSpec): (value: number) => string {
   const unit = displayUnit(field);
   return (value) => {
-    const text = formatScalar(field, value, { timeZone: "UTC" });
+    const text = field.type === "money" ? formatMoney(value, field.unit) : formatPlainNumber(value, 2);
     return unit ? `${text}${isAttachedUnit(unit) ? "" : " "}${unit}` : text;
   };
+}
+
+/** Axis tick format for a series value: the number only (`61.5`, `$228`). */
+export function seriesTickFormatter(field: FieldSpec): (value: number) => string {
+  return (value) => (field.type === "money" ? formatMoney(value, field.unit) : formatPlainNumber(value, 2));
 }
 
 /** Big headline value of a result, by the primary field's type. */
@@ -198,7 +203,7 @@ export function FieldsResult({
             timeZoneLabel={timeZoneLabel}
             height={chartHeight}
             formatPrice={seriesFormatter(series)}
-            formatTick={seriesFormatter(series)}
+            formatTick={seriesTickFormatter(series)}
             emptyLabel="No results yet"
             ariaLabel={`${series.label} over recent requests`}
           />

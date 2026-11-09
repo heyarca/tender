@@ -45,7 +45,7 @@ export function ListValue({ value }: { value: readonly unknown[] }) {
   if (value.every((item) => typeof item === "number")) {
     const shown = (value as number[]).slice(0, 6).map((item) => formatPlainNumber(item));
     return (
-      <code className="truncate font-mono text-[12px] font-normal text-foreground">
+      <code className="font-mono text-[12px] font-normal break-words text-foreground">
         [{shown.join(", ")}
         {value.length > 6 ? ", …" : ""}]
       </code>
@@ -79,7 +79,7 @@ export function ObjectValue({ value, className }: { value: Record<string, unknow
       {entries.map(([key, item]) => (
         <div key={key} className="min-w-0">
           <dt className="truncate text-caption font-normal text-muted-foreground">{labelFromKey(key)}</dt>
-          <dd className="mt-0.5 truncate text-body leading-5 font-medium text-foreground tabular-nums">
+          <dd className="mt-0.5 text-body leading-5 font-medium break-words text-foreground tabular-nums">
             {isRecord(item) ? formatLoose(item) : Array.isArray(item) ? <ListValue value={item} /> : formatLoose(item)}
           </dd>
         </div>
@@ -106,7 +106,7 @@ export function FieldValue({ field, value, context }: { field: FieldSpec; value:
 /** Fields that need a full row (long text, lists of items, nested objects). */
 export function isWideField(field: FieldSpec, value: unknown): boolean {
   if (field.type === "object") return true;
-  if (field.type === "list") return Array.isArray(value) && value.some(isRecord);
+  if (field.type === "list") return Array.isArray(value) && value.length > 0 && (value.some(isRecord) || value.every((item) => typeof item === "number"));
   if (field.type === "string" && typeof value === "string") return value.length > 40;
   return false;
 }
@@ -128,6 +128,8 @@ export function FieldGrid({ fields, values, context, change, className }: FieldG
     <dl className={cn("grid grid-cols-2 gap-x-4 gap-y-3 @md:grid-cols-3 @xl:grid-cols-4", className)}>
       {fields.map((field) => {
         const value = values ? readField(values, field.key) : undefined;
+        // An optional field the provider left out is not shown.
+        if (values && field.optional && (value === undefined || value === null)) return null;
         const wide = isWideField(field, value);
         const fieldChange = change && change.key === field.key ? change.value : null;
         return (
