@@ -61,4 +61,29 @@ export type { PersistedPolicies } from "./persistence";
 export { sanitizePolicy, sanitizePolicyPatch, sanitizeConditionsPatch } from "./sanitize";
 export { getApiSnippets, getResponseJson } from "./snippets";
 export { getInitialMarketView, getInitialState } from "./sample-state";
-export { BTC_BASELINE_PRICE, SF_BASELINE, SF_LOCATION } from "./signals";
+export { BTC_BASELINE_PRICE, btcPriceAt, SF_BASELINE, SF_LOCATION, weatherAt } from "./signals";
+export type { WeatherState } from "./signals";
+export {
+  anchoredBtcPriceAt,
+  anchoredWeatherAt,
+  btcProviderPrice,
+  sampleDataAge,
+  sampleLatency,
+  sampleRequest,
+  signalReference,
+  weatherPayload,
+} from "./requests";
+export type { AnchoredWeather, RequestSampleInput } from "./requests";
+export { executeSelection, getDefaultConditions, routeRequest, selectRoute } from "./selection";
+export type {
+  ConditionsById,
+  ExecuteSelectionOptions,
+  RouteSelection,
+  RouteSelectionKind,
+  SelectionCandidate,
+  SelectionExecution,
+  SelectRouteOptions,
+} from "./selection";
+export { createRng, hash01, hashNormal, mulberry32, seedFromString } from "./random";
+export type { Rng } from "./random";
+export { formatRequestId } from "./context";

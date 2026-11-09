@@ -23,9 +23,14 @@ export type EntryFields<E extends ActivityEntry = ActivityEntry> = E extends Act
 
 const pad = (value: number) => String(value).padStart(6, "0");
 
+/** Request id for a sequence number: `formatRequestId(123)` → "req_000123". */
+export function formatRequestId(seq: number): string {
+  return `req_${pad(seq)}`;
+}
+
 /** Allocate the next request id (`req_000123`). */
 export function nextRequestId(ctx: StepContext): string {
-  const id = `req_${pad(ctx.requestSeq)}`;
+  const id = formatRequestId(ctx.requestSeq);
   ctx.requestSeq += 1;
   return id;
 }
