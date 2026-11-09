@@ -29,12 +29,12 @@
 .tenderLanding_reqItemHeading { font-size: 29px; line-height: 1.15; letter-spacing: -0.024em; }
 .tenderLanding_reqTrigger { display: block; width: 100%; padding: 26px 0; border: 0; border-radius: 6px; background: none; font: inherit; color: var(--lp-ink-4); text-align: left; cursor: pointer; transition: color 0.2s var(--lp-ease); }
 .tenderLanding_reqTrigger:hover { color: var(--lp-ink-2); }
-.tenderLanding_reqTrigger[aria-expanded="true"] { color: var(--lp-ink); cursor: default; }
-.tenderLanding_reqTrigger:focus-visible { outline: 2px solid var(--lp-olive); outline-offset: 4px; }
+.tenderLanding_reqTrigger[aria-expanded="true"] { padding-bottom: 12px; color: var(--lp-ink); cursor: default; }
+.tenderLanding_reqTrigger:focus-visible { outline: 2px solid var(--lp-olive); outline-offset: 2px; }
 .tenderLanding_reqBody { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows 0.4s var(--lp-ease), opacity 0.3s var(--lp-ease); }
 .tenderLanding_reqBody[data-open] { grid-template-rows: 1fr; opacity: 1; }
 .tenderLanding_reqBodyInner { min-height: 0; overflow: hidden; }
-.tenderLanding_reqBodyText { max-width: 22em; margin-top: -8px; font-size: 17px; line-height: 1.5; color: var(--lp-ink-3); }
+.tenderLanding_reqBodyText { max-width: 22em; margin-top: 6px; font-size: 17px; line-height: 1.5; color: var(--lp-ink-3); }
 .tenderLanding_reqLimitLink { display: inline-flex; align-items: center; gap: 2px; margin: 16px 0 30px; border-radius: 6px; font-size: 16px; line-height: 24px; color: var(--lp-ink); }
 .tenderLanding_reqLimitLink svg { width: 18px; height: 18px; color: var(--lp-ink-2); transition: transform 0.3s var(--lp-ease); }
 .tenderLanding_reqLimitLink:hover { color: var(--lp-olive); }
