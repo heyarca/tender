@@ -25,6 +25,7 @@ export type WeatherCondition =
   | "clear"
   | "mostly-clear"
   | "partly-cloudy"
+  | "mostly-cloudy"
   | "overcast"
   | "fog"
   | "drizzle"
@@ -41,8 +42,9 @@ export interface WeatherReading {
   dataAgeMs: number;
   temperatureF: number;
   feelsLikeF: number;
-  condition: WeatherCondition;
-  /** Display label. Default derived from `condition` (`Overcast`). */
+  /** Condition code (`overcast`) or display label (`Partly cloudy`); both map to an icon. */
+  condition: WeatherCondition | (string & {});
+  /** Display label. Default: the label for `condition`. */
   conditionLabel?: string;
   /** Relative humidity, 0–100. */
   humidityPct: number;
@@ -62,7 +64,9 @@ export interface BitcoinQuote {
   pair: string;
   /** Spot mid price in USD. */
   price: number;
-  /** Price from the previous successful request, for the change indicator. */
+  /** Change in USD against the previous served request. Takes precedence over `previousPrice`. */
+  change?: number | null;
+  /** Price from the previous served request, used to derive the change when `change` is not set. */
   previousPrice?: number | null;
   /** Source timestamp (epoch ms). */
   sourceTimestamp: number;

@@ -27,6 +27,15 @@ export interface BitcoinResultProps {
   className?: string;
 }
 
+/** Change against the previous request: `change` when given, else derived from `previousPrice`. */
+export function quoteChange(quote: BitcoinQuote): number | null {
+  if (quote.change !== null && quote.change !== undefined && Number.isFinite(quote.change)) return quote.change;
+  if (quote.previousPrice !== null && quote.previousPrice !== undefined && Number.isFinite(quote.previousPrice)) {
+    return quote.price - quote.previousPrice;
+  }
+  return null;
+}
+
 /**
  * BTC/USD result: big price with the change against the previous request, a meta row (source
  * time, data age, latency), the recent-price chart, and the provenance footer.
@@ -44,9 +53,9 @@ export function BitcoinResult({
 }: BitcoinResultProps) {
   const status = request?.status ?? "ok";
   const stale = status !== "ok";
-  const change =
-    quote && quote.previousPrice !== null && quote.previousPrice !== undefined ? quote.price - quote.previousPrice : null;
-  const changePct = change !== null && quote?.previousPrice ? change / quote.previousPrice : null;
+  const change = quote ? quoteChange(quote) : null;
+  const base = quote && change !== null ? quote.price - change : 0;
+  const changePct = change !== null && base !== 0 ? change / base : null;
 
   return (
     <div className={cn("@container flex min-w-0 flex-col", className)} data-status={status}>
