@@ -184,10 +184,10 @@ export const STEP_LABELS: Readonly<Record<StepId, string>> = {
 const STEP_ORDER: readonly StepId[] = ["payment-required", "signed", "settled", "served"];
 
 const IDLE_DETAILS: Readonly<Record<StepId, string>> = {
-  "payment-required": "The contract endpoint quotes the winning bid",
-  signed: "The payer signs an EIP-3009 transfer",
-  settled: "The facilitator submits the USDC transfer",
-  served: "The provider's response is returned",
+  "payment-required": "The API quotes the winning bid",
+  signed: "The payer signs a USDC transfer",
+  settled: "The facilitator submits it",
+  served: "The provider's result returns",
 };
 
 export interface StepsInput {
