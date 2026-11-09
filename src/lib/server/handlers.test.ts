@@ -6,20 +6,25 @@ const payments = vi.hoisted(() => ({ calls: [] as PaymentQuote[], fail: false, f
 vi.mock("node:crypto", () => ({ randomUUID: () => "84d53c30-6de2-4439-b910-67ff8b1fc974" }));
 vi.mock("@/lib/payments/server", async () => {
   const { quoteFromBid } = await import("@/lib/payments/quote");
+  // The real wrapper (src/lib/payments/server.ts) stamps these exposed headers on every response.
+  function expose(response: Response): Response {
+    response.headers.set("Access-Control-Expose-Headers", "PAYMENT-REQUIRED, PAYMENT-RESPONSE, Tender-Provider, Tender-Price-USD, Tender-Settled-Atomic");
+    return response;
+  }
   return { quoteFromBid, withX402Payment: (handler: (r: Request, q: PaymentQuote & SettlementAmounts) => Promise<Response>, quote: (r: Request) => PaymentQuote) => async (request: Request) => {
     if (payments.fail) throw new Error("Facilitator unavailable");
     if (payments.failureResponse) return Response.json({ error: "Internal Server Error" }, { status: 500 });
     const q = quote(request);
     payments.calls.push(q);
-    if (!request.headers.has("PAYMENT-SIGNATURE")) return Response.json({ error: "payment_required", ...q }, { status: 402, headers: { "PAYMENT-REQUIRED": "base64-challenge" } });
+    if (!request.headers.has("PAYMENT-SIGNATURE")) return expose(Response.json({ error: "payment_required", ...q }, { status: 402, headers: { "PAYMENT-REQUIRED": "base64-challenge" } }));
     if (payments.settleThrow) {
       // Mirrors the @x402/next settlement catch: the handler already produced a
       // payload, then settlement throws and the SDK returns a bare 402 with no
       // PAYMENT-REQUIRED or PAYMENT-RESPONSE header.
       await handler(request, q as PaymentQuote & SettlementAmounts);
-      return Response.json({}, { status: 402 });
+      return expose(Response.json({}, { status: 402 }));
     }
-    return handler(request, q as PaymentQuote & SettlementAmounts);
+    return expose(await handler(request, q as PaymentQuote & SettlementAmounts));
   } };
 });
 import { GET as price, HEAD as priceHead } from "../../app/api/v1/prices/spot/route";
@@ -123,6 +128,20 @@ describe("paid contract handlers", () => {
     expect(response.headers.get("PAYMENT-REQUIRED")).toBe("base64-challenge");
     expect(await response.json()).toMatchObject({ error: "payment_required", providerId: "parasail" });
     expect(fetch).not.toHaveBeenCalled();
+  });
+  it("keeps the 402 challenge readable from any browser origin", async () => {
+    const response = await price(req("prices/spot", false));
+    expect(response.status).toBe(402);
+    expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");
+    const expose = (response.headers.get("Access-Control-Expose-Headers") ?? "").split(", ");
+    for (const header of ["PAYMENT-REQUIRED", "PAYMENT-RESPONSE", "Tender-Provider", "Tender-Price-USD", "Tender-Settled-Atomic", "Tender-Route-Reason", "Tender-Policy-Violation"]) {
+      expect(expose).toContain(header);
+    }
+  });
+  it("marks paid 200 responses callable cross-origin", async () => {
+    const response = await price(req("prices/spot?pair=BTC-USD"));
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");
   });
   it("normalizes a bare settlement-failure 402 after a served payload to 503", async () => {
     payments.settleThrow = true;

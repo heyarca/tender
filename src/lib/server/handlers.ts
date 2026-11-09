@@ -121,6 +121,8 @@ export async function handleContract(request: Request, marketId: MarketId, optio
   }
   for (const [name, value] of Object.entries(routingHeaders(selected))) response.headers.set(name, value);
   response.headers.set("Cache-Control", "private, no-store");
+  // Cross-origin browser clients (x402 wallets, dashboards) read these paid responses.
+  response.headers.set("Access-Control-Allow-Origin", "*");
   const expose = response.headers.get("Access-Control-Expose-Headers");
   response.headers.set("Access-Control-Expose-Headers", [expose, "Tender-Route-Reason", "Tender-Policy-Violation"].filter(Boolean).join(", "));
   return response;

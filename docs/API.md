@@ -3,6 +3,20 @@
 Base path: `/api/v1`. All handlers use the Node.js runtime. The OpenAPI 3.1 contract is at
 `GET /api/v1/openapi.json`.
 
+## Cross-origin access
+
+The public v1 API is callable from any browser origin without credentials. Every `/api/v1`
+response (including 402 challenges and errors) carries `Access-Control-Allow-Origin: *`.
+Paid responses additionally expose `PAYMENT-REQUIRED`, `PAYMENT-RESPONSE`, `Tender-Provider`,
+`Tender-Price-USD`, `Tender-Settled-Atomic`, `Tender-Route-Reason`, and
+`Tender-Policy-Violation` through `Access-Control-Expose-Headers`, so cross-origin clients
+can read the quote and receipt headers. `OPTIONS` preflight requests answer HTTP 204 with
+`Access-Control-Allow-Methods: GET, OPTIONS`, `Access-Control-Allow-Headers: PAYMENT-SIGNATURE,
+X-PAYMENT, Content-Type, Tender-Max-Price, Tender-Max-P95-Ms, Tender-Max-Data-Age-Ms,
+Tender-Min-Success-Rate, Tender-Preference, Tender-Pin`, and `Access-Control-Max-Age: 600`.
+The console payment endpoints under `/api/payments/*` are deliberately not CORS-enabled;
+they are same-origin console surfaces.
+
 ## Endpoints
 
 | Method | Path | Result |

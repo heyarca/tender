@@ -30,6 +30,14 @@ describe("OpenAPI", () => {
     expect(operation.parameters.some((p) => p.name === "PAYMENT-SIGNATURE")).toBe(true);
     expect(openapiDocument.components.schemas.PriceResult.properties).toHaveProperty("settled_atomic");
   });
+  it("documents the CORS preflight on every path", () => {
+    for (const path of Object.keys(openapiDocument.paths) as (keyof typeof openapiDocument.paths)[]) {
+      const options = openapiDocument.paths[path].options;
+      expect(options, path).toBeDefined();
+      expect(options.summary).toBe("CORS preflight");
+      expect(options.responses["204"]).toBeDefined();
+    }
+  });
   it("documents a 405 with an Allow header on every GET operation", () => {
     for (const path of Object.keys(openapiDocument.paths) as (keyof typeof openapiDocument.paths)[]) {
       const notAllowed = openapiDocument.paths[path].get.responses["405"];
