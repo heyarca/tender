@@ -41,6 +41,14 @@ export interface LatencyStripProps {
 }
 
 const GAP = 2;
+const LIMIT_LABEL_HEIGHT = 12;
+
+/** Top of the limit label: just above the dashed line, or just below it when the line is near the top. */
+function limitLabelTop(height: number, limitBottom: number) {
+  const lineTop = height - limitBottom;
+  const above = lineTop - LIMIT_LABEL_HEIGHT - 1;
+  return above >= 0 ? above : lineTop + 2;
+}
 
 /**
  * Recent requests as thin bars: height is latency, color is the serving provider, failed and
@@ -181,7 +189,7 @@ export function LatencyStrip({
         <span
           aria-hidden="true"
           className="pointer-events-none absolute left-0 rounded-sm bg-card/90 pr-1 text-[10px] leading-3 text-faint tabular-nums"
-          style={{ bottom: limitBottom + 2 }}
+          style={{ top: limitLabelTop(height, limitBottom) }}
         >
           {limitLabel ?? formatLatency(limitMs)}
         </span>
