@@ -190,7 +190,7 @@ export function MarketDirectory() {
             <h1 className="text-title font-semibold text-foreground">Markets</h1>
             <p className="mt-1 max-w-2xl text-body text-muted-foreground">
               APIs where providers compete to serve your requests on price, latency, freshness, and
-              reliability.
+              reliability. New markets open all the time, and AI agents can create more.
             </p>
           </div>
         </div>
