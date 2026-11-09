@@ -42,7 +42,9 @@ describe("RoutingPolicySection", () => {
     expect(sf(store).route.activeProviderId).toBe("cloudflare");
     expect(within(section).getByText("5 of 8 qualify")).toBeTruthy();
     expect(within(section).getByText("Cloudflare now qualifies.")).toBeTruthy();
-    expect(within(section).getByText("Route switched from Together to Cloudflare.")).toBeTruthy();
+    expect(
+      within(section).getByText("Route switched from Together to Cloudflare, which ranks first for lowest cost."),
+    ).toBeTruthy();
 
     fireEvent.click(within(section).getByRole("button", { name: /Reset max p95 latency to the default, 400 ms/ }));
     expect(sf(store).policy.maxP95LatencyMs).toBe(400);
@@ -101,7 +103,9 @@ describe("ProviderConditionsSection", () => {
     expect(sf(store).route.activeProviderId).toBe("deepinfra");
     expect(within(section).getByRole("combobox", { name: "Provider" }).textContent).toContain("Together");
     expect(within(section).getByText("Together no longer qualifies: P95 510 ms exceeds 400 ms.")).toBeTruthy();
-    expect(within(section).getByText("Route switched from Together to DeepInfra.")).toBeTruthy();
+    expect(
+      within(section).getByText("Route switched from Together to DeepInfra, which ranks first for lowest cost."),
+    ).toBeTruthy();
 
     fireEvent.click(within(section).getByRole("button", { name: "Restore provider Together to default conditions" }));
     expect(sf(store).providers.find((p) => p.id === "together")!.conditions.p95LatencyMs).toBe(210);

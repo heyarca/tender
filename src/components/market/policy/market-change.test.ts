@@ -47,7 +47,7 @@ describe("describeMarketChange", () => {
     );
     expect(note.lines).toEqual([
       "Together no longer qualifies: P95 640 ms exceeds 400 ms.",
-      "Route switched from Together to DeepInfra.",
+      "Route switched from Together to DeepInfra, which ranks first for lowest cost.",
     ]);
     expect(note.tone).toBe("warning");
   });
@@ -56,7 +56,7 @@ describe("describeMarketChange", () => {
     const { change } = harness();
     const note = change({ type: "set-policy", marketId: "sf-weather", patch: { maxP95LatencyMs: 700 } });
     expect(note.lines).toContain("Cloudflare now qualifies.");
-    expect(note.lines).toContain("Route switched from Together to Cloudflare.");
+    expect(note.lines).toContain("Route switched from Together to Cloudflare, which ranks first for lowest cost.");
     expect(note.tone).toBe("positive");
   });
 

@@ -285,7 +285,9 @@ function DecisionSummary({
             : `${preview.qualifiedIds.size} of ${total} qualify`}
         </Badge>
       </div>
-      <p className="text-caption leading-snug text-muted-foreground">{decision.summary}</p>
+      {decision.kind === "pinned-failing" ? null : (
+        <p className="text-caption leading-snug text-muted-foreground">{decision.summary}</p>
+      )}
       <EligibilityStrip view={view} preview={preview} />
       <div
         role="status"
@@ -294,9 +296,11 @@ function DecisionSummary({
           visibleNote && NOTE_TEXT[visibleNote.tone],
         )}
       >
-        {visibleNote?.lines.map((line) => (
-          <p key={line}>{line}</p>
-        ))}
+        {visibleNote?.lines
+          .filter((line) => !(decision.kind === "pinned-failing" && line === decision.summary))
+          .map((line) => (
+            <p key={line}>{line}</p>
+          ))}
       </div>
     </div>
   );
@@ -328,11 +332,15 @@ function EligibilityStrip({ view, preview }: { view: MarketView; preview: Return
             tabIndex={0}
             aria-label={`${row.name}: ${qualifies ? "qualifies" : `excluded, ${reasons}`}${serving ? ", serving requests" : ""}`}
             className={cn(
-              "relative flex rounded-sm transition-[opacity,filter] duration-quick focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              qualifies ? "opacity-100" : "opacity-40 grayscale",
+              "relative flex rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             )}
           >
-            <ProviderLogo src={row.logo} name={row.name} size={20} />
+            <ProviderLogo
+              src={row.logo}
+              name={row.name}
+              size={20}
+              className={cn("transition-[opacity,filter] duration-quick", !qualifies && "opacity-40 grayscale")}
+            />
             {serving ? (
               <span
                 aria-hidden="true"

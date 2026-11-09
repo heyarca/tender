@@ -1,4 +1,11 @@
-import { SWITCH_COOLDOWN_MS, type MarketView, type ProviderId, type ProviderRow, type Tone } from "@/lib/tender";
+import {
+  PREFERENCE_LABELS,
+  SWITCH_COOLDOWN_MS,
+  type MarketView,
+  type ProviderId,
+  type ProviderRow,
+  type Tone,
+} from "@/lib/tender";
 
 /** What an operator edit changed: eligibility and the route, as short product copy. */
 export interface ChangeNote {
@@ -76,7 +83,11 @@ export function describeMarketChange(before: MarketView, after: MarketView, focu
       lines.push(`Route restored: requests go to ${nameOf(toId)}.`);
       raise(pinnedFailing ? "negative" : "positive");
     } else {
-      lines.push(`Route switched from ${nameOf(fromId)} to ${nameOf(toId)}.`);
+      const ranksFirst = after.route.mode.kind === "auto" && after.recommended?.id === toId;
+      const why = ranksFirst
+        ? `, which ranks first for ${PREFERENCE_LABELS[after.policy.preference].toLowerCase()}`
+        : "";
+      lines.push(`Route switched from ${nameOf(fromId)} to ${nameOf(toId)}${why}.`);
       raise(pinnedFailing ? "negative" : "positive");
     }
   }
