@@ -72,9 +72,12 @@ export function PriceChart({
 }: PriceChartProps) {
   const clipId = `price-clip-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   const [containerRef, width] = useElementWidth<HTMLDivElement>(DEFAULT_WIDTH);
-  const [hover, setHover] = useState<number | null>(null);
+  // Hover is keyed by the hovered point's timestamp, not its index: `points` is a rolling window
+  // and every append shifts the indices, which would silently move the crosshair to another point.
+  const [hoverT, setHoverT] = useState<number | null>(null);
 
   const points = isSorted(input) ? input : [...input].sort((a, b) => a.t - b.t);
+  const pointTimes = points.map((p) => p.t);
   const okPoints = points.filter(isOk);
   const providerIds = providers ? Object.keys(providers) : [];
 
@@ -135,7 +138,10 @@ export function PriceChart({
 
   const latest = okPoints.length ? okPoints[okPoints.length - 1] : null;
   const latestPos = latest ? { x: x(latest.t), y: y(latest.price) } : null;
-  const hovered = hover !== null && hover < points.length ? points[hover] : null;
+  // Resolve the hovered point by timestamp so hover survives window slides; when the point itself
+  // slides out of the window, the crosshair and tooltip hide.
+  const hoverIndex = hoverT === null ? -1 : nearestIndex(pointTimes, hoverT);
+  const hovered = hoverIndex >= 0 && points[hoverIndex].t === hoverT ? points[hoverIndex] : null;
 
   const providerOf = (id: string | undefined) => (id && providers ? providers[id] : undefined);
   const zoneLabel = timeZoneLabel ?? timeZone;
@@ -144,7 +150,7 @@ export function PriceChart({
     if (!points.length) return;
     const px = clientX - rect.left;
     const t = shown.x0 + ((px - plot.left) / (plot.right - plot.left)) * (shown.x1 - shown.x0);
-    setHover(nearestIndex(points.map((p) => p.t), t));
+    setHoverT(pointTimes[nearestIndex(pointTimes, t)]);
   }
 
   function onPointerMove(event: PointerEvent<HTMLDivElement>) {
@@ -156,12 +162,15 @@ export function PriceChart({
     if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
       event.preventDefault();
       const step = event.key === "ArrowLeft" ? -1 : 1;
-      setHover((h) => clamp((h ?? points.length - 1) + (h === null ? 0 : step), 0, points.length - 1));
+      setHoverT((t) => {
+        const index = t === null ? points.length - 1 : clamp(nearestIndex(pointTimes, t) + step, 0, points.length - 1);
+        return pointTimes[index];
+      });
     } else if (event.key === "Home" || event.key === "End") {
       event.preventDefault();
-      setHover(event.key === "Home" ? 0 : points.length - 1);
+      setHoverT(event.key === "Home" ? pointTimes[0] : pointTimes[points.length - 1]);
     } else if (event.key === "Escape") {
-      setHover(null);
+      setHoverT(null);
     }
   }
 
@@ -183,9 +192,9 @@ export function PriceChart({
       role="group"
       aria-label={`${label}. Use the arrow keys to read prices.`}
       onPointerMove={onPointerMove}
-      onPointerLeave={() => setHover(null)}
+      onPointerLeave={() => setHoverT(null)}
       onKeyDown={onKeyDown}
-      onBlur={() => setHover(null)}
+      onBlur={() => setHoverT(null)}
     >
       <svg width={width} height={height} className="absolute top-0 left-0 block" role="img" aria-label={label}>
         <defs>
