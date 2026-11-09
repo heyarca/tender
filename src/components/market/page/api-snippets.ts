@@ -1,12 +1,15 @@
-import { MARKETS, type MarketId, type RoutingPolicy } from "@/lib/tender";
+import { contractUrl as boundContractUrl, getMarketSpec } from "@/lib/registry";
+import type { MarketId, RoutingPolicy } from "@/lib/tender";
 
-/** Contract endpoint of a market (path + its one supported argument). */
+/** Contract endpoint of a market with its params bound (`/api/v1/translation/text?source=en&target=ko`). */
 export function contractPath(marketId: MarketId): string {
-  const definition = MARKETS[marketId];
-  const slug = definition.identifier.split("/")[1] ?? "";
-  return definition.units.dataAge === "min"
-    ? `/api/v1/weather/current?location=${slug}`
-    : `/api/v1/prices/spot?pair=${slug.toUpperCase()}`;
+  const spec = getMarketSpec(marketId);
+  return spec ? boundContractUrl(spec) : marketPath(marketId);
+}
+
+/** `path` followed by more query parameters. */
+function withQuery(path: string, query: string): string {
+  return `${path}${path.includes("?") ? "&" : "?"}${query}`;
 }
 
 /** Discovery endpoint of a market (bids, performance, qualification, route). */
@@ -35,13 +38,13 @@ export function policyQuery(policy: RoutingPolicy): string {
 
 /** Full contract URL for the current policy. */
 export function contractUrl(origin: string, marketId: MarketId, policy: RoutingPolicy): string {
-  return `${origin.replace(/\/$/, "")}${contractPath(marketId)}&${policyQuery(policy)}`;
+  return `${origin.replace(/\/$/, "")}${withQuery(contractPath(marketId), policyQuery(policy))}`;
 }
 
 /** cURL walkthrough of a paid request: discovery, the 402 challenge, and the signed retry. */
 export function buildCurlSnippet(origin: string, marketId: MarketId, policy: RoutingPolicy): string {
   const base = origin.replace(/\/$/, "");
-  const contract = `"$BASE${contractPath(marketId)}&$POLICY"`;
+  const contract = `"$BASE${withQuery(contractPath(marketId), "$POLICY")}"`;
   return [
     `BASE=${base}`,
     `POLICY="${policyQuery(policy)}"`,
