@@ -109,7 +109,7 @@ export function ProviderConditionsSection({ marketId }: MarketSectionProps) {
           Reset conditions
         </Button>
       }
-      className="flex flex-col"
+      className="flex flex-col last:mb-10"
       bodyClassName="flex flex-1 flex-col"
       data-market={marketId}
     >

@@ -83,7 +83,7 @@ export function RoutingPolicySection({ marketId }: MarketSectionProps) {
           Reset policy
         </Button>
       }
-      className="flex flex-col"
+      className="flex flex-col last:mb-10"
       bodyClassName="flex flex-1 flex-col"
       data-market={marketId}
     >
@@ -273,22 +273,22 @@ function DecisionSummary({
   const total = view.providers.length;
 
   return (
-    <div className="mt-auto flex flex-col gap-2.5 rounded-lg border border-border bg-muted px-3.5 py-3">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <p className="flex min-w-0 items-center gap-2 text-xs font-medium text-foreground">
-          <StatusDot tone={TONE_DOT[decision.tone]} pulse={decision.kind === "pending-switch"} />
-          <span className="min-w-0">{title}</span>
-        </p>
-        <Badge tone={preview.qualifiedIds.size ? "neutral" : "negative"} className="ml-auto tabular-nums">
+    <div className="mt-auto flex flex-col gap-2 rounded-lg border border-border bg-muted px-3.5 py-3">
+      <p className="flex min-w-0 items-start gap-2 text-xs font-medium text-foreground">
+        <StatusDot tone={TONE_DOT[decision.tone]} pulse={decision.kind === "pending-switch"} className="mt-1.5" />
+        <span className="min-w-0">{title}</span>
+      </p>
+      {decision.kind === "pinned-failing" ? null : (
+        <p className="text-caption leading-snug text-muted-foreground">{decision.summary}</p>
+      )}
+      <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-2">
+        <EligibilityStrip view={view} preview={preview} />
+        <Badge tone={preview.qualifiedIds.size ? "neutral" : "negative"} className="ml-auto bg-background tabular-nums">
           {previewing
             ? `${preview.qualifiedIds.size} of ${total} would qualify`
             : `${preview.qualifiedIds.size} of ${total} qualify`}
         </Badge>
       </div>
-      {decision.kind === "pinned-failing" ? null : (
-        <p className="text-caption leading-snug text-muted-foreground">{decision.summary}</p>
-      )}
-      <EligibilityStrip view={view} preview={preview} />
       <div
         role="status"
         className={cn(
@@ -329,11 +329,9 @@ function EligibilityStrip({ view, preview }: { view: MarketView; preview: Return
           }
         >
           <span
-            tabIndex={0}
+            role="img"
             aria-label={`${row.name}: ${qualifies ? "qualifies" : `excluded, ${reasons}`}${serving ? ", serving requests" : ""}`}
-            className={cn(
-              "relative flex rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            )}
+            className={cn("relative flex rounded-sm")}
           >
             <ProviderLogo
               src={row.logo}
@@ -344,7 +342,7 @@ function EligibilityStrip({ view, preview }: { view: MarketView; preview: Return
             {serving ? (
               <span
                 aria-hidden="true"
-                className="absolute -right-1 -bottom-1 size-2.5 rounded-full border-2 border-muted bg-primary"
+                className="absolute -right-0.5 -bottom-0.5 size-2 rounded-full border-[1.5px] border-muted bg-primary"
               />
             ) : null}
           </span>
