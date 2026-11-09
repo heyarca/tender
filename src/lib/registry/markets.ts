@@ -1,7 +1,7 @@
 // Generated from the Tender registry design (docs/DATA-MODEL.md). Edit the data here; the engine, pages, API, and SDK read it.
 import type { MarketSpec } from "./types";
 
-/** Every market, in directory order: group, then category, featured first. */
+/** Every market, in directory order: group, then category, featured first. Crypto prices come last of all. */
 export const MARKET_SPECS: readonly MarketSpec[] = [
   {
     "id": "sf-weather",
@@ -1388,390 +1388,6 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     "image": {
       "src": "/markets/gbp-usd.jpg",
       "alt": "Pound sterling banknotes."
-    }
-  },
-  {
-    "id": "btc-usd",
-    "categoryId": "crypto-prices",
-    "contractId": "prices.spot",
-    "params": {
-      "pair": "BTC-USD"
-    },
-    "name": "Bitcoin Price",
-    "shortName": "BTC/USD",
-    "icon": "bitcoin",
-    "description": "BTC/USD spot price through one normalized contract. Every provider returns the same price definition, so bids compare like for like.",
-    "timeZone": "UTC",
-    "source": "upstream",
-    "sample": {
-      "pair": "BTC-USD",
-      "priceUsd": 75230.75
-    },
-    "listings": [
-      {
-        "providerId": "the-zone-bio",
-        "bidPrice": 0.7,
-        "p95LatencyMs": 87,
-        "dataAgeMs": 220,
-        "errorRate": 0.0003,
-        "available": true,
-        "bias": 0.3
-      },
-      {
-        "providerId": "arca-labs",
-        "bidPrice": 0.95,
-        "p95LatencyMs": 64,
-        "dataAgeMs": 140,
-        "errorRate": 0.0002,
-        "available": true,
-        "bias": -0.4
-      },
-      {
-        "providerId": "coreweave",
-        "bidPrice": 1.4,
-        "p95LatencyMs": 42,
-        "dataAgeMs": 90,
-        "errorRate": 0.0001,
-        "available": true,
-        "bias": 0.15
-      },
-      {
-        "providerId": "baseten",
-        "bidPrice": 1.8,
-        "p95LatencyMs": 58,
-        "dataAgeMs": 45,
-        "errorRate": 0.0005,
-        "available": true,
-        "bias": -0.2
-      },
-      {
-        "providerId": "novita",
-        "bidPrice": 0.4,
-        "p95LatencyMs": 310,
-        "dataAgeMs": 180,
-        "errorRate": 0.0004,
-        "available": true,
-        "bias": 0.6
-      },
-      {
-        "providerId": "crusoe",
-        "bidPrice": 0.55,
-        "p95LatencyMs": 72,
-        "dataAgeMs": 2400,
-        "errorRate": 0.0003,
-        "available": true,
-        "bias": -0.7
-      },
-      {
-        "providerId": "gmicloud",
-        "bidPrice": 2.6,
-        "p95LatencyMs": 38,
-        "dataAgeMs": 60,
-        "errorRate": 0.0001,
-        "available": true,
-        "bias": 0.05
-      },
-      {
-        "providerId": "wafer",
-        "bidPrice": 0.6,
-        "p95LatencyMs": 95,
-        "dataAgeMs": 300,
-        "errorRate": 0.0085,
-        "available": true,
-        "bias": 0.9
-      }
-    ],
-    "image": {
-      "src": "/markets/btc-usd.jpg",
-      "alt": "A bitcoin coin."
-    }
-  },
-  {
-    "id": "eth-usd",
-    "categoryId": "crypto-prices",
-    "contractId": "prices.spot",
-    "params": {
-      "pair": "ETH-USD"
-    },
-    "name": "Ethereum Price",
-    "shortName": "ETH/USD",
-    "icon": "coins",
-    "description": "ETH/USD spot price through one normalized contract. Every provider returns the same price definition, so bids compare like for like.",
-    "timeZone": "UTC",
-    "source": "signal",
-    "sample": {
-      "pair": "ETH-USD",
-      "priceUsd": 3180.4
-    },
-    "listings": [
-      {
-        "providerId": "the-zone-bio",
-        "bidPrice": 0.7,
-        "p95LatencyMs": 87,
-        "dataAgeMs": 220,
-        "errorRate": 0.0003,
-        "available": true,
-        "bias": 0.3
-      },
-      {
-        "providerId": "arca-labs",
-        "bidPrice": 0.95,
-        "p95LatencyMs": 64,
-        "dataAgeMs": 140,
-        "errorRate": 0.0002,
-        "available": true,
-        "bias": -0.4
-      },
-      {
-        "providerId": "coreweave",
-        "bidPrice": 1.4,
-        "p95LatencyMs": 42,
-        "dataAgeMs": 90,
-        "errorRate": 0.0001,
-        "available": true,
-        "bias": 0.15
-      },
-      {
-        "providerId": "baseten",
-        "bidPrice": 1.8,
-        "p95LatencyMs": 58,
-        "dataAgeMs": 45,
-        "errorRate": 0.0005,
-        "available": true,
-        "bias": -0.2
-      },
-      {
-        "providerId": "novita",
-        "bidPrice": 0.4,
-        "p95LatencyMs": 310,
-        "dataAgeMs": 180,
-        "errorRate": 0.0004,
-        "available": true,
-        "bias": 0.6
-      },
-      {
-        "providerId": "crusoe",
-        "bidPrice": 0.55,
-        "p95LatencyMs": 72,
-        "dataAgeMs": 2400,
-        "errorRate": 0.0003,
-        "available": true,
-        "bias": -0.7
-      },
-      {
-        "providerId": "gmicloud",
-        "bidPrice": 2.6,
-        "p95LatencyMs": 38,
-        "dataAgeMs": 60,
-        "errorRate": 0.0001,
-        "available": true,
-        "bias": 0.05
-      },
-      {
-        "providerId": "wafer",
-        "bidPrice": 0.6,
-        "p95LatencyMs": 95,
-        "dataAgeMs": 300,
-        "errorRate": 0.0085,
-        "available": true,
-        "bias": 0.9
-      }
-    ],
-    "image": {
-      "src": "/markets/eth-usd.jpg",
-      "alt": "Ethereum coins."
-    }
-  },
-  {
-    "id": "sol-usd",
-    "categoryId": "crypto-prices",
-    "contractId": "prices.spot",
-    "params": {
-      "pair": "SOL-USD"
-    },
-    "name": "Solana Price",
-    "shortName": "SOL/USD",
-    "icon": "coins",
-    "description": "SOL/USD spot price through one normalized contract. Every provider returns the same price definition, so bids compare like for like.",
-    "timeZone": "UTC",
-    "source": "signal",
-    "sample": {
-      "pair": "SOL-USD",
-      "priceUsd": 148.25
-    },
-    "listings": [
-      {
-        "providerId": "the-zone-bio",
-        "bidPrice": 0.7,
-        "p95LatencyMs": 87,
-        "dataAgeMs": 220,
-        "errorRate": 0.0003,
-        "available": true,
-        "bias": 0.3
-      },
-      {
-        "providerId": "arca-labs",
-        "bidPrice": 0.95,
-        "p95LatencyMs": 64,
-        "dataAgeMs": 140,
-        "errorRate": 0.0002,
-        "available": true,
-        "bias": -0.4
-      },
-      {
-        "providerId": "coreweave",
-        "bidPrice": 1.4,
-        "p95LatencyMs": 42,
-        "dataAgeMs": 90,
-        "errorRate": 0.0001,
-        "available": true,
-        "bias": 0.15
-      },
-      {
-        "providerId": "baseten",
-        "bidPrice": 1.8,
-        "p95LatencyMs": 58,
-        "dataAgeMs": 45,
-        "errorRate": 0.0005,
-        "available": true,
-        "bias": -0.2
-      },
-      {
-        "providerId": "novita",
-        "bidPrice": 0.4,
-        "p95LatencyMs": 310,
-        "dataAgeMs": 180,
-        "errorRate": 0.0004,
-        "available": true,
-        "bias": 0.6
-      },
-      {
-        "providerId": "crusoe",
-        "bidPrice": 0.55,
-        "p95LatencyMs": 72,
-        "dataAgeMs": 2400,
-        "errorRate": 0.0003,
-        "available": true,
-        "bias": -0.7
-      },
-      {
-        "providerId": "gmicloud",
-        "bidPrice": 2.6,
-        "p95LatencyMs": 38,
-        "dataAgeMs": 60,
-        "errorRate": 0.0001,
-        "available": true,
-        "bias": 0.05
-      },
-      {
-        "providerId": "wafer",
-        "bidPrice": 0.6,
-        "p95LatencyMs": 95,
-        "dataAgeMs": 300,
-        "errorRate": 0.0085,
-        "available": true,
-        "bias": 0.9
-      }
-    ],
-    "image": {
-      "src": "/markets/sol-usd.jpg",
-      "alt": "Crypto coins."
-    }
-  },
-  {
-    "id": "xrp-usd",
-    "categoryId": "crypto-prices",
-    "contractId": "prices.spot",
-    "params": {
-      "pair": "XRP-USD"
-    },
-    "name": "XRP Price",
-    "shortName": "XRP/USD",
-    "icon": "coins",
-    "description": "XRP/USD spot price through one normalized contract. Every provider returns the same price definition, so bids compare like for like.",
-    "timeZone": "UTC",
-    "source": "signal",
-    "sample": {
-      "pair": "XRP-USD",
-      "priceUsd": 2.14
-    },
-    "listings": [
-      {
-        "providerId": "the-zone-bio",
-        "bidPrice": 0.7,
-        "p95LatencyMs": 87,
-        "dataAgeMs": 220,
-        "errorRate": 0.0003,
-        "available": true,
-        "bias": 0.3
-      },
-      {
-        "providerId": "arca-labs",
-        "bidPrice": 0.95,
-        "p95LatencyMs": 64,
-        "dataAgeMs": 140,
-        "errorRate": 0.0002,
-        "available": true,
-        "bias": -0.4
-      },
-      {
-        "providerId": "coreweave",
-        "bidPrice": 1.4,
-        "p95LatencyMs": 42,
-        "dataAgeMs": 90,
-        "errorRate": 0.0001,
-        "available": true,
-        "bias": 0.15
-      },
-      {
-        "providerId": "baseten",
-        "bidPrice": 1.8,
-        "p95LatencyMs": 58,
-        "dataAgeMs": 45,
-        "errorRate": 0.0005,
-        "available": true,
-        "bias": -0.2
-      },
-      {
-        "providerId": "novita",
-        "bidPrice": 0.4,
-        "p95LatencyMs": 310,
-        "dataAgeMs": 180,
-        "errorRate": 0.0004,
-        "available": true,
-        "bias": 0.6
-      },
-      {
-        "providerId": "crusoe",
-        "bidPrice": 0.55,
-        "p95LatencyMs": 72,
-        "dataAgeMs": 2400,
-        "errorRate": 0.0003,
-        "available": true,
-        "bias": -0.7
-      },
-      {
-        "providerId": "gmicloud",
-        "bidPrice": 2.6,
-        "p95LatencyMs": 38,
-        "dataAgeMs": 60,
-        "errorRate": 0.0001,
-        "available": true,
-        "bias": 0.05
-      },
-      {
-        "providerId": "wafer",
-        "bidPrice": 0.6,
-        "p95LatencyMs": 95,
-        "dataAgeMs": 300,
-        "errorRate": 0.0085,
-        "available": true,
-        "bias": 0.9
-      }
-    ],
-    "image": {
-      "src": "/markets/xrp-usd.jpg",
-      "alt": "Crypto coins."
     }
   },
   {
@@ -4073,6 +3689,390 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
       "src": "/catalog/sports-scores.jpg",
       "avif": "/catalog/sports-scores.avif",
       "alt": "Stadium floodlights glowing through falling snow."
+    }
+  },
+  {
+    "id": "btc-usd",
+    "categoryId": "crypto-prices",
+    "contractId": "prices.spot",
+    "params": {
+      "pair": "BTC-USD"
+    },
+    "name": "Bitcoin Price",
+    "shortName": "BTC/USD",
+    "icon": "bitcoin",
+    "description": "BTC/USD spot price through one normalized contract. Every provider returns the same price definition, so bids compare like for like.",
+    "timeZone": "UTC",
+    "source": "upstream",
+    "sample": {
+      "pair": "BTC-USD",
+      "priceUsd": 75230.75
+    },
+    "listings": [
+      {
+        "providerId": "the-zone-bio",
+        "bidPrice": 0.7,
+        "p95LatencyMs": 87,
+        "dataAgeMs": 220,
+        "errorRate": 0.0003,
+        "available": true,
+        "bias": 0.3
+      },
+      {
+        "providerId": "arca-labs",
+        "bidPrice": 0.95,
+        "p95LatencyMs": 64,
+        "dataAgeMs": 140,
+        "errorRate": 0.0002,
+        "available": true,
+        "bias": -0.4
+      },
+      {
+        "providerId": "coreweave",
+        "bidPrice": 1.4,
+        "p95LatencyMs": 42,
+        "dataAgeMs": 90,
+        "errorRate": 0.0001,
+        "available": true,
+        "bias": 0.15
+      },
+      {
+        "providerId": "baseten",
+        "bidPrice": 1.8,
+        "p95LatencyMs": 58,
+        "dataAgeMs": 45,
+        "errorRate": 0.0005,
+        "available": true,
+        "bias": -0.2
+      },
+      {
+        "providerId": "novita",
+        "bidPrice": 0.4,
+        "p95LatencyMs": 310,
+        "dataAgeMs": 180,
+        "errorRate": 0.0004,
+        "available": true,
+        "bias": 0.6
+      },
+      {
+        "providerId": "crusoe",
+        "bidPrice": 0.55,
+        "p95LatencyMs": 72,
+        "dataAgeMs": 2400,
+        "errorRate": 0.0003,
+        "available": true,
+        "bias": -0.7
+      },
+      {
+        "providerId": "gmicloud",
+        "bidPrice": 2.6,
+        "p95LatencyMs": 38,
+        "dataAgeMs": 60,
+        "errorRate": 0.0001,
+        "available": true,
+        "bias": 0.05
+      },
+      {
+        "providerId": "wafer",
+        "bidPrice": 0.6,
+        "p95LatencyMs": 95,
+        "dataAgeMs": 300,
+        "errorRate": 0.0085,
+        "available": true,
+        "bias": 0.9
+      }
+    ],
+    "image": {
+      "src": "/markets/btc-usd.jpg",
+      "alt": "A bitcoin coin."
+    }
+  },
+  {
+    "id": "eth-usd",
+    "categoryId": "crypto-prices",
+    "contractId": "prices.spot",
+    "params": {
+      "pair": "ETH-USD"
+    },
+    "name": "Ethereum Price",
+    "shortName": "ETH/USD",
+    "icon": "coins",
+    "description": "ETH/USD spot price through one normalized contract. Every provider returns the same price definition, so bids compare like for like.",
+    "timeZone": "UTC",
+    "source": "signal",
+    "sample": {
+      "pair": "ETH-USD",
+      "priceUsd": 3180.4
+    },
+    "listings": [
+      {
+        "providerId": "the-zone-bio",
+        "bidPrice": 0.7,
+        "p95LatencyMs": 87,
+        "dataAgeMs": 220,
+        "errorRate": 0.0003,
+        "available": true,
+        "bias": 0.3
+      },
+      {
+        "providerId": "arca-labs",
+        "bidPrice": 0.95,
+        "p95LatencyMs": 64,
+        "dataAgeMs": 140,
+        "errorRate": 0.0002,
+        "available": true,
+        "bias": -0.4
+      },
+      {
+        "providerId": "coreweave",
+        "bidPrice": 1.4,
+        "p95LatencyMs": 42,
+        "dataAgeMs": 90,
+        "errorRate": 0.0001,
+        "available": true,
+        "bias": 0.15
+      },
+      {
+        "providerId": "baseten",
+        "bidPrice": 1.8,
+        "p95LatencyMs": 58,
+        "dataAgeMs": 45,
+        "errorRate": 0.0005,
+        "available": true,
+        "bias": -0.2
+      },
+      {
+        "providerId": "novita",
+        "bidPrice": 0.4,
+        "p95LatencyMs": 310,
+        "dataAgeMs": 180,
+        "errorRate": 0.0004,
+        "available": true,
+        "bias": 0.6
+      },
+      {
+        "providerId": "crusoe",
+        "bidPrice": 0.55,
+        "p95LatencyMs": 72,
+        "dataAgeMs": 2400,
+        "errorRate": 0.0003,
+        "available": true,
+        "bias": -0.7
+      },
+      {
+        "providerId": "gmicloud",
+        "bidPrice": 2.6,
+        "p95LatencyMs": 38,
+        "dataAgeMs": 60,
+        "errorRate": 0.0001,
+        "available": true,
+        "bias": 0.05
+      },
+      {
+        "providerId": "wafer",
+        "bidPrice": 0.6,
+        "p95LatencyMs": 95,
+        "dataAgeMs": 300,
+        "errorRate": 0.0085,
+        "available": true,
+        "bias": 0.9
+      }
+    ],
+    "image": {
+      "src": "/markets/eth-usd.jpg",
+      "alt": "Ethereum coins."
+    }
+  },
+  {
+    "id": "sol-usd",
+    "categoryId": "crypto-prices",
+    "contractId": "prices.spot",
+    "params": {
+      "pair": "SOL-USD"
+    },
+    "name": "Solana Price",
+    "shortName": "SOL/USD",
+    "icon": "coins",
+    "description": "SOL/USD spot price through one normalized contract. Every provider returns the same price definition, so bids compare like for like.",
+    "timeZone": "UTC",
+    "source": "signal",
+    "sample": {
+      "pair": "SOL-USD",
+      "priceUsd": 148.25
+    },
+    "listings": [
+      {
+        "providerId": "the-zone-bio",
+        "bidPrice": 0.7,
+        "p95LatencyMs": 87,
+        "dataAgeMs": 220,
+        "errorRate": 0.0003,
+        "available": true,
+        "bias": 0.3
+      },
+      {
+        "providerId": "arca-labs",
+        "bidPrice": 0.95,
+        "p95LatencyMs": 64,
+        "dataAgeMs": 140,
+        "errorRate": 0.0002,
+        "available": true,
+        "bias": -0.4
+      },
+      {
+        "providerId": "coreweave",
+        "bidPrice": 1.4,
+        "p95LatencyMs": 42,
+        "dataAgeMs": 90,
+        "errorRate": 0.0001,
+        "available": true,
+        "bias": 0.15
+      },
+      {
+        "providerId": "baseten",
+        "bidPrice": 1.8,
+        "p95LatencyMs": 58,
+        "dataAgeMs": 45,
+        "errorRate": 0.0005,
+        "available": true,
+        "bias": -0.2
+      },
+      {
+        "providerId": "novita",
+        "bidPrice": 0.4,
+        "p95LatencyMs": 310,
+        "dataAgeMs": 180,
+        "errorRate": 0.0004,
+        "available": true,
+        "bias": 0.6
+      },
+      {
+        "providerId": "crusoe",
+        "bidPrice": 0.55,
+        "p95LatencyMs": 72,
+        "dataAgeMs": 2400,
+        "errorRate": 0.0003,
+        "available": true,
+        "bias": -0.7
+      },
+      {
+        "providerId": "gmicloud",
+        "bidPrice": 2.6,
+        "p95LatencyMs": 38,
+        "dataAgeMs": 60,
+        "errorRate": 0.0001,
+        "available": true,
+        "bias": 0.05
+      },
+      {
+        "providerId": "wafer",
+        "bidPrice": 0.6,
+        "p95LatencyMs": 95,
+        "dataAgeMs": 300,
+        "errorRate": 0.0085,
+        "available": true,
+        "bias": 0.9
+      }
+    ],
+    "image": {
+      "src": "/markets/sol-usd.jpg",
+      "alt": "Crypto coins."
+    }
+  },
+  {
+    "id": "xrp-usd",
+    "categoryId": "crypto-prices",
+    "contractId": "prices.spot",
+    "params": {
+      "pair": "XRP-USD"
+    },
+    "name": "XRP Price",
+    "shortName": "XRP/USD",
+    "icon": "coins",
+    "description": "XRP/USD spot price through one normalized contract. Every provider returns the same price definition, so bids compare like for like.",
+    "timeZone": "UTC",
+    "source": "signal",
+    "sample": {
+      "pair": "XRP-USD",
+      "priceUsd": 2.14
+    },
+    "listings": [
+      {
+        "providerId": "the-zone-bio",
+        "bidPrice": 0.7,
+        "p95LatencyMs": 87,
+        "dataAgeMs": 220,
+        "errorRate": 0.0003,
+        "available": true,
+        "bias": 0.3
+      },
+      {
+        "providerId": "arca-labs",
+        "bidPrice": 0.95,
+        "p95LatencyMs": 64,
+        "dataAgeMs": 140,
+        "errorRate": 0.0002,
+        "available": true,
+        "bias": -0.4
+      },
+      {
+        "providerId": "coreweave",
+        "bidPrice": 1.4,
+        "p95LatencyMs": 42,
+        "dataAgeMs": 90,
+        "errorRate": 0.0001,
+        "available": true,
+        "bias": 0.15
+      },
+      {
+        "providerId": "baseten",
+        "bidPrice": 1.8,
+        "p95LatencyMs": 58,
+        "dataAgeMs": 45,
+        "errorRate": 0.0005,
+        "available": true,
+        "bias": -0.2
+      },
+      {
+        "providerId": "novita",
+        "bidPrice": 0.4,
+        "p95LatencyMs": 310,
+        "dataAgeMs": 180,
+        "errorRate": 0.0004,
+        "available": true,
+        "bias": 0.6
+      },
+      {
+        "providerId": "crusoe",
+        "bidPrice": 0.55,
+        "p95LatencyMs": 72,
+        "dataAgeMs": 2400,
+        "errorRate": 0.0003,
+        "available": true,
+        "bias": -0.7
+      },
+      {
+        "providerId": "gmicloud",
+        "bidPrice": 2.6,
+        "p95LatencyMs": 38,
+        "dataAgeMs": 60,
+        "errorRate": 0.0001,
+        "available": true,
+        "bias": 0.05
+      },
+      {
+        "providerId": "wafer",
+        "bidPrice": 0.6,
+        "p95LatencyMs": 95,
+        "dataAgeMs": 300,
+        "errorRate": 0.0085,
+        "available": true,
+        "bias": 0.9
+      }
+    ],
+    "image": {
+      "src": "/markets/xrp-usd.jpg",
+      "alt": "Crypto coins."
     }
   }
 ];
