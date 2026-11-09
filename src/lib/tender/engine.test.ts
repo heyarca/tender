@@ -104,6 +104,16 @@ describe("operator changes", () => {
     expect(latestOf(state, W, "policy-updated")!.title).toBe("Policy updated: max P95 latency 400 ms → 200 ms");
   });
 
+  it("formats BTC max data age changes in milliseconds", () => {
+    const state = run(createInitialState(), { type: "set-policy", marketId: B, patch: { maxDataAgeMs: 1_010 }, now: E + 1_000 });
+    expect(latestOf(state, B, "policy-updated")!.title).toBe("Policy updated: max data age 1,000 ms → 1,010 ms");
+  });
+
+  it("keeps weather max data age copy in minutes", () => {
+    const state = run(createInitialState(), { type: "set-policy", marketId: W, patch: { maxDataAgeMs: 30 * 60_000 }, now: E + 1_000 });
+    expect(latestOf(state, W, "policy-updated")!.title).toBe("Policy updated: max data age 15 min → 30 min");
+  });
+
   it("re-routes immediately on a mode change", () => {
     let state = run(createInitialState(), { type: "set-routing-mode", marketId: W, mode: { kind: "pinned", providerId: "fireworks" }, now: E + 1_000 });
     expect(active(state, W)).toBe("fireworks");

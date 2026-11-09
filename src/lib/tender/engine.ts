@@ -283,8 +283,12 @@ function setPolicy(market: MarketState, ctx: StepContext, patch: PolicyPatch): M
   const next = { ...market.policy, ...sanitizePolicyPatch(market.id, patch) };
   const changes = diffPolicy(market.policy, next);
   if (!changes.length) return market;
-  const updated = pushActivity(ctx, { ...market, policy: next }, policyUpdatedEntry(changes));
-  return reconcileRoute(updated, ctx, operator("policy-change", `Policy changed: ${changes.map(policyChangeText).join("; ")}`));
+  const updated = pushActivity(ctx, { ...market, policy: next }, policyUpdatedEntry(market.id, changes));
+  return reconcileRoute(
+    updated,
+    ctx,
+    operator("policy-change", `Policy changed: ${changes.map((change) => policyChangeText(market.id, change)).join("; ")}`),
+  );
 }
 
 function setRoutingMode(market: MarketState, ctx: StepContext, mode: RoutingMode): MarketState {
@@ -302,7 +306,7 @@ function resetPolicy(market: MarketState, ctx: StepContext): MarketState {
   const changes = diffPolicy(market.policy, defaults);
   const modeReset = !sameMode(market.policy.mode, defaults.mode);
   if (!changes.length && !modeReset) return market;
-  const updated = pushActivity(ctx, { ...market, policy: defaults }, policyResetEntry(changes, modeReset));
+  const updated = pushActivity(ctx, { ...market, policy: defaults }, policyResetEntry(market.id, changes, modeReset));
   return reconcileRoute(updated, ctx, operator("policy-change", "Routing policy reset to defaults"));
 }
 
