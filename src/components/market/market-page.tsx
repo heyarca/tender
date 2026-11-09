@@ -60,9 +60,8 @@ function MarketPageContent({ marketId, onSwitchMarket }: MarketPageProps) {
       <MarketStickyBar view={view} onRun={run} onOpenApi={openApi} />
       <PageContainer>
         <MarketHeader
-          definition={view.definition}
+          marketId={marketId}
           autoRun={view.autoRun}
-          onSwitchMarket={onSwitchMarket}
           onOpenApi={openApi}
           onAutoRunChange={(enabled) => actions.setAutoRun(marketId, enabled)}
           onRun={run}
