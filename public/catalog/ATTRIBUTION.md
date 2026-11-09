@@ -145,3 +145,27 @@ These assets are derived from free Unsplash photos. Source pages are retained fo
 - Source page: https://unsplash.com/photos/grayscale-photo-of-condenser-microphone-beside-pop-filter-bG8U3kaZltE
 - Direct image: https://images.unsplash.com/photo-1531651008558-ed1740375b39?auto=format&fit=crop&q=60&crop=entropy&cs=srgb&fm=jpg&ixid=NHwxMjA3fDA&ixlib=rb-4.1.0
 - License: [Unsplash License](https://unsplash.com/license)
+
+## `text-to-speech`
+- Photographer: Martin Martz
+- Source page: https://unsplash.com/photos/a-black-background-with-red-and-blue-shapes-JfwQ36wG7Uo
+- Direct image: https://images.unsplash.com/photo-1686519093104-3140c6dcf284?auto=format&fit=crop&q=60&crop=entropy&cs=srgb&fm=jpg&ixid=NHwxMjA3fDA&ixlib=rb-4.1.0
+- License: [Unsplash License](https://unsplash.com/license)
+
+## `image-generation`
+- Photographer: Steve A Johnson
+- Source page: https://unsplash.com/photos/abstract-painting-e5LdlAMpkEw
+- Direct image: https://images.unsplash.com/photo-1541961017774-22349e4a1262?auto=format&fit=crop&q=60&crop=entropy&cs=srgb&fm=jpg&ixid=NHwxMjA3fDA&ixlib=rb-4.1.0
+- License: [Unsplash License](https://unsplash.com/license)
+
+## `translation`
+- Photographer: Olga Tutunaru
+- Source page: https://unsplash.com/photos/open-book-with-fanned-pages-JMATuFkXeHU
+- Direct image: https://images.unsplash.com/photo-1591951425600-d09958978584?auto=format&fit=crop&q=60&crop=entropy&cs=srgb&fm=jpg&ixid=NHwxMjA3fDA&ixlib=rb-4.1.0
+- License: [Unsplash License](https://unsplash.com/license)
+
+## `document-ocr`
+- Photographer: Kelly Sikkema
+- Source page: https://unsplash.com/photos/stack-of-papers-flat-lay-photography-tQQ4BwN_UFs
+- Direct image: https://images.unsplash.com/photo-1554224155-1696413565d3?auto=format&fit=crop&q=60&crop=entropy&cs=srgb&fm=jpg&ixid=NHwxMjA3fDA&ixlib=rb-4.1.0
+- License: [Unsplash License](https://unsplash.com/license)

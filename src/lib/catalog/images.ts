@@ -125,4 +125,24 @@ export const CATALOG_IMAGE_PATHS: Record<string, CatalogImagePath> = {
     jpg: "/catalog/speech-to-text.jpg",
     alt: "Studio condenser microphone and pop filter.",
   },
+  "text-to-speech": {
+    avif: "/catalog/text-to-speech.avif",
+    jpg: "/catalog/text-to-speech.jpg",
+    alt: "Abstract red and blue forms on black.",
+  },
+  "image-generation": {
+    avif: "/catalog/image-generation.avif",
+    jpg: "/catalog/image-generation.jpg",
+    alt: "Colorful abstract painted texture.",
+  },
+  "translation": {
+    avif: "/catalog/translation.avif",
+    jpg: "/catalog/translation.jpg",
+    alt: "Open book with fanned pages.",
+  },
+  "document-ocr": {
+    avif: "/catalog/document-ocr.avif",
+    jpg: "/catalog/document-ocr.jpg",
+    alt: "Stack of paper documents from above.",
+  },
 };
