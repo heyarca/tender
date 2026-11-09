@@ -1,0 +1,33 @@
+import { describe, expect, it } from "vitest";
+import { openapiDocument } from "./openapi";
+import { GET } from "../../app/api/v1/openapi.json/route";
+describe("OpenAPI", () => {
+  it("serves an OpenAPI 3.1 document for all five public routes", async () => {
+    const response = GET();
+    expect(response.status).toBe(200);
+    const doc = await response.json();
+    expect(doc.openapi).toBe("3.1.0");
+    expect(Object.keys(doc.paths)).toHaveLength(5);
+  });
+  it("resolves every schema reference and uses unique operation ids", () => {
+    const refs: string[] = [];
+    const walk = (value: unknown) => {
+      if (!value || typeof value !== "object") return;
+      for (const [key, child] of Object.entries(value)) {
+        if (key === "$ref") refs.push(child as string);
+        else walk(child);
+      }
+    };
+    walk(openapiDocument);
+    for (const path of refs) expect(openapiDocument.components.schemas).toHaveProperty(path.replace("#/components/schemas/", ""));
+    const ids = Object.values(openapiDocument.paths).map((p) => p.get.operationId);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+  it("documents x402, routing, and explicit minimum-unit settlement", () => {
+    const operation = openapiDocument.paths["/prices/spot"].get;
+    expect(operation.responses["402"].headers).toHaveProperty("PAYMENT-REQUIRED");
+    expect(operation.responses["200"].headers).toHaveProperty("PAYMENT-RESPONSE");
+    expect(operation.parameters.some((p) => p.name === "PAYMENT-SIGNATURE")).toBe(true);
+    expect(openapiDocument.components.schemas.PriceResult.properties).toHaveProperty("settled_atomic");
+  });
+});
