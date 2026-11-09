@@ -265,7 +265,7 @@ function ProviderTableRow({ row, view, selected, onSelect, layoutKey, reduceMoti
         className={cn(
           // Small screens: the provider column stays in view while the metrics scroll, and tags wrap under the name.
           "max-md:sticky max-md:left-0 max-md:z-[1] max-md:max-w-44 max-md:bg-card max-md:whitespace-normal",
-          selected && "shadow-[inset_2px_0_0_var(--primary)]",
+          selected && "shadow-[inset_2px_0_0_var(--primary-strong)]",
         )}
       >
         <div className="flex min-w-0 items-center gap-2 max-md:flex-wrap max-md:gap-y-1">
