@@ -349,6 +349,24 @@ export function providerTrend(row: Pick<ProviderRow, "evaluation" | "history">, 
   return { metric, values, limit, label, description };
 }
 
+/**
+ * Vertical scale for a trend sparkline. Latency, age, and bid keep at least a
+ * 100% span so monitor noise reads as calm texture and the dashed limit stays
+ * in view. Success rate uses a fixed window from 1 down past the minimum
+ * (twice the error budget), so 99.94% vs 99.50% is visible.
+ */
+export function trendScale(trend: Pick<Trend, "metric" | "values" | "limit">): {
+  domain?: readonly [number, number];
+  minSpanRatio?: number;
+} {
+  if (trend.metric !== "success") return { minSpanRatio: 1 };
+  const finite = trend.values.filter((v) => Number.isFinite(v));
+  const floor = trend.limit - 2 * (1 - trend.limit);
+  const low = Math.min(floor, ...finite);
+  const pad = (1 - low) * 0.1;
+  return { domain: [Math.max(0, low - pad), 1 + pad] };
+}
+
 // ---------------------------------------------------------------------------
 // Value formatting
 // ---------------------------------------------------------------------------

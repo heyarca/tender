@@ -34,6 +34,7 @@ import {
   routeLabel,
   statusTone,
   successSamples,
+  trendScale,
   valueParts,
   type MetricKey,
   type SignalTone,
@@ -96,7 +97,12 @@ export function ProvidersTable({ view, selectedId, onSelect }: ProvidersTablePro
   );
 
   return (
-    <Table aria-label={`${view.definition.name} providers`} data-slot="providers-table">
+    <Table
+      aria-label={`${view.definition.name} providers`}
+      data-slot="providers-table"
+      // OpenRouter's `or-table--tight-x`: 10px inner cell padding, 16px at the row edges.
+      className="[&_td]:px-2.5 [&_th]:px-2.5"
+    >
       <TableHeader>
         <TableRow>
           <TableHead {...sortProps("name")} className="max-md:sticky max-md:left-0 max-md:z-[2] max-md:bg-card">
@@ -140,7 +146,7 @@ export function ProvidersTable({ view, selectedId, onSelect }: ProvidersTablePro
           <TableHead tooltip="Active serves requests now. Standby providers qualify and take over in rank order.">
             Route
           </TableHead>
-          <TableHead className="w-0">
+          <TableHead className="w-0 pl-1! last:pr-2">
             <span className="sr-only">Actions</span>
           </TableHead>
         </TableRow>
@@ -252,7 +258,7 @@ function ProviderTableRow({ row, view, selected, onSelect, layoutKey, reduceMoti
           selected && "shadow-[inset_2px_0_0_var(--primary)]",
         )}
       >
-        <div className="flex min-w-0 items-center gap-2.5">
+        <div className="flex min-w-0 items-center gap-2">
           <button
             type="button"
             aria-pressed={selected}
@@ -292,13 +298,21 @@ function ProviderTableRow({ row, view, selected, onSelect, layoutKey, reduceMoti
               ? `Success rate ${format.percent(row.successRate)}`
               : "No successful requests: the provider is not responding"
           }
-          className={cn(excluded && !failing.success && "[&>span]:text-muted-foreground")}
+          className={cn("[&>span]:w-14", excluded && !failing.success && "[&>span]:text-muted-foreground")}
         />
       </TableCell>
       <TableCell>
         <Tooltip content={trend.description}>
-          <span className="inline-flex cursor-help">
-            <Sparkline values={trend.values} limit={trend.limit} tone={sparkTone} width={80} height={22} ariaLabel={trend.description} />
+          <span className="flex w-fit cursor-help">
+            <Sparkline
+              values={trend.values}
+              limit={trend.limit}
+              tone={sparkTone}
+              width={60}
+              height={22}
+              {...trendScale(trend)}
+              ariaLabel={trend.description}
+            />
           </span>
         </Tooltip>
       </TableCell>
@@ -312,8 +326,10 @@ function ProviderTableRow({ row, view, selected, onSelect, layoutKey, reduceMoti
           <RouteText route={route} />
         )}
       </TableCell>
-      <TableCell className="py-0">
-        <ProviderRowMenu marketId={view.id} row={row} mode={view.policy.mode} onSelect={onSelect} />
+      <TableCell className="py-0 pl-1! last:pr-2">
+        <div className="flex justify-end">
+          <ProviderRowMenu marketId={view.id} row={row} mode={view.policy.mode} onSelect={onSelect} />
+        </div>
       </TableCell>
     </MotionRow>
   );
@@ -323,7 +339,7 @@ function ProviderTags({ row }: { row: ProviderRow }) {
   const tags = providerTags(row);
   if (!tags.length) return null;
   return (
-    <span className="flex shrink-0 items-center gap-2">
+    <span className="flex shrink-0 items-center gap-1.5">
       {tags.map((tag) => {
         switch (tag) {
           case "active":
@@ -451,14 +467,14 @@ function RouteText({ route }: { route: ReturnType<typeof routeLabel> }) {
   switch (route.tone) {
     case "active":
       return (
-        <span className="inline-flex items-center gap-1.5 font-medium text-accent-foreground">
+        <span className="flex w-fit items-center gap-1.5 font-medium text-accent-foreground">
           <StatusDot tone="active" size="sm" pulse />
           {route.text}
         </span>
       );
     case "negative":
       return (
-        <span className="inline-flex items-center gap-1.5 font-medium text-negative-text">
+        <span className="flex w-fit items-center gap-1.5 font-medium text-negative-text">
           <StatusDot tone="negative" size="sm" />
           {route.text}
         </span>
@@ -475,7 +491,7 @@ function RouteText({ route }: { route: ReturnType<typeof routeLabel> }) {
 function PendingRouteText({ marketId }: { marketId: MarketView["id"] }) {
   const pending = usePendingSwitch(marketId);
   return (
-    <span className="inline-flex items-center gap-1.5 text-warning-text tabular-nums">
+    <span className="flex w-fit items-center gap-1.5 text-warning-text tabular-nums">
       <StatusDot tone="warning" size="sm" />
       {pending ? `Next in ${pending.secondsRemaining} s` : "Next route"}
     </span>
