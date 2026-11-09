@@ -47,7 +47,7 @@ function rowOf(name: string) {
 }
 
 describe("HeroSection", () => {
-  it("renders the only h1, the approved copy, and both calls to action", () => {
+  it("renders the only h1, the approved copy, and the calls to action", () => {
     const { container } = render(<HeroSection />);
     expect(container.querySelectorAll("h1")).toHaveLength(1);
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Make APIs compete for your traffic.");
@@ -58,6 +58,7 @@ describe("HeroSection", () => {
     ).toBeTruthy();
     expect(screen.getByRole("link", { name: /Try Tender/ }).getAttribute("href")).toBe("/markets");
     expect(screen.getByRole("link", { name: /See how it works/ }).getAttribute("href")).toBe("#how-it-works");
+    expect(screen.getByRole("link", { name: /Watch video/ }).getAttribute("href")).toBe("/demo");
     expect(container.textContent).not.toMatch(/simulated|sample|illustrative|demo/i);
   });
 
