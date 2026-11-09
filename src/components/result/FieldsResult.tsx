@@ -2,10 +2,10 @@ import type { ContractSpec, FieldSpec } from "@/lib/registry";
 import { readField } from "@/lib/registry";
 import { cn } from "@/lib/utils";
 import { Delta } from "@/components/viz/Delta";
-import { formatAge, formatClock, formatLatency } from "@/components/viz/format";
+import { formatAge, formatClock, formatLatency, formatUsd } from "@/components/viz/format";
 import { PriceChart } from "@/components/viz/PriceChart";
 import type { PricePoint, VizProviders } from "@/components/viz/types";
-import { displayUnit, formatMoney, formatPlainNumber, formatScalar, isAttachedUnit, type FormatContext } from "./field-format";
+import { displayUnit, formatMoney, formatPlainNumber, formatScalar, isAttachedUnit, tickDecimals, type FormatContext } from "./field-format";
 import { FieldGrid, FieldUnit, ListValue, ObjectValue, ResultLink } from "./FieldGrid";
 import { ResultMeta } from "./ResultMeta";
 import { ResultStatusLine } from "./ResultStatusLine";
@@ -43,9 +43,10 @@ export function seriesFormatter(field: FieldSpec): (value: number) => string {
   };
 }
 
-/** Axis tick format for a series value: the number only (`61.5`, `$228`). */
-export function seriesTickFormatter(field: FieldSpec): (value: number) => string {
-  return (value) => (field.type === "money" ? formatMoney(value, field.unit) : formatPlainNumber(value, 2));
+/** Axis tick format for a series value: the number only, with enough decimals to keep ticks distinct. */
+export function seriesTickFormatter(field: FieldSpec, points: readonly PricePoint[] = []): (value: number) => string {
+  const decimals = tickDecimals(points.map((point) => point.price));
+  return (value) => (field.type === "money" ? formatUsd(value, decimals) : formatPlainNumber(value, decimals));
 }
 
 /** Big headline value of a result, by the primary field's type. */
@@ -203,7 +204,7 @@ export function FieldsResult({
             timeZoneLabel={timeZoneLabel}
             height={chartHeight}
             formatPrice={seriesFormatter(series)}
-            formatTick={seriesTickFormatter(series)}
+            formatTick={seriesTickFormatter(series, points)}
             emptyLabel="No results yet"
             ariaLabel={`${series.label} over recent requests`}
           />

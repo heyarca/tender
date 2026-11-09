@@ -24,9 +24,9 @@ export function formatPlainNumber(value: number, maxDecimals = 4): string {
   return value < 0 && text !== "0" ? `${MINUS}${text}` : text;
 }
 
-/** Money: USD with a dollar sign and two decimals (four below one dollar); other units as a number. */
+/** Money: USD with a dollar sign and two decimals (four below $10, like spot pairs); other units as a number. */
 export function formatMoney(value: number, unit?: string): string {
-  if (!unit || unit === "USD") return formatUsd(value, Math.abs(value) > 0 && Math.abs(value) < 1 ? 4 : 2);
+  if (!unit || unit === "USD") return formatUsd(value, Math.abs(value) > 0 && Math.abs(value) < 10 ? 4 : 2);
   return formatPlainNumber(value, 2);
 }
 
@@ -147,4 +147,16 @@ export function displayUnit(field: Pick<FieldSpec, "type" | "unit">): string | u
   if (!field.unit) return undefined;
   if (field.type === "money" && field.unit === "USD") return undefined;
   return field.unit;
+}
+
+/**
+ * Fraction digits that keep chart ticks distinct for these values: about two significant digits of
+ * a quarter of their range (`$3.4201` vs `$3.4205`, `$228.5`, `61.5`). Between 0 and 4.
+ */
+export function tickDecimals(values: readonly number[]): number {
+  const finiteValues = values.filter((value) => Number.isFinite(value));
+  if (finiteValues.length < 2) return 0;
+  const range = Math.max(...finiteValues) - Math.min(...finiteValues);
+  if (range <= 0) return 0;
+  return Math.min(4, Math.max(0, Math.ceil(-Math.log10(range / 4))));
 }

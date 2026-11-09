@@ -7,7 +7,7 @@ import { PriceChart } from "@/components/viz/PriceChart";
 import type { PricePoint, VizProviders } from "@/components/viz/types";
 import { formatMoney, type FormatContext } from "./field-format";
 import { FieldGrid } from "./FieldGrid";
-import { ReadingMeta } from "./FieldsResult";
+import { ReadingMeta, seriesTickFormatter } from "./FieldsResult";
 import { ResultMeta } from "./ResultMeta";
 import { ResultStatusLine } from "./ResultStatusLine";
 import type { FieldsReading, ResultRequest } from "./types";
@@ -68,7 +68,8 @@ export function PriceFieldsResult({
   const changePct = change !== null && base !== 0 ? change / base : null;
   const format = (value: number) => formatMoney(value, primary?.unit);
   const formatChange = (value: number) =>
-    primary?.unit && primary.unit !== "USD" ? formatMoney(value, primary.unit) : formatUsd(value, price !== null && Math.abs(price) < 1 ? 4 : 2);
+    primary?.unit && primary.unit !== "USD" ? formatMoney(value, primary.unit) : formatUsd(value, price !== null && Math.abs(price) < 10 ? 4 : 2);
+  const formatTick = seriesTickFormatter(primary, points);
   const rest = contract.output.filter((field) => field !== primary && field !== unitField);
 
   return (
@@ -107,6 +108,7 @@ export function PriceFieldsResult({
         timeZoneLabel={timeZoneLabel}
         height={chartHeight}
         formatPrice={format}
+        formatTick={formatTick}
       />
 
       <FieldGrid
