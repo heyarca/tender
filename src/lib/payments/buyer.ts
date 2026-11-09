@@ -46,20 +46,24 @@ export class PaidRequestError extends Error {
 }
 
 /** Runs the actual x402 challenge/sign/retry flow using HTTP or a local route transport. No automatic re-payment. */
-export async function performPaidRequest(url: URL, transport: typeof fetch = fetch): Promise<PaidRequestResult> {
+export async function performPaidRequest(url: URL, transport: typeof fetch = fetch, callerSignal?: AbortSignal): Promise<PaidRequestResult> {
+  const deadline = AbortSignal.timeout(75_000);
+  const signal = callerSignal ? AbortSignal.any([deadline, callerSignal]) : deadline;
+  signal.throwIfAborted();
   const account = getPayerAccount();
   let selected: PaymentRequirements | undefined;
   const client = x402Client.fromConfig({
     schemes: [{ network: PAYMENT_NETWORK, client: new ExactEvmScheme(account) }],
     spendControls: { maxAmountPerPayment: "$0.000100", allowedAssets: [{ network: PAYMENT_NETWORK, asset: USDC_ADDRESS, maxAmountPerPayment: "100" }] },
   }).onBeforePaymentCreation(async ({ selectedRequirements }) => {
+    signal.throwIfAborted();
     assertSafePayment(selectedRequirements);
     const exact = selectedRequirements.extra.price_usd;
     if (typeof exact !== "number" || settlementAmounts(exact).settled_atomic !== selectedRequirements.amount) throw new Error("Invalid settlement quote");
     selected = selectedRequirements;
   });
   const paidFetch = wrapFetchWithPayment(transport, client);
-  const response = await paidFetch(url, { headers: { Accept: "application/json" }, redirect: "error", cache: "no-store", signal: AbortSignal.timeout(75_000) });
+  const response = await paidFetch(url, { headers: { Accept: "application/json" }, redirect: "error", cache: "no-store", signal });
   const body: unknown = await response.json();
   const header = response.headers.get("PAYMENT-RESPONSE");
   if (!response.ok) {

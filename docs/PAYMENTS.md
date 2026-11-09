@@ -81,6 +81,8 @@ The x402 client refuses more than `100` atomic USDC (`0.000100` USDC) per reques
 any asset except the configured USDC contract, any scheme except `exact`, or any payee outside the committed provider map.
 It also verifies the amount against the exact bid before signing. It never follows redirects or automatically creates a second payment after a failed signed retry.
 
+Cancellation is checked before signing, local dispatch, and provider execution, and again before starting settlement. The in-flight lock remains held until the underlying operation ends; cancellation does not release it while a transfer can still finish. Facilitator calls have bounded 20-second deadlines.
+
 A timeout during settlement has an **unknown outcome**: a transfer may still land on-chain. Check the payer/payee balances and explorer before trying again.
 
 ## Setup and funding
@@ -112,6 +114,7 @@ No ETH faucet is required for the payer. Do not send real USDC or mainnet assets
 | `TENDER_FACILITATOR_URL` | x402 facilitator endpoint | `https://facilitator.payai.network` |
 | `TENDER_RPC_URL` | Base Sepolia RPC endpoint | `https://sepolia.base.org` |
 | `VERCEL_AUTOMATION_BYPASS_SECRET` | Optional CLI smoke HTTP access through preview protection | None |
+| `TENDER_PREVIEW_URL` | Trusted HTTPS deployment origin for the smoke CLI bypass credential | Required only with a bypass secret; localhost never receives it |
 
 Never use `NEXT_PUBLIC_` for a wallet secret. Bun loads `.env.local` for the scripts; Next loads it for local routes.
 No environment variable switches payment behavior or enables a mainnet network.

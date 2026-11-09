@@ -42,10 +42,11 @@ export function createPaidRequestEndpoint(handleContract: ContractHandler) {
       const url = contractUrl("https://tender.internal", input);
       const transport: typeof fetch = async (target, init) => {
         const contractRequest = new Request(target, init);
+        contractRequest.signal.throwIfAborted();
         if (contractRequest.url !== url.href || contractRequest.method !== "GET") throw new Error("Unexpected payment target");
         return handleContract(contractRequest, input.market);
       };
-      const result = await performPaidRequest(url, transport);
+      const result = await performPaidRequest(url, transport, request.signal);
       return Response.json(result, { headers });
     } catch (error) {
       if (error instanceof PaidRequestError) return Response.json({ error: error.message, details: error.details }, { status: error.status, headers });

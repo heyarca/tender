@@ -8,7 +8,7 @@ import { PAYMENT_NETWORK } from "./config";
 // Publicly known test-only key. Never use for funded wallets.
 const key = `0x${"0".repeat(63)}1` as const;
 const payer = privateKeyToAccount(key).address;
-afterEach(() => vi.unstubAllEnvs());
+afterEach(() => { vi.unstubAllEnvs(); vi.restoreAllMocks(); });
 
 describe("paid endpoint", () => {
   it("executes the actual x402 signed retry locally without trusting Host", async () => {
@@ -38,6 +38,15 @@ describe("paid endpoint", () => {
       const response = await endpoint(new Request("https://tender.test/api/payments/demo-request", { method: "POST", headers: { "Content-Type": type }, body }));
       expect(response.status).toBe(status);
     }
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+  it("never dispatches or signs after an already-aborted payment deadline", async () => {
+    vi.stubEnv("TENDER_DEMO_PAYER_PRIVATE_KEY", key);
+    vi.spyOn(AbortSignal, "timeout").mockReturnValue(AbortSignal.abort());
+    const dispatch = vi.fn();
+    const endpoint = createPaidRequestEndpoint(dispatch);
+    const response = await endpoint(new Request("https://tender.test/pay", { method: "POST", headers: { "Content-Type": "application/json" }, body: '{"market":"btc-usd"}' }));
+    expect(response.status).toBe(502);
     expect(dispatch).not.toHaveBeenCalled();
   });
   it("returns 503 when payer is absent", async () => {
