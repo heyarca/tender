@@ -37,3 +37,21 @@ These assets are derived from free Unsplash photos. Source pages are retained fo
 - Source page: https://unsplash.com/photos/hallway-between-glass-panel-doors-yWwob8kwOCk
 - Direct image: https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&q=60&crop=entropy&cs=srgb&fm=jpg&ixid=NHwxMjA3fDA&ixlib=rb-4.1.0
 - License: [Unsplash License](https://unsplash.com/license)
+
+## `ip-risk`
+- Photographer: JJ Ying
+- Source page: https://unsplash.com/photos/purple-and-blue-light-digital-wallpaper-8bghKxNU1j0
+- Direct image: https://images.unsplash.com/photo-1597733336794-12d05021d510?auto=format&fit=crop&q=60&crop=entropy&cs=srgb&fm=jpg&ixid=NHwxMjA3fDA&ixlib=rb-4.1.0
+- License: [Unsplash License](https://unsplash.com/license)
+
+## `ocr-invoice`
+- Photographer: Kelly Sikkema
+- Source page: https://unsplash.com/photos/stack-of-papers-flat-lay-photography-tQQ4BwN_UFs
+- Direct image: https://images.unsplash.com/photo-1554224155-1696413565d3?auto=format&fit=crop&q=60&crop=entropy&cs=srgb&fm=jpg&ixid=NHwxMjA3fDA&ixlib=rb-4.1.0
+- License: [Unsplash License](https://unsplash.com/license)
+
+## `translate-en-ko`
+- Photographer: Olga Tutunaru
+- Source page: https://unsplash.com/photos/open-book-with-fanned-pages-JMATuFkXeHU
+- Direct image: https://images.unsplash.com/photo-1591951425600-d09958978584?auto=format&fit=crop&q=60&crop=entropy&cs=srgb&fm=jpg&ixid=NHwxMjA3fDA&ixlib=rb-4.1.0
+- License: [Unsplash License](https://unsplash.com/license)

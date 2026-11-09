@@ -35,4 +35,19 @@ export const CATALOG_IMAGE_PATHS: Record<string, CatalogImagePath> = {
     jpg: "/catalog/company-profile.jpg",
     alt: "Minimal glass-walled office corridor.",
   },
+  "ip-risk": {
+    avif: "/catalog/ip-risk.avif",
+    jpg: "/catalog/ip-risk.jpg",
+    alt: "Purple and blue abstract network light.",
+  },
+  "ocr-invoice": {
+    avif: "/catalog/ocr-invoice.avif",
+    jpg: "/catalog/ocr-invoice.jpg",
+    alt: "Organized stack of paper documents.",
+  },
+  "translate-en-ko": {
+    avif: "/catalog/translate-en-ko.avif",
+    jpg: "/catalog/translate-en-ko.jpg",
+    alt: "Open book with fanned pages against a light background.",
+  },
 };
