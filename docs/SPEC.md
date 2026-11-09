@@ -215,39 +215,23 @@ replacement qualifies (all four checks with values vs limits).
 
 ## 5. Engine/store contract (`src/lib/tender`)
 
-Public API: `@/lib/tender` (server-safe: types, market definitions, format, evaluation) and `@/lib/tender/client` ("use client": provider, store hooks). The authoritative API reference is `src/lib/tender/README.md`; this section is the summary.
+The authoritative reference is [`src/lib/tender/README.md`](../src/lib/tender/README.md). Summary:
 
-```ts
-type MarketId = "sf-weather" | "btc-usd";
-type RoutingPreference = "lowest-cost" | "lowest-latency" | "freshest-data";
-type RoutingMode = { kind: "auto" } | { kind: "pinned"; providerId: string };
-
-interface RoutingPolicy { maxPrice: number; maxP95LatencyMs: number; maxDataAgeMs: number;
-  minSuccessRate: number /* 0..1 */; preference: RoutingPreference; mode: RoutingMode }
-interface ProviderConditions { bidPrice: number; p95LatencyMs: number; dataAgeMs: number;
-  errorRate: number /* 0..1 */; available: boolean }
-
-<TenderProvider>{children}</TenderProvider>        // root layout; owns store, clock, rebase, persistence
-useMarketView(marketId): MarketView                 // memoized derived view (see below)
-useTenderActions(): {
-  runRequest(m), setAutoRun(m, on),
-  setPolicy(m, patch: Partial<Omit<RoutingPolicy,"mode">>), setRoutingMode(m, mode), resetPolicy(m),
-  updateProvider(m, providerId, patch: Partial<ProviderConditions>), restoreProvider(m, providerId),
-  resetConditions(m), switchToRecommended(m) /* pins rank-1 provider when pinned mode is violated */
-}
-useNow(): number                                    // store clock (1 s tick)
-useRouteEvents(marketId, cb)                        // subscribe to route switches / no-eligible / pin violations (for toasts)
-MARKETS / getMarketDefinition(marketId)             // static definitions (names, identifiers, units, time zone, contract, sample code)
-format.*                                            // price, latency, age, percent, time, temperature, usd helpers
-```
-
-`MarketView` provides everything the UI renders: definition, policy + default policy, providers (display
-order: active first, then qualified by rank, then excluded), each with identity (name, logo), current and
-default conditions, evaluation (status, reasons, rank, qualifies), routing role (`active` | `standby` |
-`excluded` | `pinned` | `pinned-failing`), `isBestPrice`, `modified`, history; the route + routing decision
-(kind, summary sentence, detail lines, pending switch countdown, recommended provider); last result + recent
-results; summary metrics (active provider, request price, P95, data age, success rate, request count, spend);
-activity (newest first, ≤ 200), and `autoRun`.
+- `@/lib/tender` (server and client; never imports React or zustand): types (`MarketId`, `ProviderId`,
+  `RoutingPolicy`, `RoutingMode`, `ProviderConditions`, `RequestResult`, `ActivityEntry`, `MarketView`,
+  `ProviderRow`, …), market definitions (`MARKETS`, `MARKET_IDS`, `getMarketDefinition`, `isMarketId`,
+  `getDefaultPolicy`, `getDefaultConditions`, `toDisplayValue`/`fromDisplayValue`), evaluation
+  (`evaluateMarket`, `runChecks`, `compareProviders`, `STATUS_LABELS`, `PREFERENCE_LABELS`), the pure reducer
+  (`createInitialState`, `reduce`, `selectMarketView`), stateless server routing (`selectRoute`,
+  `executeSelection`, `routeRequest`), request sampling, persistence helpers, `format.*`, and
+  `getApiSnippets` / `getResponseJson`.
+- `@/lib/tender/client` (`"use client"`): `<TenderProvider>` (mount once in the root layout),
+  `useMarketView(marketId)` (does not re-render on the 1 s clock), `useNow()`, `useTenderActions()`
+  (`runRequest`, `setAutoRun`, `setPolicy`, `setRoutingMode`, `resetPolicy`, `updateProvider`,
+  `restoreProvider`, `resetConditions`, `switchToRecommended`), `useRouteEvents(marketId, cb)`,
+  `usePendingSwitch(marketId)`, `useMarketIds()`, `useTenderSelector(selector)`.
+- The HTTP API (`/api/v1/*`) is documented in [`docs/API.md`](API.md); stablecoin payments (x402 USDC on
+  Base Sepolia) in [`docs/PAYMENTS.md`](PAYMENTS.md).
 
 ## 6. Source layout and ownership
 
@@ -255,6 +239,8 @@ activity (newest first, ≤ 200), and `autoRun`.
 src/app/                         routes, layout, globals.css (tokens)
 src/lib/utils.ts                 cn() — tailwind-merge configured for the custom type scale
 src/lib/tender/                  engine: types, fixtures, evaluate, router, requests, random, format, store, tests
+src/lib/server/                  HTTP API glue (route handlers in src/app/api/v1)
+src/lib/payments/                x402 USDC payments (seller wrapper, guarded payer, client hook)
 src/components/ui/               primitives (Button, Badge, SegmentedControl, Select, NumberField, Switch, Tooltip,
                                  Popover, Dialog, Toast, Table, Card, StatCard, Section, ProviderLogo, Kbd, CodeBlock …)
 src/components/shell/            TopNav, TenderMark/Logo, PageContainer, SidebarNav (+ scroll-spy), StickyBar, CommandPalette
