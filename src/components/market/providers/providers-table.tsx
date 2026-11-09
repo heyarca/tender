@@ -200,7 +200,8 @@ function useActiveRowFlash(
     if (!prev || prev.marketId !== view.id || prev.activeId === activeId || !activeId) return;
     const el = rowRefs.current.get(activeId);
     if (!el || typeof el.animate !== "function") return;
-    const flash = getComputedStyle(document.documentElement).getPropertyValue("--accent-border").trim();
+    // The selected-row wash (lime 25%): lime is a fill only, the row text stays ink.
+    const flash = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim();
     if (!flash) return;
     const rest = getComputedStyle(el).backgroundColor;
     const animation = el.animate([{ backgroundColor: flash }, { backgroundColor: rest }], {
@@ -361,7 +362,7 @@ function ProviderTags({ row }: { row: ProviderRow }) {
             );
           case "pinned":
             return (
-              <Badge key={tag} variant="outline" tone={row.role === "pinned-failing" ? "negative" : "active"} icon={<Pin aria-hidden="true" />} data-tag="pinned">
+              <Badge key={tag} tone={row.role === "pinned-failing" ? "negative" : "active"} icon={<Pin aria-hidden="true" />} data-tag="pinned">
                 Pinned
               </Badge>
             );
