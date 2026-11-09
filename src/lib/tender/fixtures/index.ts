@@ -11,17 +11,50 @@ import type {
 } from "../types";
 import { BTC_USD } from "./btc-usd";
 import { SF_WEATHER } from "./sf-weather";
+import { NY_WEATHER } from "./ny-weather";
+import { LONDON_WEATHER } from "./london-weather";
+import { SEOUL_WEATHER } from "./seoul-weather";
+import { TOKYO_WEATHER } from "./tokyo-weather";
+import { SINGAPORE_WEATHER } from "./singapore-weather";
+import { ETH_USD } from "./eth-usd";
+import { SOL_USD } from "./sol-usd";
+import { XRP_USD } from "./xrp-usd";
+import { EUR_USD } from "./eur-usd";
+import { GBP_USD } from "./gbp-usd";
 
 export { BTC_USD, BTC_USD_DEFAULT_POLICY, BTC_USD_PROVIDERS } from "./btc-usd";
 export { SF_WEATHER, SF_WEATHER_DEFAULT_POLICY, SF_WEATHER_PROVIDERS } from "./sf-weather";
 
 /** Market ids in display order. */
-export const MARKET_IDS = ["sf-weather", "btc-usd"] as const satisfies readonly MarketId[];
+export const MARKET_IDS = [
+  "sf-weather",
+  "ny-weather",
+  "london-weather",
+  "seoul-weather",
+  "tokyo-weather",
+  "singapore-weather",
+  "btc-usd",
+  "eth-usd",
+  "sol-usd",
+  "xrp-usd",
+  "eur-usd",
+  "gbp-usd",
+] as const satisfies readonly MarketId[];
 
 /** Market definitions by id. */
 export const MARKETS: Readonly<Record<MarketId, MarketDefinition>> = {
   "sf-weather": SF_WEATHER,
+  "ny-weather": NY_WEATHER,
+  "london-weather": LONDON_WEATHER,
+  "seoul-weather": SEOUL_WEATHER,
+  "tokyo-weather": TOKYO_WEATHER,
+  "singapore-weather": SINGAPORE_WEATHER,
   "btc-usd": BTC_USD,
+  "eth-usd": ETH_USD,
+  "sol-usd": SOL_USD,
+  "xrp-usd": XRP_USD,
+  "eur-usd": EUR_USD,
+  "gbp-usd": GBP_USD,
 };
 
 /** Default market for `/`. */

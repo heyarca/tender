@@ -64,7 +64,7 @@ export function toResultRequest(
 
 /** Normalized weather payload of the newest served request, or `null`. */
 export function toWeatherReading(served: ServedRequestResult | null): WeatherReading | null {
-  if (!served || served.marketId !== "sf-weather") return null;
+  if (!served || served.payload.kind !== "weather") return null;
   const p = served.payload;
   return {
     location: p.location.name,
@@ -85,7 +85,7 @@ export function toWeatherReading(served: ServedRequestResult | null): WeatherRea
 
 /** Normalized BTC/USD quote of the newest served request, or `null`. */
 export function toBitcoinQuote(served: ServedRequestResult | null): BitcoinQuote | null {
-  if (!served || served.marketId !== "btc-usd") return null;
+  if (!served || served.payload.kind !== "btc") return null;
   const p = served.payload;
   return {
     pair: p.pair.replace("-", "/"),

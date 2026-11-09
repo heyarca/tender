@@ -4,6 +4,7 @@
  * same delta keeps every value unchanged.
  */
 import { hashNormal } from "./random";
+import type { MarketId } from "./types";
 
 /** Baseline BTC/USD price at the signal origin. */
 export const BTC_BASELINE_PRICE = 75_230.75;
@@ -22,6 +23,13 @@ export const SF_BASELINE = {
 
 /** San Francisco location of the normalized result. */
 export const SF_LOCATION = { name: "San Francisco, CA", latitude: 37.7749, longitude: -122.4194 } as const;
+
+/** Location shape shared by every weather market's result. */
+export interface MarketLocation {
+  name: string;
+  latitude: number;
+  longitude: number;
+}
 
 interface Octave {
   periodS: number;
@@ -107,24 +115,29 @@ export interface WeatherState {
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
-/** True San Francisco conditions at `at`; drifts slowly from the baseline. */
-export function weatherAt(at: number, origin: number): WeatherState {
+/** Same noise shapes as San Francisco, offset to a different baseline (SPEC-compatible extension). */
+function weatherAtWithBaseline(baseline: WeatherState, at: number, origin: number): WeatherState {
   const s = (at - origin) / 1000;
-  const temperatureF = SF_BASELINE.temperatureF + anchoredNoise(s, TEMP);
-  const humidityPct = clamp(SF_BASELINE.humidityPct + anchoredNoise(s, HUMIDITY), 0, 100);
+  const temperatureF = baseline.temperatureF + anchoredNoise(s, TEMP);
+  const humidityPct = clamp(baseline.humidityPct + anchoredNoise(s, HUMIDITY), 0, 100);
   return {
     temperatureF,
     humidityPct,
-    windMph: Math.max(0, SF_BASELINE.windMph + anchoredNoise(s, WIND)),
-    windDirectionDeg: (SF_BASELINE.windDirectionDeg + anchoredNoise(s, WIND_DIR) + 360) % 360,
-    pressureHpa: SF_BASELINE.pressureHpa + anchoredNoise(s, PRESSURE),
-    visibilityMi: Math.max(0, SF_BASELINE.visibilityMi + anchoredNoise(s, VISIBILITY)),
+    windMph: Math.max(0, baseline.windMph + anchoredNoise(s, WIND)),
+    windDirectionDeg: (baseline.windDirectionDeg + anchoredNoise(s, WIND_DIR) + 360) % 360,
+    pressureHpa: baseline.pressureHpa + anchoredNoise(s, PRESSURE),
+    visibilityMi: Math.max(0, baseline.visibilityMi + anchoredNoise(s, VISIBILITY)),
     dewPointF:
-      SF_BASELINE.dewPointF +
-      0.6 * (temperatureF - SF_BASELINE.temperatureF) +
-      0.2 * (humidityPct - SF_BASELINE.humidityPct),
-    cloudCoverPct: clamp(SF_BASELINE.cloudCoverPct - Math.abs(anchoredNoise(s, CLOUD)), 0, 100),
+      baseline.dewPointF +
+      0.6 * (temperatureF - baseline.temperatureF) +
+      0.2 * (humidityPct - baseline.humidityPct),
+    cloudCoverPct: clamp(baseline.cloudCoverPct - Math.abs(anchoredNoise(s, CLOUD)), 0, 100),
   };
+}
+
+/** True San Francisco conditions at `at`; drifts slowly from the baseline. */
+export function weatherAt(at: number, origin: number): WeatherState {
+  return weatherAtWithBaseline(SF_BASELINE, at, origin);
 }
 
 /** Condition label from cloud cover. */
@@ -133,4 +146,106 @@ export function conditionLabel(cloudCoverPct: number): string {
   if (cloudCoverPct >= 70) return "Mostly cloudy";
   if (cloudCoverPct >= 40) return "Partly cloudy";
   return "Mostly clear";
+}
+
+/** Location and baseline conditions for every weather market besides San Francisco. */
+export const WEATHER_MARKETS: Partial<Record<MarketId, { location: MarketLocation; baseline: WeatherState }>> = {
+  "ny-weather": {
+    location: { name: "New York, NY", latitude: 40.7128, longitude: -74.006 },
+    baseline: {
+      temperatureF: 52,
+      humidityPct: 68,
+      windMph: 12,
+      windDirectionDeg: 250,
+      pressureHpa: 1015,
+      visibilityMi: 8,
+      dewPointF: 42,
+      cloudCoverPct: 55,
+    },
+  },
+  "london-weather": {
+    location: { name: "London, UK", latitude: 51.5074, longitude: -0.1278 },
+    baseline: {
+      temperatureF: 48,
+      humidityPct: 78,
+      windMph: 14,
+      windDirectionDeg: 220,
+      pressureHpa: 1009,
+      visibilityMi: 6,
+      dewPointF: 42,
+      cloudCoverPct: 85,
+    },
+  },
+  "seoul-weather": {
+    location: { name: "Seoul, South Korea", latitude: 37.5665, longitude: 126.978 },
+    baseline: {
+      temperatureF: 41,
+      humidityPct: 55,
+      windMph: 7,
+      windDirectionDeg: 300,
+      pressureHpa: 1022,
+      visibilityMi: 9,
+      dewPointF: 27,
+      cloudCoverPct: 20,
+    },
+  },
+  "tokyo-weather": {
+    location: { name: "Tokyo, Japan", latitude: 35.6762, longitude: 139.6503 },
+    baseline: {
+      temperatureF: 57,
+      humidityPct: 60,
+      windMph: 9,
+      windDirectionDeg: 340,
+      pressureHpa: 1016,
+      visibilityMi: 11,
+      dewPointF: 44,
+      cloudCoverPct: 35,
+    },
+  },
+  "singapore-weather": {
+    location: { name: "Singapore", latitude: 1.3521, longitude: 103.8198 },
+    baseline: {
+      temperatureF: 86,
+      humidityPct: 82,
+      windMph: 6,
+      windDirectionDeg: 190,
+      pressureHpa: 1010,
+      visibilityMi: 6,
+      dewPointF: 78,
+      cloudCoverPct: 70,
+    },
+  },
+};
+
+/** True conditions at `at` for any weather market; `sf-weather` is byte-identical to `weatherAt`. */
+export function weatherAtFor(marketId: MarketId, at: number, origin: number): WeatherState {
+  const other = WEATHER_MARKETS[marketId];
+  return other ? weatherAtWithBaseline(other.baseline, at, origin) : weatherAt(at, origin);
+}
+
+/** Result location for any weather market; `sf-weather` is `SF_LOCATION`. */
+export function weatherLocationFor(marketId: MarketId): MarketLocation {
+  return WEATHER_MARKETS[marketId]?.location ?? SF_LOCATION;
+}
+
+/** Baseline price and noise sensitivity (relative to the BTC/USD noise) for every price market besides BTC/USD. */
+export const PRICE_MARKETS: Partial<Record<MarketId, { pair: string; basePrice: number; sensitivity: number }>> = {
+  "eth-usd": { pair: "ETH-USD", basePrice: 3180.4, sensitivity: 1 },
+  "sol-usd": { pair: "SOL-USD", basePrice: 148.25, sensitivity: 1 },
+  "xrp-usd": { pair: "XRP-USD", basePrice: 2.14, sensitivity: 1 },
+  "eur-usd": { pair: "EUR-USD", basePrice: 1.0812, sensitivity: 0.02 },
+  "gbp-usd": { pair: "GBP-USD", basePrice: 1.2734, sensitivity: 0.02 },
+};
+
+/** True price at `at` for any price market; `btc-usd` is byte-identical to `btcPriceAt`. */
+export function priceAtFor(marketId: MarketId, at: number, origin: number): number {
+  const other = PRICE_MARKETS[marketId];
+  if (!other) return btcPriceAt(at, origin);
+  const noise = anchoredNoise((at - origin) / 1000, BTC_OCTAVES);
+  return other.basePrice + other.sensitivity * noise;
+}
+
+/** Pair label for any price market; `btc-usd` is `"BTC-USD"`. */
+export function pairFor(marketId: MarketId): string {
+  return PRICE_MARKETS[marketId]?.pair ?? "BTC-USD";
 }

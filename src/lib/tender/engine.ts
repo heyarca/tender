@@ -34,6 +34,7 @@ import type {
   PolicyPatch,
   ProviderConditions,
   ProviderId,
+  RequestResult,
   RoutingMode,
   RoutingPolicy,
   SeriesPoint,
@@ -71,8 +72,34 @@ export type TenderAction =
 
 /** How long the initial route has been active at the epoch. */
 const INITIAL_ROUTE_AGE_MS = 47 * 60_000;
-const SEEDS: Record<MarketId, number> = { "sf-weather": 0x5f3759df, "btc-usd": 0x1b873593 };
-const SERIES_STEP_MS: Record<MarketId, number> = { "sf-weather": 60_000, "btc-usd": 3_000 };
+const SEEDS: Record<MarketId, number> = {
+  "sf-weather": 0x5f3759df,
+  "ny-weather": 0x2545f491,
+  "london-weather": 0x27d4eb2f,
+  "seoul-weather": 0x165667b1,
+  "tokyo-weather": 0x85ebca6b,
+  "singapore-weather": 0xc2b2ae35,
+  "btc-usd": 0x1b873593,
+  "eth-usd": 0x9e3779b9,
+  "sol-usd": 0x7f4a7c15,
+  "xrp-usd": 0x6a09e667,
+  "eur-usd": 0xbb67ae85,
+  "gbp-usd": 0x3c6ef372,
+};
+const SERIES_STEP_MS: Record<MarketId, number> = {
+  "sf-weather": 60_000,
+  "ny-weather": 60_000,
+  "london-weather": 60_000,
+  "seoul-weather": 60_000,
+  "tokyo-weather": 60_000,
+  "singapore-weather": 60_000,
+  "btc-usd": 3_000,
+  "eth-usd": 3_000,
+  "sol-usd": 3_000,
+  "xrp-usd": 3_000,
+  "eur-usd": 3_000,
+  "gbp-usd": 3_000,
+};
 
 export interface InitialStateOptions {
   /** Start time (default `FIXTURE_EPOCH`). */
@@ -88,9 +115,9 @@ function seedSeries(marketId: MarketId, providerId: ProviderId | null, condition
   return Array.from({ length: SERIES_SEED_POINTS }, (_, index) => {
     const at = end - (SERIES_SEED_POINTS - index) * step;
     const value =
-      marketId === "btc-usd"
-        ? btcProviderPrice(at - age, origin, bias)
-        : weatherPayload(at - age, origin, bias).temperatureF;
+      MARKETS[marketId].units.dataAge === "ms"
+        ? btcProviderPrice(at - age, origin, bias, undefined, undefined, marketId)
+        : weatherPayload(at - age, origin, bias, undefined, undefined, marketId).temperatureF;
     return { at, value, providerId, requestId: null };
   });
 }
@@ -377,16 +404,16 @@ function shiftMarket(market: MarketState, delta: number): MarketState {
       history: p.history.map((s) => ({ ...s, at: s.at + delta })),
       latencies: p.latencies.map((s) => ({ ...s, at: s.at + delta })),
     })),
-    requests: market.requests.map((r) => {
+    requests: market.requests.map((r): RequestResult => {
       if (r.status !== "ok") return { ...r, requestedAt: r.requestedAt + delta };
-      if (r.marketId === "sf-weather") {
-        return { ...r, requestedAt: r.requestedAt + delta, payload: { ...r.payload, observedAt: r.payload.observedAt + delta } };
+      if (r.payload.kind === "weather") {
+        return { ...r, requestedAt: r.requestedAt + delta, payload: { ...r.payload, observedAt: r.payload.observedAt + delta } } as RequestResult;
       }
       return {
         ...r,
         requestedAt: r.requestedAt + delta,
         payload: { ...r.payload, sourceTimestamp: r.payload.sourceTimestamp + delta },
-      };
+      } as RequestResult;
     }),
     activity: market.activity.map((entry) =>
       entry.kind === "switch-scheduled"

@@ -117,7 +117,7 @@ export function getResponseJson(market: SnippetMarket, result: RequestResult): s
     dataAgeMs: result.dataAgeMs,
     costUsd: round(result.cost, 10),
   };
-  if (result.marketId === "sf-weather") {
+  if (result.payload.kind === "weather") {
     const p = result.payload;
     return JSON.stringify(
       {

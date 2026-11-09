@@ -1,9 +1,9 @@
 import type { Address } from "viem";
-import type { ConditionsPatch } from "@/lib/tender/types";
+import type { ConditionsPatch, MarketId } from "@/lib/tender/types";
 
 export type PaymentConditions = Partial<Record<string, ConditionsPatch>>;
 
-export type PaymentMarket = "sf-weather" | "btc-usd";
+export type PaymentMarket = MarketId;
 export interface SettlementAmounts {
   price_usd: number;
   settled_usd: number;

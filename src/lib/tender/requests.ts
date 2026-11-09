@@ -7,13 +7,15 @@ import { FIXTURE_EPOCH, LATENCY_LIMIT, REQUEST_LOG_LIMIT, SERIES_LIMIT } from ".
 import { nextRequestId, pushActivity, type StepContext } from "./context";
 import { compass } from "./format";
 import { createRng, type Rng } from "./random";
-import { btcPriceAt, conditionLabel, SF_LOCATION, weatherAt, type WeatherState } from "./signals";
-import { getProviderFixture } from "./fixtures";
+import { conditionLabel, pairFor, priceAtFor, weatherAtFor, weatherLocationFor, type WeatherState } from "./signals";
+import { getProviderFixture, MARKETS } from "./fixtures";
 import type {
   BtcPayload,
   BtcReference,
   MarketId,
   MarketReference,
+  PriceMarketId,
+  WeatherMarketId,
   MarketState,
   ProviderConditions,
   ProviderId,
@@ -47,7 +49,12 @@ export function sampleLatency(rng: Rng, p95LatencyMs: number): number {
 export function sampleDataAge(rng: Rng, dataAgeMs: number, marketId: MarketId): number {
   const value = dataAgeMs * (1 + rng.range(-0.2, 0.2));
   // Weather observations are timestamped to the second.
-  return marketId === "sf-weather" ? Math.round(value / 1000) * 1000 : Math.max(0, Math.round(value));
+  return isWeatherMarket(marketId) ? Math.round(value / 1000) * 1000 : Math.max(0, Math.round(value));
+}
+
+/** Weather-style markets report data age in minutes; price markets in milliseconds. */
+function isWeatherMarket(marketId: MarketId): boolean {
+  return MARKETS[marketId].units.dataAge === "min";
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
@@ -80,10 +87,11 @@ export function anchoredWeatherAt(
   origin: number,
   reference?: WeatherReference,
   referenceAt: number = observedAt,
+  marketId: MarketId = "sf-weather",
 ): AnchoredWeather {
-  const w = weatherAt(observedAt, origin);
+  const w = weatherAtFor(marketId, observedAt, origin);
   if (!reference) return { ...w, condition: null, feelsLikeF: null };
-  const r = weatherAt(referenceAt, origin);
+  const r = weatherAtFor(marketId, referenceAt, origin);
   const shift = (key: WeatherNumericField): number => {
     const value = reference[key];
     return typeof value === "number" && Number.isFinite(value) ? value + (w[key] - r[key]) : w[key];
@@ -122,15 +130,16 @@ export function weatherPayload(
   bias: number,
   reference?: WeatherReference,
   referenceAt?: number,
+  marketId: MarketId = "sf-weather",
 ): WeatherPayload {
-  const w = anchoredWeatherAt(observedAt, origin, reference, referenceAt);
+  const w = anchoredWeatherAt(observedAt, origin, reference, referenceAt, marketId);
   const temperatureF = w.temperatureF + bias * 0.5;
   const humidityPct = clamp(w.humidityPct - bias * 2, 0, 100);
   const windDirectionDeg = Math.round(w.windDirectionDeg) % 360;
   const feelsLikeF = w.feelsLikeF === null ? temperatureF - 0.1 * w.windMph : w.feelsLikeF + bias * 0.5;
   return {
     kind: "weather",
-    location: { ...SF_LOCATION },
+    location: { ...weatherLocationFor(marketId) },
     observedAt,
     temperatureF: round(temperatureF, 1),
     feelsLikeF: round(feelsLikeF, 1),
@@ -151,10 +160,26 @@ export function weatherPayload(
  * walk; with one, the reference price moved by the walk between `reference.at`
  * (default `referenceAt`) and `at`.
  */
-export function anchoredBtcPriceAt(at: number, origin: number, reference?: BtcReference, referenceAt: number = at): number {
-  if (!reference || !Number.isFinite(reference.priceUsd)) return btcPriceAt(at, origin);
+export function anchoredBtcPriceAt(
+  at: number,
+  origin: number,
+  reference?: BtcReference,
+  referenceAt: number = at,
+  marketId: MarketId = "btc-usd",
+): number {
+  if (!reference || !Number.isFinite(reference.priceUsd)) return priceAtFor(marketId, at, origin);
   const anchor = reference.at ?? referenceAt;
-  return reference.priceUsd + (btcPriceAt(at, origin) - btcPriceAt(anchor, origin));
+  return reference.priceUsd + (priceAtFor(marketId, at, origin) - priceAtFor(marketId, anchor, origin));
+}
+
+/** Decimals a market's price is reported with. */
+function priceDecimals(marketId: MarketId): number {
+  return pairFor(marketId).endsWith("-USD") && (marketId === "eur-usd" || marketId === "gbp-usd") ? 4 : 2;
+}
+
+/** Provider bias scales with the price level so small-priced pairs stay realistic. */
+function priceBiasScale(marketId: MarketId): number {
+  return marketId === "eur-usd" || marketId === "gbp-usd" ? 0.0001 : marketId === "xrp-usd" ? 0.002 : marketId === "sol-usd" ? 0.1 : marketId === "eth-usd" ? 0.5 : 1;
 }
 
 /** BTC price a provider reports for the source time `sourceTimestamp` (true price + bias ≤ $1.50). */
@@ -164,8 +189,10 @@ export function btcProviderPrice(
   bias: number,
   reference?: BtcReference,
   referenceAt?: number,
+  marketId: MarketId = "btc-usd",
 ): number {
-  return round(anchoredBtcPriceAt(sourceTimestamp, origin, reference, referenceAt) + bias * 1.5, 2);
+  const scale = marketId === "btc-usd" ? 1 : priceBiasScale(marketId);
+  return round(anchoredBtcPriceAt(sourceTimestamp, origin, reference, referenceAt, marketId) + bias * 1.5 * scale, priceDecimals(marketId));
 }
 
 /**
@@ -173,8 +200,8 @@ export function btcProviderPrice(
  * upstream value is available).
  */
 export function signalReference(marketId: MarketId, at: number, origin: number = FIXTURE_EPOCH): MarketReference {
-  if (marketId === "btc-usd") return { kind: "btc", at, priceUsd: round(btcPriceAt(at, origin), 2) };
-  const w = weatherAt(at, origin);
+  if (!isWeatherMarket(marketId)) return { kind: "btc", at, priceUsd: round(priceAtFor(marketId, at, origin), priceDecimals(marketId)) };
+  const w = weatherAtFor(marketId, at, origin);
   return {
     kind: "weather",
     at,
@@ -198,7 +225,7 @@ const FAILURES = [
 
 /** Value plotted in the market chart for a served result. */
 export function seriesValue(result: ServedRequestResult): number {
-  return result.marketId === "btc-usd" ? result.payload.priceUsd : result.payload.temperatureF;
+  return result.payload.kind === "btc" ? result.payload.priceUsd : result.payload.temperatureF;
 }
 
 /** Input of `sampleRequest`: everything a single request depends on. */
@@ -310,14 +337,15 @@ export function sampleRequest(input: RequestSampleInput): { result: RequestResul
     dataAgeMs,
     cost: c.bidPrice / 1e6,
   };
-  if (marketId === "sf-weather") {
+  if (isWeatherMarket(marketId)) {
     return {
-      result: { ...base, marketId: "sf-weather", payload: weatherPayload(
+      result: { ...base, marketId: marketId as WeatherMarketId, payload: weatherPayload(
           now - dataAgeMs,
           origin,
           fixture.bias,
           reference?.kind === "weather" ? reference : undefined,
           reference?.at ?? now,
+          marketId,
         ),
       },
       rng: rng.state,
@@ -330,18 +358,19 @@ export function sampleRequest(input: RequestSampleInput): { result: RequestResul
     fixture.bias,
     reference?.kind === "btc" ? reference : undefined,
     now,
+    marketId,
   );
   const previous = input.previousPriceUsd ?? null;
-  const changeUsd = previous !== null ? round(priceUsd - previous, 2) : null;
+  const changeUsd = previous !== null ? round(priceUsd - previous, priceDecimals(marketId)) : null;
   const payload: BtcPayload = {
     kind: "btc",
-    pair: "BTC-USD",
+    pair: pairFor(marketId),
     priceUsd,
     changeUsd,
     changePct: previous !== null && changeUsd !== null ? round((changeUsd / previous) * 100, 4) : null,
     sourceTimestamp,
   };
-  return { result: { ...base, marketId: "btc-usd", payload }, rng: rng.state };
+  return { result: { ...base, marketId: marketId as PriceMarketId, payload }, rng: rng.state };
 }
 
 /**
@@ -357,7 +386,7 @@ export function executeRequest(
     market.policy.mode.kind === "pinned" ? market.policy.mode.providerId : market.route.activeProviderId;
   const provider = providerId ? market.providers.find((p) => p.id === providerId) : undefined;
   const previous = market.requests.find(
-    (r): r is Extract<RequestResult, { status: "ok"; marketId: "btc-usd" }> => r.status === "ok" && r.marketId === "btc-usd",
+    (r): r is Extract<RequestResult, { status: "ok" }> & { payload: { kind: "btc" } } => r.status === "ok" && r.payload.kind === "btc",
   );
   return sampleRequest({
     marketId: market.id,

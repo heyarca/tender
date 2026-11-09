@@ -68,7 +68,7 @@ async function serveSelection(selection: RouteSelection, settlement: SettlementA
     policy_violation: selection.policyViolation, policy_violations: selection.violations.map((r) => r.message),
     reference_source: input.source, reference_timestamp: input.timestamp,
   };
-  if (result.marketId === "btc-usd") {
+  if (result.payload.kind === "btc") {
     return json({ ...common, pair: result.payload.pair, price: result.payload.priceUsd, currency: "USD",
       source_timestamp: new Date(result.payload.sourceTimestamp).toISOString() });
   }

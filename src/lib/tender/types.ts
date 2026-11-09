@@ -10,13 +10,32 @@
 // ---------------------------------------------------------------------------
 
 /** Identifier of a market. */
-export type MarketId = "sf-weather" | "btc-usd";
+/** Weather markets (normalized `WeatherPayload` result). */
+export type WeatherMarketId =
+  | "sf-weather"
+  | "ny-weather"
+  | "london-weather"
+  | "seoul-weather"
+  | "tokyo-weather"
+  | "singapore-weather";
+
+/** Price markets (normalized `BtcPayload` result). */
+export type PriceMarketId = "btc-usd" | "eth-usd" | "sol-usd" | "xrp-usd" | "eur-usd" | "gbp-usd";
+
+export type MarketId = WeatherMarketId | PriceMarketId;
 
 /** Provider identifier, unique inside a market (matches `public/providers/<id>.<ext>`). */
 export type ProviderId = string;
 
 /** Display time zone of a market. */
-export type MarketTimeZone = "America/Los_Angeles" | "UTC";
+export type MarketTimeZone =
+  | "America/Los_Angeles"
+  | "America/New_York"
+  | "Europe/London"
+  | "Asia/Seoul"
+  | "Asia/Tokyo"
+  | "Asia/Singapore"
+  | "UTC";
 
 /** Icon hint for a market (the UI maps it to an icon). */
 export type MarketIcon = "cloud" | "bitcoin";
@@ -339,7 +358,8 @@ export interface WeatherPayload {
 
 export interface BtcPayload {
   kind: "btc";
-  pair: "BTC-USD";
+  /** "BTC-USD", "ETH-USD", "EUR-USD", … */
+  pair: string;
   priceUsd: number;
   /** Change vs the previous served request in this market (`null` for the first). */
   changeUsd: number | null;
@@ -402,12 +422,12 @@ interface ServedBase extends RequestBase {
 }
 
 export interface ServedWeatherResult extends ServedBase {
-  marketId: "sf-weather";
+  marketId: WeatherMarketId;
   payload: WeatherPayload;
 }
 
 export interface ServedBtcResult extends ServedBase {
-  marketId: "btc-usd";
+  marketId: PriceMarketId;
   payload: BtcPayload;
 }
 

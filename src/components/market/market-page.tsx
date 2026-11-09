@@ -54,7 +54,7 @@ function MarketPageContent({ marketId, onSwitchMarket }: MarketPageProps) {
   useRouteToasts(marketId, onSwitchMarket);
   useHotkey("mod+enter", run);
 
-  const activeProviders = useMemo<Record<MarketId, ProviderIdentity | null>>(
+  const activeProviders = useMemo<Partial<Record<MarketId, ProviderIdentity | null>>>(
     () => ({
       "sf-weather": weather.route.activeProvider?.identity ?? null,
       "btc-usd": bitcoin.route.activeProvider?.identity ?? null,
