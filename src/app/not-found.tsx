@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { MarketIconCircle } from "@/components/market/page/market-icon";
+import { MarketIconCircle, marketIconName } from "@/components/market/page/market-icon";
 import { marketHref } from "@/components/market/page/routes";
 import { SimpleHeader } from "@/components/market/page/simple-header";
 import { PageContainer } from "@/components/shell/page-container";
-import { MARKET_IDS, MARKETS } from "@/lib/tender";
+import { marketIdentifier } from "@/components/market/market-registry";
+import { MARKET_SPECS } from "@/lib/registry";
+
+/** A few featured markets to continue from. */
+const SUGGESTED = MARKET_SPECS.filter((market) => market.featured).slice(0, 4);
 
 export const metadata: Metadata = {
   title: "Page not found",
@@ -24,18 +28,18 @@ export default function NotFound() {
             ones. Here are a few:
           </p>
           <ul className="mt-6 grid gap-2 sm:grid-cols-2">
-            {MARKET_IDS.slice(0, 4).map((id) => {
-              const market = MARKETS[id];
+            {SUGGESTED.map((market) => {
+              const id = market.id;
               return (
                 <li key={id}>
                   <Link
                     href={marketHref(id)}
                     className="group flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-2.5 no-underline transition-colors duration-quick hover:bg-card-hover focus-visible:border-focus-border focus-visible:shadow-focus focus-visible:outline-none"
                   >
-                    <MarketIconCircle icon={market.icon} />
+                    <MarketIconCircle icon={marketIconName(id)} />
                     <span className="flex min-w-0 flex-1 flex-col">
                       <span className="truncate text-body font-medium text-foreground">{market.name}</span>
-                      <span className="truncate text-caption text-muted-foreground">{market.identifier}</span>
+                      <span className="truncate text-caption text-muted-foreground">{marketIdentifier(market)}</span>
                     </span>
                     <ArrowRight
                       className="size-4 shrink-0 text-muted-foreground transition-transform duration-quick group-hover:translate-x-0.5 group-hover:text-accent-foreground motion-reduce:transition-none"

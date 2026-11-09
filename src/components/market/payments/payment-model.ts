@@ -10,6 +10,8 @@ import {
   type ProviderId,
   type RouteSelection,
 } from "@/lib/tender";
+import { displayUnit, formatScalar, isAttachedUnit } from "@/components/result/field-format";
+import { getContract, getMarketSpec, readField } from "@/lib/registry";
 import { EXPLORER_URL, MAX_PAYMENT_ATOMIC } from "@/lib/payments/config";
 import { PAYEES } from "@/lib/payments/payees";
 import type { PaymentConditions, PaymentPolicy } from "@/lib/payments/types";
@@ -262,22 +264,52 @@ function finite(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
-/** One line for a paid response: "61°F Overcast" or "$75,230.75". */
+const isPlainRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+function formatTemperature(temperatureF: number, condition: unknown): string {
+  const rounded = Math.round(temperatureF);
+  const temperature = `${rounded < 0 ? "\u2212" : ""}${Math.abs(rounded)}°F`;
+  return typeof condition === "string" && condition ? `${temperature} ${condition}` : temperature;
+}
+
+function formatSpot(price: number): string {
+  const abs = Math.abs(price);
+  // Pairs priced near $1 (FX, XRP) need more decimals than BTC/ETH to be meaningful.
+  const decimals = abs < 10 ? 4 : 2;
+  const text = new Intl.NumberFormat("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(abs);
+  return `${price < 0 ? "\u2212" : ""}$${text}`;
+}
+
+/** One line from contract-shaped result data (registry contract of the market). */
+function summarizeContractData(marketId: MarketId, data: Record<string, unknown>): string | null {
+  const spec = getMarketSpec(marketId);
+  const contract = spec ? getContract(spec.contractId) : undefined;
+  if (!spec || !contract) return null;
+  if (contract.id === "weather.current") return finite(data.temperatureF) ? formatTemperature(data.temperatureF, data.condition) : null;
+  if (contract.id === "prices.spot") return finite(data.priceUsd) ? formatSpot(data.priceUsd) : null;
+  const primary = contract.output.find((field) => field.primary);
+  if (!primary) return null;
+  const value = readField(data, primary.key);
+  if (value === undefined || value === null) return null;
+  const unit = displayUnit(primary);
+  let text = formatScalar(primary, value, { timeZone: spec.timeZone });
+  if (primary.type === "money" && typeof data.unit === "string" && data.unit) text = `${text} ${data.unit}`;
+  else if (unit) text = `${text}${isAttachedUnit(unit) ? "" : " "}${unit}`;
+  return text.length > 64 ? `${text.slice(0, 63)}…` : text;
+}
+
+/**
+ * One line for a paid response: "61°F Overcast", "$75,230.75", "$3.4213 per 10k reel", or the
+ * primary field of the contract. Reads `data` (contract-shaped) and falls back to flat responses.
+ */
 export function summarizePayload(marketId: MarketId, payload: Record<string, unknown> | null | undefined): string | null {
   if (!payload) return null;
+  const fromContract = summarizeContractData(marketId, isPlainRecord(payload.data) ? payload.data : payload);
+  if (fromContract) return fromContract;
   if (typeof payload.unit === "string" && finite(payload.price)) {
     return `${new Intl.NumberFormat("en-US", { maximumFractionDigits: payload.price < 100 ? 4 : 2 }).format(payload.price)} ${payload.unit}`;
   }
-  if (MARKETS[marketId].units.dataAge === "ms") {
-    if (!finite(payload.price)) return null;
-    const abs = Math.abs(payload.price);
-    // Pairs priced near $1 (FX, XRP) need more decimals than BTC/ETH to be meaningful.
-    const decimals = abs < 10 ? 4 : 2;
-    const text = new Intl.NumberFormat("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(abs);
-    return `${payload.price < 0 ? "\u2212" : ""}$${text}`;
-  }
-  if (!finite(payload.temperature_f)) return null;
-  const rounded = Math.round(payload.temperature_f);
-  const temperature = `${rounded < 0 ? "\u2212" : ""}${Math.abs(rounded)}°F`;
-  return typeof payload.condition === "string" && payload.condition ? `${temperature} ${payload.condition}` : temperature;
+  if (MARKETS[marketId].units.dataAge === "ms") return finite(payload.price) ? formatSpot(payload.price) : null;
+  return finite(payload.temperature_f) ? formatTemperature(payload.temperature_f, payload.condition) : null;
 }

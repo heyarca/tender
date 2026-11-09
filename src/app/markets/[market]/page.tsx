@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getMarketDefinition, isMarketId, MARKET_IDS } from "@/lib/tender";
+import { getMarketSpec, isRegisteredMarket, MARKET_SPECS } from "@/lib/registry";
 
 /**
  * This segment renders no UI (the market page lives in the shared `/markets` layout and
@@ -9,15 +9,16 @@ import { getMarketDefinition, isMarketId, MARKET_IDS } from "@/lib/tender";
  */
 export const instant = false;
 
+/** Every registry market has a page. */
 export function generateStaticParams() {
-  return MARKET_IDS.map((market) => ({ market }));
+  return MARKET_SPECS.map((market) => ({ market: market.id }));
 }
 
 export async function generateMetadata({ params }: PageProps<"/markets/[market]">): Promise<Metadata> {
   const { market } = await params;
-  if (!isMarketId(market)) return { title: "Market not found" };
-  const definition = getMarketDefinition(market);
-  return { title: definition.name, description: definition.description };
+  const spec = getMarketSpec(market);
+  if (!spec) return { title: "Market not found" };
+  return { title: spec.name, description: spec.description };
 }
 
 /**
@@ -26,6 +27,6 @@ export async function generateMetadata({ params }: PageProps<"/markets/[market]"
  */
 export default async function MarketRoute({ params }: PageProps<"/markets/[market]">) {
   const { market } = await params;
-  if (!isMarketId(market)) notFound();
+  if (!isRegisteredMarket(market)) notFound();
   return null;
 }

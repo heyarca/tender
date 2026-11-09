@@ -1,19 +1,21 @@
 "use client";
 
 import { useMemo, type ReactNode } from "react";
-import { BitcoinResult, WeatherResult } from "@/components/result";
+import { BitcoinResult, FieldsResult, PriceFieldsResult, WeatherResult } from "@/components/result";
 import { Badge, StatusDot } from "@/components/ui/badge";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProviderLogo } from "@/components/ui/provider-logo";
 import { StatCard } from "@/components/ui/stat-card";
 import { InfoTooltip } from "@/components/ui/tooltip";
 import { LatencyStrip } from "@/components/viz/LatencyStrip";
+import { getContract, getMarketSpec, type ContractSpec } from "@/lib/registry";
 import { format, type MarketView } from "@/lib/tender";
 import { useNow, usePendingSwitch } from "@/lib/tender/client";
 import { cn } from "@/lib/utils";
 import {
   providerIdsOf,
   toBitcoinQuote,
+  toFieldsReading,
   toPricePoints,
   toResultRequest,
   toTimelineRequests,
@@ -30,14 +32,88 @@ function UpdatedAgo({ at }: { at: number | null }) {
   return <span className="tabular-nums">Updated {format.relativeTime(at, now)}</span>;
 }
 
+type ResultKind = "weather" | "btc" | "price-fields" | "fields";
+
+/**
+ * Renderer of a market's result: the served payload kind first (weather, spot price, fields), then
+ * the contract's `resultView` before the first result.
+ */
+function resultKindOf(contract: ContractSpec | undefined, payloadKind: string | undefined): ResultKind {
+  if (payloadKind === "weather") return "weather";
+  if (payloadKind === "btc") return "btc";
+  if (payloadKind === "fields") return contract?.resultView === "price" ? "price-fields" : "fields";
+  if (!contract) return "btc";
+  if (contract.resultView === "weather") return "weather";
+  if (contract.id === "prices.spot") return "btc";
+  return contract.resultView === "price" ? "price-fields" : "fields";
+}
+
+/** One-line note beside the result title: the price definition, else what data age means here. */
+function freshnessNote(contract: ContractSpec | undefined, priceDefinition: string | undefined): string {
+  if (priceDefinition) return priceDefinition;
+  if (!contract) return "Data age is data freshness, not request latency.";
+  if (contract.freshness.basis === "generated") return "Generated on request. Data age is time since generation.";
+  return `${contract.freshness.label} is data freshness, not request latency.`;
+}
+
 function ResultCard({ view }: { view: MarketView }) {
   const { definition } = view;
+  const spec = getMarketSpec(view.id);
+  const contract = spec ? getContract(spec.contractId) : undefined;
+  const kind = resultKindOf(contract, view.lastServed?.payload.kind);
   const request = useMemo(() => toResultRequest(view.lastResult, view.providersById), [view.lastResult, view.providersById]);
   const providers = useMemo(() => vizProvidersOf(definition), [definition]);
   const points = useMemo(
-    () => (view.id !== "sf-weather" ? toPricePoints(view.series, view.recentResults) : []),
-    [view.id, view.series, view.recentResults],
+    () => (kind !== "weather" ? toPricePoints(view.series, view.recentResults) : []),
+    [kind, view.series, view.recentResults],
   );
+  const timeZone = definition.timeZone;
+  const timeZoneLabel = definition.timeZoneLabel;
+
+  let body: ReactNode;
+  if (kind === "weather") {
+    body = (
+      <WeatherResult reading={toWeatherReading(view.lastServed)} request={request} timeZone={timeZone} timeZoneLabel={timeZoneLabel} />
+    );
+  } else if (kind === "btc" || !contract) {
+    body = (
+      <BitcoinResult
+        quote={toBitcoinQuote(view.lastServed)}
+        request={request}
+        points={points}
+        providers={providers}
+        timeZone={timeZone}
+        timeZoneLabel={timeZoneLabel}
+        chartHeight={120}
+      />
+    );
+  } else if (kind === "price-fields") {
+    body = (
+      <PriceFieldsResult
+        contract={contract}
+        title={spec?.shortName ?? definition.shortName}
+        reading={toFieldsReading(view.lastServed)}
+        request={request}
+        points={points}
+        providers={providers}
+        timeZone={timeZone}
+        timeZoneLabel={timeZoneLabel}
+        chartHeight={120}
+      />
+    );
+  } else {
+    body = (
+      <FieldsResult
+        contract={contract}
+        reading={toFieldsReading(view.lastServed)}
+        request={request}
+        points={points}
+        providers={providers}
+        timeZone={timeZone}
+        timeZoneLabel={timeZoneLabel}
+      />
+    );
+  }
 
   return (
     <Card padding="md" className="flex min-w-0 flex-col">
@@ -45,31 +121,14 @@ function ResultCard({ view }: { view: MarketView }) {
         <div className="flex min-w-0 items-baseline gap-2">
           <CardTitle className="shrink-0">Latest result</CardTitle>
           <CardDescription className="mt-0 truncate max-sm:hidden">
-            {definition.priceDefinition ?? "Observation age is data freshness, not request latency."}
+            {freshnessNote(contract, definition.priceDefinition)}
           </CardDescription>
         </div>
         <div className="shrink-0 text-caption text-muted-foreground">
           <UpdatedAgo at={view.lastResult?.requestedAt ?? null} />
         </div>
       </CardHeader>
-      {view.id === "sf-weather" ? (
-        <WeatherResult
-          reading={toWeatherReading(view.lastServed)}
-          request={request}
-          timeZone={definition.timeZone}
-          timeZoneLabel={definition.timeZoneLabel}
-        />
-      ) : (
-        <BitcoinResult
-          quote={toBitcoinQuote(view.lastServed)}
-          request={request}
-          points={points}
-          providers={providers}
-          timeZone={definition.timeZone}
-          timeZoneLabel={definition.timeZoneLabel}
-          chartHeight={120}
-        />
-      )}
+      {body}
     </Card>
   );
 }
@@ -160,6 +219,8 @@ function ActiveProviderCard({ view, className }: { view: MarketView; className?:
 
 function MetricCards({ view }: { view: MarketView }) {
   const { metrics, policy } = view;
+  const spec = getMarketSpec(view.id);
+  const freshnessLabel = (spec && getContract(spec.contractId)?.freshness.label) ?? "Data age";
   const bid = metrics.bidPrice;
   const latency = metrics.p95LatencyMs;
   const age = metrics.dataAgeMs;
@@ -197,7 +258,7 @@ function MetricCards({ view }: { view: MarketView }) {
             <InfoTooltip
               label="About data freshness"
               iconSize={12}
-              content="Observation age: how old the data is when the provider serves it. It is not request latency."
+              content={`${freshnessLabel}: how old the data is when the provider serves it. It is not request latency.`}
             />
           </span>
         }

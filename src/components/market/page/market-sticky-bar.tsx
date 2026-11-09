@@ -9,7 +9,7 @@ import { focusSection } from "@/components/market/market-ui";
 import type { MarketView } from "@/lib/tender";
 import { cn } from "@/lib/utils";
 import { MARKET_TITLE_ID } from "./market-header";
-import { MarketGlyph } from "./market-icon";
+import { MarketGlyph, marketIconName } from "./market-icon";
 
 /** Active provider chip: logo, name, and a status dot. Opens the providers table. */
 export function ActiveProviderChip({ view, className }: { view: MarketView; className?: string }) {
@@ -47,7 +47,7 @@ export function MarketStickyBar({ view, onRun, onOpenApi }: { view: MarketView; 
   return (
     <StickyBar sentinelId={MARKET_TITLE_ID} aria-label={`${definition.name} summary`}>
       <div className="flex min-w-0 items-center gap-3">
-        <StickyBarTitle icon={<MarketGlyph icon={definition.icon} />}>{definition.name}</StickyBarTitle>
+        <StickyBarTitle icon={<MarketGlyph icon={marketIconName(view.id)} />}>{definition.name}</StickyBarTitle>
         <ActiveProviderChip view={view} className="max-w-40 sm:max-w-none" />
       </div>
       <StickyBarActions>
