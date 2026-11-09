@@ -38,15 +38,18 @@ export interface PaletteContext {
 export function buildPaletteGroups({ view, actions, onSwitchMarket, onOpenApi, onSelectProvider }: PaletteContext): CommandPaletteGroup[] {
   const marketId = view.id;
   const pinned = view.policy.mode.kind === "pinned";
+  // cmdk ranks items inside a group but keeps the group order, so groups are ordered for the
+  // common queries (market, section, provider name), and descriptions stay short to avoid
+  // fuzzy matches against long text.
   return [
     {
       heading: "Markets",
       items: MARKET_IDS.map((id) => ({
         id: `market:${id}`,
         label: MARKETS[id].name,
-        description: MARKETS[id].identifier + (id === marketId ? " · Current" : ""),
+        description: id === marketId ? `${MARKETS[id].identifier} · Current` : MARKETS[id].identifier,
         icon: <MarketGlyph icon={MARKETS[id].icon} tinted={false} />,
-        keywords: [MARKETS[id].shortName, "market", "switch"],
+        keywords: [MARKETS[id].shortName],
         onSelect: () => onSwitchMarket(id),
       })),
     },
@@ -58,76 +61,9 @@ export function buildPaletteGroups({ view, actions, onSwitchMarket, onOpenApi, o
           id: `section:${section.id}`,
           label: section.label,
           icon: <Icon />,
-          keywords: ["go to", "section"],
           onSelect: () => afterDialogClose(() => focusSection(section.id)),
         };
       }),
-    },
-    {
-      heading: "Actions",
-      items: [
-        {
-          id: "action:run",
-          label: "Run request",
-          description: view.route.activeProvider ? `via ${view.route.activeProvider.name}` : "No eligible provider",
-          icon: <Play />,
-          shortcut: ["⌘", "↵"],
-          keywords: ["request", "send", "execute"],
-          onSelect: () => actions.runRequest(marketId),
-        },
-        {
-          id: "action:auto-run",
-          label: view.autoRun ? "Turn off Auto-run" : "Turn on Auto-run",
-          description: "One request every 2 s",
-          icon: <Repeat />,
-          keywords: ["auto", "run", "toggle"],
-          onSelect: () => actions.setAutoRun(marketId, !view.autoRun),
-        },
-        ...(pinned
-          ? [
-              {
-                id: "action:automatic",
-                label: "Use automatic switching",
-                description: "Unpin the provider",
-                icon: <Wand2 />,
-                keywords: ["auto", "unpin", "routing mode"],
-                onSelect: () => actions.setRoutingMode(marketId, { kind: "auto" }),
-              },
-            ]
-          : []),
-        ...(Object.keys(PREFERENCE_LABELS) as RoutingPreference[]).map((preference) => ({
-          id: `action:preference:${preference}`,
-          label: `Prefer ${PREFERENCE_LABELS[preference].toLowerCase()}`,
-          description: view.policy.preference === preference ? "Current preference" : "Routing preference",
-          icon: PREFERENCE_ICONS[preference],
-          keywords: [PREFERENCE_LABELS[preference], "preference", "routing", "policy"],
-          onSelect: () => actions.setPolicy(marketId, { preference }),
-        })),
-        {
-          id: "action:reset-conditions",
-          label: "Reset conditions",
-          description: "Every provider back to its default bid and performance",
-          icon: <RotateCcw />,
-          keywords: ["restore", "providers", "defaults"],
-          onSelect: () => actions.resetConditions(marketId),
-        },
-        {
-          id: "action:reset-policy",
-          label: "Reset policy",
-          description: "Default limits and automatic switching",
-          icon: <RefreshCcw />,
-          keywords: ["routing", "defaults", "limits"],
-          onSelect: () => actions.resetPolicy(marketId),
-        },
-        {
-          id: "action:api",
-          label: "Open API",
-          description: "cURL, TypeScript, and paid requests",
-          icon: <SquareTerminal />,
-          keywords: ["code", "curl", "snippet", "x402", "usdc"],
-          onSelect: onOpenApi,
-        },
-      ],
     },
     {
       heading: "Providers",
@@ -136,9 +72,69 @@ export function buildPaletteGroups({ view, actions, onSwitchMarket, onOpenApi, o
         label: row.name,
         description: `${row.isActive ? "Active" : row.statusLabel} · ${format.priceWithUnit(row.conditions.bidPrice)}`,
         image: row.logo,
-        keywords: [row.id, row.statusLabel, "provider", "conditions", "bid"],
+        keywords: [row.id],
         onSelect: () => onSelectProvider(row.id),
       })),
+    },
+    {
+      heading: "Actions",
+      items: [
+        {
+          id: "action:run",
+          label: "Run request",
+          icon: <Play />,
+          shortcut: ["⌘", "↵"],
+          keywords: ["send"],
+          onSelect: () => actions.runRequest(marketId),
+        },
+        {
+          id: "action:auto-run",
+          label: view.autoRun ? "Turn off Auto-run" : "Turn on Auto-run",
+          description: "Every 2 s",
+          icon: <Repeat />,
+          onSelect: () => actions.setAutoRun(marketId, !view.autoRun),
+        },
+        ...(pinned
+          ? [
+              {
+                id: "action:automatic",
+                label: "Use automatic switching",
+                icon: <Wand2 />,
+                keywords: ["unpin"],
+                onSelect: () => actions.setRoutingMode(marketId, { kind: "auto" }),
+              },
+            ]
+          : []),
+        ...(Object.keys(PREFERENCE_LABELS) as RoutingPreference[]).map((preference) => ({
+          id: `action:preference:${preference}`,
+          label: `Prefer ${PREFERENCE_LABELS[preference].toLowerCase()}`,
+          description: view.policy.preference === preference ? "Current" : undefined,
+          icon: PREFERENCE_ICONS[preference],
+          keywords: [PREFERENCE_LABELS[preference]],
+          onSelect: () => actions.setPolicy(marketId, { preference }),
+        })),
+        {
+          id: "action:reset-conditions",
+          label: "Reset conditions",
+          icon: <RotateCcw />,
+          keywords: ["restore"],
+          onSelect: () => actions.resetConditions(marketId),
+        },
+        {
+          id: "action:reset-policy",
+          label: "Reset policy",
+          icon: <RefreshCcw />,
+          keywords: ["defaults"],
+          onSelect: () => actions.resetPolicy(marketId),
+        },
+        {
+          id: "action:api",
+          label: "Open API",
+          icon: <SquareTerminal />,
+          keywords: ["curl", "code", "x402"],
+          onSelect: onOpenApi,
+        },
+      ],
     },
   ];
 }
