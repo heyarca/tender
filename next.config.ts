@@ -26,6 +26,10 @@ const nextConfig: NextConfig = {
   /* config options here */
   cacheComponents: true,
   partialPrefetching: true,
+  async redirects() {
+    // One video file: /demo.mp4. Replace it to update the cut.
+    return [{ source: "/demo/tender-demo.mp4", destination: "/demo.mp4", permanent: false }];
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
