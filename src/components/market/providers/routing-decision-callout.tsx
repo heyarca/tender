@@ -13,6 +13,8 @@ import { cn } from "@/lib/utils";
 import { checkTone } from "./provider-table-model";
 
 const CHECK_LINE_ORDER: readonly CheckId[] = ["price", "latency", "freshness", "reliability"];
+/** Availability first (only shown when it fails), then the four limits in policy-form order. */
+const checkRank = (check: CheckId) => (check === "availability" ? -1 : CHECK_LINE_ORDER.indexOf(check));
 
 const FRAME: Record<RoutingDecision["kind"], string> = {
   routing: "border-border bg-card",
@@ -116,25 +118,13 @@ export function RoutingDecisionCallout({ view }: RoutingDecisionCalloutProps) {
 
             {decision.kind === "pending-switch" ? <CooldownProgress view={view} /> : null}
 
-            {(decision.kind === "routing" || decision.kind === "pinned") && serving ? (
+            {(decision.kind === "routing" || decision.kind === "pinned" || decision.kind === "pinned-failing") &&
+            serving ? (
               <CheckList
-                items={CHECK_LINE_ORDER.map((id) => serving.evaluation.checks.find((c) => c.check === id)!).map((c) => ({
-                  key: c.check,
-                  text: c.message,
-                  passed: c.passed,
-                  tone: checkTone(c.check),
-                }))}
-              />
-            ) : null}
-
-            {decision.kind === "pinned-failing" && serving ? (
-              <CheckList
-                items={serving.evaluation.reasons.map((r) => ({
-                  key: r.check,
-                  text: r.message,
-                  passed: false,
-                  tone: checkTone(r.check),
-                }))}
+                items={serving.evaluation.checks
+                  .filter((c) => CHECK_LINE_ORDER.includes(c.check) || !c.passed)
+                  .sort((a, b) => checkRank(a.check) - checkRank(b.check))
+                  .map((c) => ({ key: c.check, text: c.message, passed: c.passed, tone: checkTone(c.check) }))}
               />
             ) : null}
 
@@ -197,12 +187,10 @@ function ExclusionList({ view }: { view: MarketView }) {
   return (
     <ul className="mt-2 grid gap-x-6 gap-y-1 text-caption md:grid-cols-2" aria-label="Why each provider is excluded">
       {view.providers.map((row) => (
-        <li key={row.id} className="flex min-w-0 items-center gap-2">
-          <ProviderLogo src={row.logo} name={row.name} size={16} />
+        <li key={row.id} className="flex min-w-0 items-start gap-2">
+          <ProviderLogo src={row.logo} name={row.name} size={16} className="mt-px" />
           <span className="shrink-0 font-medium text-foreground">{row.name}</span>
-          <span className="truncate text-negative-text" title={row.evaluation.reasons.map((r) => r.message).join("; ")}>
-            {row.evaluation.reasons.map((r) => r.message).join("; ")}
-          </span>
+          <span className="min-w-0 text-negative-text">{row.evaluation.reasons.map((r) => r.message).join("; ")}</span>
         </li>
       ))}
     </ul>
