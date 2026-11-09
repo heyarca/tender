@@ -168,13 +168,13 @@ describe("paid contract handlers", () => {
     expect(payments.calls[0].payTo).not.toBe(getPayee("together"));
   });
   it("uses changed availability without mutating shared defaults", async () => {
-    const changed = await handleContract(req("prices/spot"), "btc-usd", { conditions: { the-zone-bio: { available: false } } });
+    const changed = await handleContract(req("prices/spot"), "btc-usd", { conditions: { "the-zone-bio": { available: false } } });
     expect(changed.headers.get("Tender-Provider")).toBe("arca-labs");
     const unchanged = await price(req("prices/spot"));
     expect(unchanged.headers.get("Tender-Provider")).toBe("the-zone-bio");
   });
   it("sanitizes/clamps conditions while preserving unspecified defaults", async () => {
-    const response = await handleContract(req("prices/spot?pin=the-zone-bio"), "btc-usd", { conditions: { the-zone-bio: { p95LatencyMs: -100, dataAgeMs: -5, errorRate: -1, bidPrice: Number.NaN } } });
+    const response = await handleContract(req("prices/spot?pin=the-zone-bio"), "btc-usd", { conditions: { "the-zone-bio": { p95LatencyMs: -100, dataAgeMs: -5, errorRate: -1, bidPrice: Number.NaN } } });
     const data = await response.json();
     expect(response.status).toBe(200);
     expect(data.latency_ms).toBeLessThanOrEqual(7);
@@ -183,11 +183,11 @@ describe("paid contract handlers", () => {
     expect(data.policy_violation).toBe(false);
   });
   it("ignores unknown providers and invalid patch containers", async () => {
-    const response = await handleContract(req("prices/spot"), "btc-usd", { conditions: { unknown: { bidPrice: 0.1 }, the-zone-bio: null as unknown as ConditionsPatch } });
+    const response = await handleContract(req("prices/spot"), "btc-usd", { conditions: { unknown: { bidPrice: 0.1 }, "the-zone-bio": null as unknown as ConditionsPatch } });
     expect(response.headers.get("Tender-Provider")).toBe("the-zone-bio");
   });
   it("clamps a zero bid to the market minimum so every paid request has a positive price", async () => {
-    const response = await handleContract(req("prices/spot"), "btc-usd", { conditions: { the-zone-bio: { bidPrice: 0 } } });
+    const response = await handleContract(req("prices/spot"), "btc-usd", { conditions: { "the-zone-bio": { bidPrice: 0 } } });
     const data = await response.json();
     expect(response.status).toBe(200);
     expect(response.headers.get("Tender-Provider")).toBe("the-zone-bio");
@@ -195,8 +195,8 @@ describe("paid contract handlers", () => {
     expect(data.settled_atomic).toBe("1");
   });
   it("never reads condition changes from public query parameters or headers", async () => {
-    const encoded = encodeURIComponent(JSON.stringify({ the-zone-bio: { available: false, bidPrice: 20 } }));
-    const response = await price(req(`prices/spot?conditions=${encoded}&conditions[the-zone-bio][available]=false`, true, { "Tender-Conditions": JSON.stringify({ the-zone-bio: { available: false } }) }));
+    const encoded = encodeURIComponent(JSON.stringify({ "the-zone-bio": { available: false, bidPrice: 20 } }));
+    const response = await price(req(`prices/spot?conditions=${encoded}&conditions[the-zone-bio][available]=false`, true, { "Tender-Conditions": JSON.stringify({ "the-zone-bio": { available: false } }) }));
     expect(response.headers.get("Tender-Provider")).toBe("the-zone-bio");
     expect(payments.calls[0].amountUsd).toBe(0.7 / 1e6);
     expect(payments.calls[0].payTo).toBe(getPayee("the-zone-bio"));

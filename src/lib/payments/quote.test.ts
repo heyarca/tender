@@ -22,7 +22,7 @@ describe("USDC quotes", () => {
   it.each([0, -1, NaN, Infinity, Number.MAX_VALUE])("rejects invalid bid %s", (bid) => expect(() => bidToAtomic(bid)).toThrow());
   it("validates recipients and descriptions", () => {
     const quote = quoteFromBid("together", 18, "Weather");
-    expect(() => validateQuote({ ...quote, payTo: PAYEES.the-zone-bio })).toThrow("recipient");
+    expect(() => validateQuote({ ...quote, payTo: PAYEES["the-zone-bio"] })).toThrow("recipient");
     expect(() => validateQuote({ ...quote, description: "" })).toThrow("description");
     expect(() => getPayee("__proto__")).toThrow();
     expect(() => getPayee("unknown")).toThrow();
