@@ -1,7 +1,7 @@
 import { contractUrl, parsePaidRequestInput, PaidRequestError, performPaidRequest } from "./buyer";
 import { paymentRateLimiter, PaymentSafetyError } from "./limits";
 import { getPayerAccount } from "./wallet";
-import type { PaymentMarket } from "./types";
+import type { PaymentMarket, PaidRequestEvent, PaidRequestProgress } from "./types";
 import type { ContractOptions } from "@/lib/server/handlers";
 
 type ContractHandler = (request: Request, market: PaymentMarket, options?: ContractOptions) => Promise<Response>;
@@ -39,21 +39,59 @@ export function createPaidRequestEndpoint(handleContract: ContractHandler) {
     }
     const release = paymentRateLimiter.acquire();
     if (!release) return Response.json({ error: "Payment request limit reached" }, { status: 429, headers: { ...headers, "Retry-After": "60" } });
-    try {
+    const failureEvent = (error: unknown): Extract<PaidRequestEvent, { type: "error" }> => {
+      if (error instanceof PaymentSafetyError) return { type: "error", error: error.message, status: 422 };
+      if (error instanceof PaidRequestError) return { type: "error", error: error.message, details: error.details, status: error.status };
+      return { type: "error", error: "Payment request failed. Check balances before trying again.", status: 502 };
+    };
+    const execute = async (signal: AbortSignal, onProgress?: (event: PaidRequestProgress) => void) => {
       const url = contractUrl("https://tender.internal", input);
       const transport: typeof fetch = async (target, init) => {
-        const contractRequest = new Request(target, init);
+        const transportRequest = new Request(target, init);
+        // Bind the local contract directly to the endpoint cancellation source.
+        // SDK retries clone Requests; their intermediate signal followers may be
+        // collected while provider work is pending in the native fetch runtime.
+        const contractRequest = new Request(transportRequest, {
+          signal: AbortSignal.any([signal, transportRequest.signal]),
+        });
         contractRequest.signal.throwIfAborted();
         if (contractRequest.url !== url.href || contractRequest.method !== "GET") throw new Error("Unexpected payment target");
         return handleContract(contractRequest, input.market, { conditions: input.conditions });
       };
-      const result = await performPaidRequest(url, transport, request.signal);
-      return Response.json(result, { headers });
+      return performPaidRequest(url, transport, signal, onProgress);
+    };
+    const acceptsStream = request.headers.get("Accept")?.split(",").some((part) => {
+      const [mediaType, ...parameters] = part.trim().split(";");
+      const qualityParameter = parameters.find((parameter) => parameter.trim().toLowerCase().startsWith("q="));
+      const quality = qualityParameter ? Number(qualityParameter.split("=")[1]) : 1;
+      return mediaType.trim().toLowerCase() === "application/x-ndjson" && Number.isFinite(quality) && quality > 0 && quality <= 1;
+    });
+    if (acceptsStream) {
+      const cancelled = new AbortController();
+      const signal = AbortSignal.any([request.signal, cancelled.signal]);
+      const encoder = new TextEncoder();
+      let closed = false;
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          const emit = (event: PaidRequestEvent) => {
+            if (closed) return;
+            try { controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`)); } catch { closed = true; }
+          };
+          void execute(signal, emit).then((result) => emit({ type: "result", result })).catch((error: unknown) => emit(failureEvent(error))).finally(() => {
+            // A disconnected client must not unlock a still-running settlement.
+            release();
+            if (!closed) { closed = true; controller.close(); }
+          });
+        },
+        cancel() { closed = true; cancelled.abort(); },
+      });
+      return new Response(stream, { headers: { ...headers, "Content-Type": "application/x-ndjson", "X-Content-Type-Options": "nosniff" } });
+    }
+    try {
+      return Response.json(await execute(request.signal), { headers });
     } catch (error) {
-      if (error instanceof PaymentSafetyError) return Response.json({ error: error.message }, { status: 422, headers });
-      if (error instanceof PaidRequestError) return Response.json({ error: error.message, details: error.details }, { status: error.status, headers });
-      // Do not expose wallet, signature or transport internals in errors.
-      return Response.json({ error: "Payment request failed. Check balances before trying again." }, { status: 502, headers });
+      const { status, error: message, details } = failureEvent(error);
+      return Response.json({ error: message, ...(details === undefined ? {} : { details }) }, { status, headers });
     } finally { release(); }
   };
 }

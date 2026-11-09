@@ -56,3 +56,17 @@ export interface PaidRequestInput {
   conditions?: PaymentConditions;
 }
 export type PaidRequestOptions = Omit<PaidRequestInput, "market">;
+
+export interface PaidRequestFailure {
+  status: number;
+  message: string;
+  retryAfterSeconds?: number;
+  details?: unknown;
+}
+export type PaidRequestStage = "idle" | "payment-required" | "signed" | "complete" | "failed";
+export type PaidRequestProgress =
+  | { type: "payment-required"; providerId: string; payTo: string; settled_atomic: string }
+  | { type: "signed" };
+export type PaidRequestEvent = PaidRequestProgress
+  | { type: "result"; result: PaidRequestResult }
+  | { type: "error"; status: number; error: string; details?: unknown; retryAfterSeconds?: number };

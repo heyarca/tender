@@ -15,7 +15,7 @@ export interface TopNavLink {
 
 export interface TopNavProps {
   links: readonly TopNavLink[];
-  /** `href` of the current link. It gets `aria-current="page"` and the grape text color. */
+  /** `href` of the current link. It gets `aria-current="page"` and the olive accent text color. */
   activeHref?: string;
   /** Opens the command palette (search trigger click). Bind ⌘K with `useHotkey` or `CommandPalette`. */
   onSearch: () => void;

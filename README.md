@@ -17,3 +17,8 @@ bun run verify    # typecheck, lint, tests, production build
 - Product and engine spec: [`docs/SPEC.md`](docs/SPEC.md)
 - Design system: [`docs/DESIGN.md`](docs/DESIGN.md)
 - Provider logo sources: [`docs/provider-logos.md`](docs/provider-logos.md)
+
+## Deploy
+
+`main` deploys to production on Vercel (`the-zone-bio/tender`); pull requests get preview deployments.
+Pull requests to `main` merge automatically once CI (`bun run verify`) passes. Keep a PR in draft to hold it.

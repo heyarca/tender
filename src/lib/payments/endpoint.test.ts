@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { paymentRateLimiter, PaymentRateLimiter } from "./limits";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { privateKeyToAccount } from "viem/accounts";
 import { createPaidRequestEndpoint } from "./endpoint";
 import { createPaymentServer, withX402Payment } from "./server";
@@ -8,6 +9,10 @@ import { PAYMENT_NETWORK } from "./config";
 // Publicly known test-only key. Never use for funded wallets.
 const key = `0x${"0".repeat(63)}1` as const;
 const payer = privateKeyToAccount(key).address;
+beforeEach(() => {
+  const limiter = new PaymentRateLimiter();
+  vi.spyOn(paymentRateLimiter, "acquire").mockImplementation(() => limiter.acquire());
+});
 afterEach(() => { vi.unstubAllEnvs(); vi.restoreAllMocks(); });
 
 describe("paid endpoint", () => {
