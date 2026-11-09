@@ -25,7 +25,7 @@ const thumbSize: Record<SwitchSize, string> = {
   md: "size-4 data-checked:translate-x-4",
 };
 
-/** Small toggle. Grape when on. */
+/** Small toggle. Lime track with an ink thumb when on. */
 export function Switch({ size = "sm", className, onCheckedChange, ...props }: SwitchProps) {
   return (
     <BaseSwitch.Root
@@ -33,7 +33,7 @@ export function Switch({ size = "sm", className, onCheckedChange, ...props }: Sw
       onCheckedChange={onCheckedChange ? (checked) => onCheckedChange(checked) : undefined}
       className={cn(
         "inline-flex shrink-0 cursor-pointer items-center rounded-full bg-foreground/15 p-0.5 transition-colors duration-quick",
-        "hover:bg-foreground/20 data-checked:bg-primary data-checked:hover:bg-accent-hover",
+        "hover:bg-foreground/20 data-checked:bg-primary data-checked:hover:bg-primary-hover data-checked:shadow-[inset_0_0_0_1px_var(--primary-border)]",
         "focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_var(--color-accent)]",
         "data-disabled:cursor-not-allowed data-disabled:opacity-50",
         rootSize[size],
@@ -43,7 +43,7 @@ export function Switch({ size = "sm", className, onCheckedChange, ...props }: Sw
     >
       <BaseSwitch.Thumb
         className={cn(
-          "block rounded-full bg-background shadow-sm transition-transform duration-quick ease-smooth-out motion-reduce:transition-none",
+          "block rounded-full bg-background shadow-sm transition-[transform,background-color] duration-quick ease-smooth-out motion-reduce:transition-none in-data-checked:bg-primary-foreground",
           thumbSize[size],
         )}
       />
