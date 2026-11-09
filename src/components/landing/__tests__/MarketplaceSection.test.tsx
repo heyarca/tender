@@ -117,7 +117,7 @@ describe("ClosingSection", () => {
     const { container } = render(<ClosingSection />);
     expect(screen.getByRole("heading", { level: 2, name: "Find a better provider for your next request." })).toBeTruthy();
     expect(
-      screen.getByText("Choose Bitcoin price or weather, set your requirements, and see where Tender routes your next request."),
+      screen.getByText("Pick any API on Tender or request a new one. Set your requirements and see where Tender routes your next request."),
     ).toBeTruthy();
     const links = screen.getAllByRole("link");
     expect(links).toHaveLength(1);

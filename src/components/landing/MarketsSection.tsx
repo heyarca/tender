@@ -44,7 +44,7 @@ export function MarketsSection() {
               the data your app needs.
             </>
           }
-          lead="Start with Bitcoin prices or weather data. Compare providers in each market, set your requirements, and see which one gets the next request."
+          lead="Every API on Tender is its own market, and anyone can request a new one. Compare the providers in each market, set your requirements, and see which one gets the next request."
         />
         <div className={styles.marketGrid}>
           {MARKET_CARDS.map(({ id, title, description, href, Visual }) => (

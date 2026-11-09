@@ -35,7 +35,7 @@ describe("MarketsSection", () => {
     expect(section.getAttribute("aria-labelledby")).toBe(heading.id);
     expect(
       within(section).getByText(
-        "Start with Bitcoin prices or weather data. Compare providers in each market, set your requirements, and see which one gets the next request.",
+        "Every API on Tender is its own market, and anyone can request a new one. Compare the providers in each market, set your requirements, and see which one gets the next request.",
       ),
     ).toBeTruthy();
   });
