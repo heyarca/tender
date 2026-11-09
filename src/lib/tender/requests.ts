@@ -245,7 +245,7 @@ export interface RequestSampleInput {
   routingMode?: RoutingMode["kind"];
   /** Origin of the deterministic market signal (default `FIXTURE_EPOCH`). */
   signalOrigin?: number;
-  /** BTC only: price of the previous served request, for `changeUsd`. */
+  /** BTC and quote markets: value of the previous served request, for the change. */
   previousPriceUsd?: number | null;
   /**
    * Upstream reference value (live SF conditions or BTC spot). Ignored when it
@@ -385,9 +385,7 @@ export function executeRequest(
   const providerId: ProviderId | null =
     market.policy.mode.kind === "pinned" ? market.policy.mode.providerId : market.route.activeProviderId;
   const provider = providerId ? market.providers.find((p) => p.id === providerId) : undefined;
-  const previous = market.requests.find(
-    (r): r is Extract<RequestResult, { status: "ok" }> & { payload: { kind: "btc" } } => r.status === "ok" && r.payload.kind === "btc",
-  );
+  const previous = market.requests.find((r): r is ServedRequestResult => r.status === "ok" && r.marketId === market.id);
   return sampleRequest({
     marketId: market.id,
     providerId: provider ? provider.id : null,
@@ -397,7 +395,7 @@ export function executeRequest(
     seed: market.rng,
     routingMode: market.policy.mode.kind,
     signalOrigin: market.signalOrigin,
-    previousPriceUsd: previous?.payload.priceUsd ?? null,
+    previousPriceUsd: previous && previous.payload.kind !== "weather" ? seriesValue(previous) : null,
   });
 }
 

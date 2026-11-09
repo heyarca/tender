@@ -200,6 +200,6 @@ export const EUR_USD: MarketDefinition = {
     },
   },
   providers: EUR_USD_PROVIDERS,
-  codeSamples: getApiSnippets({ id: "eur-usd", identifier: "prices/eur-usd" }, EUR_USD_DEFAULT_POLICY),
+  codeSamples: getApiSnippets({ id: "eur-usd", identifier: "prices/eur-usd", dataAgeUnit: "ms" }, EUR_USD_DEFAULT_POLICY),
   sampleResponse,
 };

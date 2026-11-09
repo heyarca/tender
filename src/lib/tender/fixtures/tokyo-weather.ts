@@ -215,6 +215,6 @@ export const TOKYO_WEATHER: MarketDefinition = {
     },
   },
   providers: TOKYO_WEATHER_PROVIDERS,
-  codeSamples: getApiSnippets({ id: "tokyo-weather", identifier: "weather/tokyo" }, TOKYO_WEATHER_DEFAULT_POLICY),
+  codeSamples: getApiSnippets({ id: "tokyo-weather", identifier: "weather/tokyo", dataAgeUnit: "min" }, TOKYO_WEATHER_DEFAULT_POLICY),
   sampleResponse,
 };

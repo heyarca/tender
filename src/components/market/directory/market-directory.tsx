@@ -28,7 +28,6 @@ import { useMarketView } from "@/lib/tender/client";
 
 type Category = string;
 
-/** Hard-coded: cloud is Weather, euro and pound are Currencies, everything else is Crypto prices. */
 function categoryFor(icon: MarketIcon): Category {
   if (icon === "cloud") return "Weather";
   if (icon === "euro" || icon === "pound") return "Currencies";

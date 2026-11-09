@@ -200,6 +200,6 @@ export const SOL_USD: MarketDefinition = {
     },
   },
   providers: SOL_USD_PROVIDERS,
-  codeSamples: getApiSnippets({ id: "sol-usd", identifier: "prices/sol-usd" }, SOL_USD_DEFAULT_POLICY),
+  codeSamples: getApiSnippets({ id: "sol-usd", identifier: "prices/sol-usd", dataAgeUnit: "ms" }, SOL_USD_DEFAULT_POLICY),
   sampleResponse,
 };

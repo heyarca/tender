@@ -7,6 +7,8 @@ import type { CodeSample, MarketId, RequestResult, RoutingPolicy } from "./types
 interface SnippetMarket {
   id: MarketId;
   identifier: string;
+  /** "min" for a weather-style market, "ms" for a price-style market. Required by `getApiSnippets`. */
+  dataAgeUnit?: "min" | "ms";
 }
 
 function tsNumber(value: number): string {
@@ -31,14 +33,14 @@ function modeValue(policy: RoutingPolicy): string {
  * The policy values are embedded, so the dialog matches the current form.
  */
 export function getApiSnippets(market: SnippetMarket, policy: RoutingPolicy): CodeSample[] {
-  const call =
-    market.id === "sf-weather"
-      ? { ts: `tender.weather.current({ location: "san-francisco" }`, py: `tender.weather.current(\n    location="san-francisco",` }
-      : { ts: `tender.prices.spot({ pair: "BTC-USD" }`, py: `tender.prices.spot(\n    pair="BTC-USD",` };
-  const read =
-    market.id === "sf-weather"
-      ? { ts: "result.data.temperatureF", py: 'result.data["temperatureF"]' }
-      : { ts: "result.data.priceUsd", py: 'result.data["priceUsd"]' };
+  const slug = market.identifier.split("/")[1] ?? "";
+  const isWeather = market.dataAgeUnit === "min";
+  const call = isWeather
+    ? { ts: `tender.weather.current({ location: "${slug}" }`, py: `tender.weather.current(\n    location="${slug}",` }
+    : { ts: `tender.prices.spot({ pair: "${slug.toUpperCase()}" }`, py: `tender.prices.spot(\n    pair="${slug.toUpperCase()}",` };
+  const read = isWeather
+    ? { ts: "result.data.temperatureF", py: 'result.data["temperatureF"]' }
+    : { ts: "result.data.priceUsd", py: 'result.data["priceUsd"]' };
 
   const typescript = `import { Tender } from "@tender/sdk";
 

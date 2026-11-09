@@ -215,6 +215,6 @@ export const SF_WEATHER: MarketDefinition = {
     },
   },
   providers: SF_WEATHER_PROVIDERS,
-  codeSamples: getApiSnippets({ id: "sf-weather", identifier: "weather/san-francisco" }, SF_WEATHER_DEFAULT_POLICY),
+  codeSamples: getApiSnippets({ id: "sf-weather", identifier: "weather/san-francisco", dataAgeUnit: "min" }, SF_WEATHER_DEFAULT_POLICY),
   sampleResponse,
 };

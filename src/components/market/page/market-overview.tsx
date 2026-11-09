@@ -35,7 +35,7 @@ function ResultCard({ view }: { view: MarketView }) {
   const request = useMemo(() => toResultRequest(view.lastResult, view.providersById), [view.lastResult, view.providersById]);
   const providers = useMemo(() => vizProvidersOf(definition), [definition]);
   const points = useMemo(
-    () => (view.id === "btc-usd" ? toPricePoints(view.series, view.recentResults) : []),
+    () => (view.id !== "sf-weather" ? toPricePoints(view.series, view.recentResults) : []),
     [view.id, view.series, view.recentResults],
   );
 
