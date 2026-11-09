@@ -13,7 +13,7 @@ describe("payer controls", () => {
   it("rejects mainnet, foreign assets and unknown recipients", () => {
     expect(() => assertSafePayment({ ...safe, network: "eip155:8453" })).toThrow();
     expect(() => assertSafePayment({ ...safe, asset: PAYEES.together })).toThrow();
-    expect(() => assertSafePayment({ ...safe, payTo: PAYEES.parasail })).toThrow();
+    expect(() => assertSafePayment({ ...safe, payTo: PAYEES.the-zone-bio })).toThrow();
     expect(() => assertSafePayment({ ...safe, extra: {} })).toThrow();
     expect(() => assertSafePayment({ ...safe, extra: { ...safe.extra, paymentFlow: "escrow" } })).toThrow();
   });

@@ -1,7 +1,7 @@
 /** Identity of a provider as charts show it. */
 export interface VizProvider {
   name: string;
-  /** Logo path under `/public`, e.g. `/providers/parasail.png`. */
+  /** Logo path under `/public`, e.g. `/providers/the-zone-bio.jpg`. */
   logo?: string;
   /** Series color. Default: `providerColor(id, providerIds)`. */
   color?: string;

@@ -102,7 +102,7 @@ describe("ProvidersSection", () => {
 
   it("renders the Bitcoin market defaults", () => {
     mount("btc-usd");
-    expect(rowIds()[0]).toBe("parasail");
+    expect(rowIds()[0]).toBe("the-zone-bio");
     expect(row("novita").dataset.status).toBe("too-slow");
     expect(row("crusoe").dataset.status).toBe("stale-data");
     expect(row("gmicloud").dataset.status).toBe("over-budget");

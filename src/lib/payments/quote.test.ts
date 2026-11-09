@@ -16,13 +16,13 @@ describe("USDC quotes", () => {
     expect(settlementAmounts(0.000249).settled_atomic).toBe("249");
   });
   it("makes rounding explicit", () => {
-    expect(quoteFromBid("parasail", 0.7, "Bitcoin")).toMatchObject({ price_usd: 0.0000007, settled_usd: 0.000001, settled_atomic: "1", settlement_note: ROUNDING_NOTE });
+    expect(quoteFromBid("the-zone-bio", 0.7, "Bitcoin")).toMatchObject({ price_usd: 0.0000007, settled_usd: 0.000001, settled_atomic: "1", settlement_note: ROUNDING_NOTE });
     expect(quoteFromBid("together", 18, "Weather").settlement_note).toBeUndefined();
   });
   it.each([0, -1, NaN, Infinity, Number.MAX_VALUE])("rejects invalid bid %s", (bid) => expect(() => bidToAtomic(bid)).toThrow());
   it("validates recipients and descriptions", () => {
     const quote = quoteFromBid("together", 18, "Weather");
-    expect(() => validateQuote({ ...quote, payTo: PAYEES.parasail })).toThrow("recipient");
+    expect(() => validateQuote({ ...quote, payTo: PAYEES.the-zone-bio })).toThrow("recipient");
     expect(() => validateQuote({ ...quote, description: "" })).toThrow("description");
     expect(() => getPayee("__proto__")).toThrow();
     expect(() => getPayee("unknown")).toThrow();

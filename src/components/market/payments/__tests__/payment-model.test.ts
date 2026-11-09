@@ -114,7 +114,7 @@ describe("buildPaymentQuote", () => {
 
   it("discloses rounding for a fractional atomic bid", () => {
     const quote = buildPaymentQuote(getInitialMarketView("btc-usd"));
-    expect(quote.providerId).toBe("parasail");
+    expect(quote.providerId).toBe("the-zone-bio");
     expect(quote.amounts).toMatchObject({ settledAtomic: "1", rounded: true });
   });
 

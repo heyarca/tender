@@ -14,8 +14,8 @@ Names and logos are identities inside the local fixture data only.
 | modal | Modal | `/providers/modal.jpg` | https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://modal.com&size=256 |
 | mistral | Mistral | `/providers/mistral.png` | https://openrouter.ai/images/icons/Mistral.png |
 | nebius | Nebius | `/providers/nebius.png` | https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://docs.nebius.com/&size=256 |
-| parasail | Parasail | `/providers/parasail.png` | https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://www.parasail.io/&size=256 |
-| inference-net | inference.net | `/providers/inference-net.png` | https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://inference.net/&size=256 |
+| the-zone-bio | THE ZONE BIO | `/providers/the-zone-bio.jpg` | https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://www.the-zone-bio.io/&size=256 |
+| arca-labs | Arca Labs | `/providers/arca-labs.png` | https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://Arca Labs/&size=256 |
 | coreweave | CoreWeave | `/providers/coreweave.svg` | https://openrouter.ai/images/icons/CoreWeave.svg |
 | baseten | Baseten | `/providers/baseten.svg` | https://openrouter.ai/images/icons/baseten-favicon.svg |
 | novita | NovitaAI | `/providers/novita.png` | https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://novita.ai/&size=256 |

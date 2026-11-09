@@ -14,16 +14,16 @@ export const BTC_USD_DEFAULT_POLICY: RoutingPolicy = {
 /** Providers bidding on Bitcoin Price, in fixture order (SPEC §3.2). */
 export const BTC_USD_PROVIDERS: ProviderFixture[] = [
   {
-    id: "parasail",
-    name: "Parasail",
-    logo: "/providers/parasail.png",
+    id: "the-zone-bio",
+    name: "THE ZONE BIO",
+    logo: "/providers/the-zone-bio.jpg",
     defaults: { bidPrice: 0.7, p95LatencyMs: 87, dataAgeMs: 220, errorRate: 0.0003, available: true },
     bias: 0.3,
   },
   {
-    id: "inference-net",
-    name: "inference.net",
-    logo: "/providers/inference-net.png",
+    id: "arca-labs",
+    name: "Arca Labs",
+    logo: "/providers/arca-labs.png",
     defaults: { bidPrice: 0.95, p95LatencyMs: 64, dataAgeMs: 140, errorRate: 0.0002, available: true },
     bias: -0.4,
   },
@@ -77,7 +77,7 @@ const sampleResponse = JSON.stringify(
     market: "prices/btc-usd",
     requestedAt: "2026-11-09T18:29:57.000Z",
     status: "ok",
-    servedBy: "parasail",
+    servedBy: "the-zone-bio",
     latencyMs: 51,
     dataAgeMs: 214,
     costUsd: 0.0000007,

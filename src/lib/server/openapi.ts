@@ -16,13 +16,27 @@ const policyParameters = [
     { name: where === "query" ? "pin" : "Tender-Pin", in: where, description: "Provider id in this market. A pin never silently reroutes; policy violations are reported.", schema: string },
   ]),
 ];
+const preflightOperation = {
+  summary: "CORS preflight",
+  description: "Cross-origin browser clients may call the v1 API without credentials. Answers OPTIONS with 204, Access-Control-Allow-Origin: *, Access-Control-Allow-Methods: GET, OPTIONS, Access-Control-Allow-Headers covering payment, policy, and Content-Type headers, and Access-Control-Max-Age: 600. Not available on the console payment endpoints.",
+  responses: { "204": { description: "Preflight accepted; no payload", headers: {
+    "Access-Control-Allow-Origin": { description: "Always * for the public v1 API", schema: string },
+    "Access-Control-Allow-Methods": { description: "GET, OPTIONS", schema: string },
+    "Access-Control-Allow-Headers": { description: "PAYMENT-SIGNATURE, X-PAYMENT, Content-Type, Tender-Max-Price, Tender-Max-P95-Ms, Tender-Max-Data-Age-Ms, Tender-Min-Success-Rate, Tender-Preference, Tender-Pin", schema: string },
+    "Access-Control-Max-Age": { description: "Preflight cache lifetime in seconds: 600", schema: string },
+  } } },
+};
 const routeHeaders = {
   "Tender-Provider": { description: "Selected provider id, identical to the quoted payee's provider", schema: string },
   "Tender-Route-Reason": { description: "Automatic ranking preference or explicit pin", schema: string },
   "Tender-Policy-Violation": { description: "true when a pinned provider fails the policy", schema: { type: "string", enum: ["true", "false"] } },
+  "Tender-Price-USD": { description: "Exact winning bid divided by 1,000,000 requests, as a decimal string; matches the JSON price_usd", schema: string },
+  "Tender-Settled-Atomic": { description: "USDC atomic units (6 decimals) actually settled, encoded as an integer string; matches the JSON settled_atomic", schema: string },
 };
+const allowHeader = { description: "Methods the target resource accepts; GET only across the v1 API", schema: string };
 const errors = {
   "400": { description: "Invalid contract input or policy", content: content("Error") },
+  "405": { description: "Method not allowed; the operation accepts GET only", headers: { Allow: allowHeader }, content: content("Error") },
   "409": { description: "No eligible provider; no payment requested", content: content("Error") },
   "500": { description: "Selected provider failed; no settlement", content: content("ProviderError") },
   "502": { description: "Selected provider failed; no settlement", content: content("ProviderError") },
@@ -62,14 +76,14 @@ const result = {
 const requiredResult = ["provider", "latency_ms", "data_age_ms", "request_id", "price_usd", "settled_usd", "settled_atomic", "policy_violation", "reference_source", "reference_timestamp"];
 export const openapiDocument = {
   openapi: "3.1.0",
-  info: { title: "Tender API", version: "1.0.0", description: "Policy-based API routing. Prices are USD per 1M requests; settlement is per-request USDC on Base Sepolia. Console cooldowns and notifications do not apply to this stateless API." },
+  info: { title: "Tender API", version: "1.0.0", description: "Policy-based API routing. Prices are USD per 1M requests; settlement is per-request USDC on Base Sepolia. Console cooldowns and notifications do not apply to this stateless API. Every v1 response is callable from any browser origin: Access-Control-Allow-Origin is always *, with no credentials; OPTIONS preflight answers 204 with Access-Control-Max-Age: 600." },
   servers: [{ url: "/api/v1" }],
   paths: {
-    "/markets": { get: { operationId: "listMarkets", summary: "List markets", responses: { "200": { description: "Available markets", content: content("MarketList") } } } },
-    "/markets/{market}": { get: { operationId: "getMarket", summary: "Provider bids and routing decision", parameters: [{ name: "market", in: "path", required: true, schema: { type: "string", enum: ["sf-weather", "btc-usd"] } }, ...policyParameters], responses: { "200": { description: "Market detail and evaluation", content: content("MarketDetail") }, "400": errors["400"], "404": { description: "Unknown market", content: content("Error") } } } },
-    "/weather/current": { get: paidOperation("weatherCurrent", "location", "san-francisco", "WeatherResult") },
-    "/prices/spot": { get: paidOperation("pricesSpot", "pair", "BTC-USD", "PriceResult") },
-    "/openapi.json": { get: { operationId: "getOpenAPI", summary: "OpenAPI document", responses: { "200": { description: "OpenAPI 3.1 document", content: { "application/json": { schema: { type: "object" } } } } } } },
+    "/markets": { get: { operationId: "listMarkets", summary: "List markets", responses: { "200": { description: "Available markets", content: content("MarketList") }, "405": errors["405"] } }, options: preflightOperation },
+    "/markets/{market}": { get: { operationId: "getMarket", summary: "Provider bids and routing decision", parameters: [{ name: "market", in: "path", required: true, schema: { type: "string", enum: ["sf-weather", "btc-usd"] } }, ...policyParameters], responses: { "200": { description: "Market detail and evaluation", content: content("MarketDetail") }, "400": errors["400"], "404": { description: "Unknown market", content: content("Error") }, "405": errors["405"] } }, options: preflightOperation },
+    "/weather/current": { get: paidOperation("weatherCurrent", "location", "san-francisco", "WeatherResult"), options: preflightOperation },
+    "/prices/spot": { get: paidOperation("pricesSpot", "pair", "BTC-USD", "PriceResult"), options: preflightOperation },
+    "/openapi.json": { get: { operationId: "getOpenAPI", summary: "OpenAPI document", responses: { "200": { description: "OpenAPI 3.1 document", content: { "application/json": { schema: { type: "object" } } } }, "405": errors["405"] } }, options: preflightOperation },
   },
   components: { schemas: {
     Error: { type: "object", required: ["error"], properties: { error: { type: "object", required: ["code", "message"], properties: { code: string, message: string } } } },

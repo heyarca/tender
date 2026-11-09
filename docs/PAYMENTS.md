@@ -27,7 +27,7 @@ USDC cannot transfer a fractional atomic unit. Tender rounds **up**, never down 
 The extra charge is always less than one atomic unit.
 
 - Together's `$18 /M` bid settles as `18` atomic units (`0.000018` USDC).
-- Parasail's `$0.70 /M` bid has `price_usd: 0.0000007` and settles as `1` atomic unit (`0.000001` USDC).
+- THE ZONE BIO's `$0.70 /M` bid has `price_usd: 0.0000007` and settles as `1` atomic unit (`0.000001` USDC).
 - Fireworks' `$27.50 /M` bid settles as `28` atomic units (`0.000028` USDC).
 
 Quotes, the 402 JSON body, payment requirements `extra`, paid JSON responses and receipt objects include:

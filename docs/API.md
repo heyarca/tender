@@ -3,6 +3,20 @@
 Base path: `/api/v1`. All handlers use the Node.js runtime. The OpenAPI 3.1 contract is at
 `GET /api/v1/openapi.json`.
 
+## Cross-origin access
+
+The public v1 API is callable from any browser origin without credentials. Every `/api/v1`
+response (including 402 challenges and errors) carries `Access-Control-Allow-Origin: *`.
+Paid responses additionally expose `PAYMENT-REQUIRED`, `PAYMENT-RESPONSE`, `Tender-Provider`,
+`Tender-Price-USD`, `Tender-Settled-Atomic`, `Tender-Route-Reason`, and
+`Tender-Policy-Violation` through `Access-Control-Expose-Headers`, so cross-origin clients
+can read the quote and receipt headers. `OPTIONS` preflight requests answer HTTP 204 with
+`Access-Control-Allow-Methods: GET, OPTIONS`, `Access-Control-Allow-Headers: PAYMENT-SIGNATURE,
+X-PAYMENT, Content-Type, Tender-Max-Price, Tender-Max-P95-Ms, Tender-Max-Data-Age-Ms,
+Tender-Min-Success-Rate, Tender-Preference, Tender-Pin`, and `Access-Control-Max-Age: 600`.
+The console payment endpoints under `/api/payments/*` are deliberately not CORS-enabled;
+they are same-origin console surfaces.
+
 ## Endpoints
 
 | Method | Path | Result |
@@ -16,6 +30,8 @@ Base path: `/api/v1`. All handlers use the Node.js runtime. The OpenAPI 3.1 cont
 Market ids are `sf-weather` and `btc-usd`. Only the listed location and pair are supported.
 Omitting either contract argument uses that endpoint's default. Other values return HTTP 400.
 Unknown markets return HTTP 404. Discovery and OpenAPI do not require payment.
+Every `/api/v1` endpoint accepts GET only; other methods return HTTP 405 with an
+`Allow: GET` header and an `{"error":{"code":"method_not_allowed"}}` body.
 
 ## Routing policy
 
@@ -51,7 +67,10 @@ Discovery still returns HTTP 200 with a null active provider and an empty rankin
 
 Every contract request computes its routing selection once. The same provider supplies the
 x402 amount/payee and the normalized result. `Tender-Provider` identifies it.
-`Tender-Route-Reason` is the preference or `pinned`. Errors and paid responses are not cached.
+`Tender-Route-Reason` is the preference or `pinned`. Every paid-route response (including the
+402 challenge) also carries `Tender-Price-USD`, the exact winning bid per request as a decimal
+string matching the JSON `price_usd`, and `Tender-Settled-Atomic`, the settled USDC amount in
+atomic units as an integer string matching the JSON `settled_atomic`. Errors and paid responses are not cached.
 Provider failures return `provider_error` with the provider, request id, latency, and policy
 violation fields (HTTP 500, 502, 503, or 504). Payment-service exceptions return HTTP 503 with
 `payment_unavailable`. Failed provider requests are not settled: the x402 SDK cancels the
@@ -74,7 +93,7 @@ Prices have two distinct meanings:
 
 USDC has six decimal places. A bid of X USD per 1M requests is X atomic units per request.
 Settlement rounds **up** to the next atomic unit, never down to zero. The increase is less
-than one atomic unit. For the configured Parasail bid of $0.70/M, `price_usd` is `0.0000007`,
+than one atomic unit. For the configured THE ZONE BIO bid of $0.70/M, `price_usd` is `0.0000007`,
 `settled_atomic` is `"1"`, and `settled_usd` is `0.000001`. The note is exactly:
 
 > Rounded up to the USDC minimum unit (0.000001)

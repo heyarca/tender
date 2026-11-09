@@ -12,7 +12,7 @@ describe("market handlers", () => {
   it("uses shared ranking and exclusions", async () => {
     const response = await detail(request(), context());
     const data = await response.json();
-    expect(data.routing.active_provider).toBe("parasail");
+    expect(data.routing.active_provider).toBe("the-zone-bio");
     expect(data.providers.find((p: { id: string }) => p.id === "novita").evaluation.status).toBe("too-slow");
     expect(response.headers.get("Cache-Control")).toBe("private, no-store");
   });

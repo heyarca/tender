@@ -10,7 +10,8 @@ when the current provider no longer meets those requirements.
 ## Design reference
 
 Use **OpenRouter's current UI design system** as the primary visual reference:
-https://openrouter.ai/deepseek/deepseek-v4.1-flash-1017#providers (screenshots and markup in `/tmp/escape-research/`).
+https://openrouter.ai/deepseek/deepseek-v4.1-flash-1017#providers (the live page is the source of truth;
+detailed tokens and component specs live in `docs/DESIGN.md`).
 Closely match its typography, spacing, page width, navigation, tabs, provider tables, badges, buttons, borders, and restrained colors.
 
 - Reuse the **actual provider logos shown in the linked Providers section** (they are in `public/providers/`). Never

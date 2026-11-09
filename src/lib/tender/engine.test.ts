@@ -25,11 +25,11 @@ const update = (marketId: MarketId, providerId: string, patch: object, now: numb
 const request = (marketId: MarketId, now: number): TenderAction => ({ type: "run-request", marketId, now });
 
 describe("initial state", () => {
-  it("routes to Together and Parasail with one served request each", () => {
+  it("routes to Together and THE ZONE BIO with one served request each", () => {
     const state = createInitialState();
     expect(state.now).toBe(E);
     expect(active(state, W)).toBe("together");
-    expect(active(state, B)).toBe("parasail");
+    expect(active(state, B)).toBe("the-zone-bio");
     for (const id of [W, B]) {
       const market = state.markets[id];
       expect(market.requests).toHaveLength(1);
@@ -78,10 +78,10 @@ describe("failover", () => {
   });
 
   it("fails over when the active provider becomes unavailable", () => {
-    const state = run(createInitialState(), update(B, "parasail", { available: false }, E + 1_000));
-    expect(active(state, B)).toBe("inference-net");
+    const state = run(createInitialState(), update(B, "the-zone-bio", { available: false }, E + 1_000));
+    expect(active(state, B)).toBe("arca-labs");
     expect(latestOf(state, B, "route-switch")!.details[0]).toBe(
-      "Trigger: Parasail failed the availability check: Provider is not responding.",
+      "Trigger: THE ZONE BIO failed the availability check: Provider is not responding.",
     );
   });
 });
@@ -290,9 +290,9 @@ describe("requests", () => {
     expect(result.payload.changeUsd).not.toBeNull();
     expect(market.counters).toEqual({ total: 2, served: 2, failed: 0, rejected: 0 });
     expect(market.spend).toBeCloseTo(before.markets[B].spend + 0.7 / 1e6, 12);
-    expect(market.providers.find((p) => p.id === "parasail")!.latencies.at(-1)!.requestId).toBe("req_000003");
+    expect(market.providers.find((p) => p.id === "the-zone-bio")!.latencies.at(-1)!.requestId).toBe("req_000003");
     expect(market.series.at(-1)!.value).toBe(result.payload.priceUsd);
-    expect(latest(state, B).title).toBe("req_000003 served by Parasail");
+    expect(latest(state, B).title).toBe("req_000003 served by THE ZONE BIO");
   });
 
   it("keeps the last 50 requests", () => {
@@ -444,7 +444,7 @@ describe("reset and restore", () => {
     expect(selectMarketView(state.markets[B]).policyModified).toBe(true);
     state = run(state, { type: "reset-policy", marketId: B, now: E + 3_000 });
     expect(state.markets[B].policy).toEqual(getDefaultPolicy(B));
-    expect(active(state, B)).toBe("parasail");
+    expect(active(state, B)).toBe("the-zone-bio");
     expect(selectMarketView(state.markets[B]).policyModified).toBe(false);
     expect(latestOf(state, B, "policy-reset")!.title).toBe("Routing policy reset to defaults");
   });
