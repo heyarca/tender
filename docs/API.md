@@ -93,7 +93,7 @@ Prices have two distinct meanings:
 
 USDC has six decimal places. A bid of X USD per 1M requests is X atomic units per request.
 Settlement rounds **up** to the next atomic unit, never down to zero. The increase is less
-than one atomic unit. For the configured Parasail bid of $0.70/M, `price_usd` is `0.0000007`,
+than one atomic unit. For the configured THE ZONE BIO bid of $0.70/M, `price_usd` is `0.0000007`,
 `settled_atomic` is `"1"`, and `settled_usd` is `0.000001`. The note is exactly:
 
 > Rounded up to the USDC minimum unit (0.000001)

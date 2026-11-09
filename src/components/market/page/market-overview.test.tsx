@@ -98,7 +98,7 @@ describe("MarketOverview", () => {
     const { container } = renderOverview(makeStore(), "btc-usd");
     expect(container.textContent).toContain("BTC/USD");
     expect(container.querySelector('[aria-label^="Price chart"]')).toBeTruthy();
-    expect(container.textContent).toContain("Parasail");
+    expect(container.textContent).toContain("THE ZONE BIO");
   });
 });
 

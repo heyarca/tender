@@ -46,8 +46,8 @@ describe("paid contract handlers", () => {
     const data = await response.json();
     expect(response.status).toBe(200);
     expect(payments.calls).toHaveLength(1);
-    expect(payments.calls[0].providerId).toBe("parasail");
-    expect(data).toMatchObject({ provider: "parasail", price_usd: 0.0000007, settled_usd: 0.000001, settled_atomic: "1", settlement_note: "Rounded up to the USDC minimum unit (0.000001)", reference_source: "coinbase", reference_timestamp: "2026-11-09T18:30:00.000Z" });
+    expect(payments.calls[0].providerId).toBe("the-zone-bio");
+    expect(data).toMatchObject({ provider: "the-zone-bio", price_usd: 0.0000007, settled_usd: 0.000001, settled_atomic: "1", settlement_note: "Rounded up to the USDC minimum unit (0.000001)", reference_source: "coinbase", reference_timestamp: "2026-11-09T18:30:00.000Z" });
     expect(response.headers.get("Tender-Provider")).toBe(data.provider);
     expect(data.data_age_ms).toBeGreaterThanOrEqual(176);
     expect(data.data_age_ms).toBeLessThanOrEqual(264);
@@ -58,7 +58,7 @@ describe("paid contract handlers", () => {
   it("does not load upstream values before payment", async () => {
     const response = await price(req("prices/spot", false));
     expect(response.status).toBe(402);
-    expect(response.headers.get("Tender-Provider")).toBe("parasail");
+    expect(response.headers.get("Tender-Provider")).toBe("the-zone-bio");
     expect(fetch).not.toHaveBeenCalled();
   });
   it("rejects no-eligible requests before requesting payment", async () => {
@@ -126,7 +126,7 @@ describe("paid contract handlers", () => {
     const response = await price(req("prices/spot", false));
     expect(response.status).toBe(402);
     expect(response.headers.get("PAYMENT-REQUIRED")).toBe("base64-challenge");
-    expect(await response.json()).toMatchObject({ error: "payment_required", providerId: "parasail" });
+    expect(await response.json()).toMatchObject({ error: "payment_required", providerId: "the-zone-bio" });
     expect(fetch).not.toHaveBeenCalled();
   });
   it("keeps the 402 challenge readable from any browser origin", async () => {
@@ -168,13 +168,13 @@ describe("paid contract handlers", () => {
     expect(payments.calls[0].payTo).not.toBe(getPayee("together"));
   });
   it("uses changed availability without mutating shared defaults", async () => {
-    const changed = await handleContract(req("prices/spot"), "btc-usd", { conditions: { parasail: { available: false } } });
-    expect(changed.headers.get("Tender-Provider")).toBe("inference-net");
+    const changed = await handleContract(req("prices/spot"), "btc-usd", { conditions: { the-zone-bio: { available: false } } });
+    expect(changed.headers.get("Tender-Provider")).toBe("arca-labs");
     const unchanged = await price(req("prices/spot"));
-    expect(unchanged.headers.get("Tender-Provider")).toBe("parasail");
+    expect(unchanged.headers.get("Tender-Provider")).toBe("the-zone-bio");
   });
   it("sanitizes/clamps conditions while preserving unspecified defaults", async () => {
-    const response = await handleContract(req("prices/spot?pin=parasail"), "btc-usd", { conditions: { parasail: { p95LatencyMs: -100, dataAgeMs: -5, errorRate: -1, bidPrice: Number.NaN } } });
+    const response = await handleContract(req("prices/spot?pin=the-zone-bio"), "btc-usd", { conditions: { the-zone-bio: { p95LatencyMs: -100, dataAgeMs: -5, errorRate: -1, bidPrice: Number.NaN } } });
     const data = await response.json();
     expect(response.status).toBe(200);
     expect(data.latency_ms).toBeLessThanOrEqual(7);
@@ -183,23 +183,23 @@ describe("paid contract handlers", () => {
     expect(data.policy_violation).toBe(false);
   });
   it("ignores unknown providers and invalid patch containers", async () => {
-    const response = await handleContract(req("prices/spot"), "btc-usd", { conditions: { unknown: { bidPrice: 0.1 }, parasail: null as unknown as ConditionsPatch } });
-    expect(response.headers.get("Tender-Provider")).toBe("parasail");
+    const response = await handleContract(req("prices/spot"), "btc-usd", { conditions: { unknown: { bidPrice: 0.1 }, the-zone-bio: null as unknown as ConditionsPatch } });
+    expect(response.headers.get("Tender-Provider")).toBe("the-zone-bio");
   });
   it("clamps a zero bid to the market minimum so every paid request has a positive price", async () => {
-    const response = await handleContract(req("prices/spot"), "btc-usd", { conditions: { parasail: { bidPrice: 0 } } });
+    const response = await handleContract(req("prices/spot"), "btc-usd", { conditions: { the-zone-bio: { bidPrice: 0 } } });
     const data = await response.json();
     expect(response.status).toBe(200);
-    expect(response.headers.get("Tender-Provider")).toBe("parasail");
+    expect(response.headers.get("Tender-Provider")).toBe("the-zone-bio");
     expect(data.price_usd).toBe(0.05 / 1e6);
     expect(data.settled_atomic).toBe("1");
   });
   it("never reads condition changes from public query parameters or headers", async () => {
-    const encoded = encodeURIComponent(JSON.stringify({ parasail: { available: false, bidPrice: 20 } }));
-    const response = await price(req(`prices/spot?conditions=${encoded}&conditions[parasail][available]=false`, true, { "Tender-Conditions": JSON.stringify({ parasail: { available: false } }) }));
-    expect(response.headers.get("Tender-Provider")).toBe("parasail");
+    const encoded = encodeURIComponent(JSON.stringify({ the-zone-bio: { available: false, bidPrice: 20 } }));
+    const response = await price(req(`prices/spot?conditions=${encoded}&conditions[the-zone-bio][available]=false`, true, { "Tender-Conditions": JSON.stringify({ the-zone-bio: { available: false } }) }));
+    expect(response.headers.get("Tender-Provider")).toBe("the-zone-bio");
     expect(payments.calls[0].amountUsd).toBe(0.7 / 1e6);
-    expect(payments.calls[0].payTo).toBe(getPayee("parasail"));
+    expect(payments.calls[0].payTo).toBe(getPayee("the-zone-bio"));
   });
   it("does not accept HEAD/POST as paid contract requests", async () => {
     expect(priceHead().status).toBe(405);

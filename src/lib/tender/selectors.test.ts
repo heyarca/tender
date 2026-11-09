@@ -20,8 +20,8 @@ describe("selectMarketView", () => {
       "modal",
     ]);
     expect(selectMarketView(state.markets["btc-usd"]).providers.map((p) => p.id)).toEqual([
-      "parasail",
-      "inference-net",
+      "the-zone-bio",
+      "arca-labs",
       "coreweave",
       "baseten",
       "wafer",
@@ -100,8 +100,8 @@ describe("selectMarketView", () => {
     });
     const view = selectMarketView(state.markets["btc-usd"]);
     expect(view.recommended?.id).toBe("coreweave");
-    expect(view.bestPrice?.id).toBe("parasail");
-    expect(view.decision.details).toContain("Best price: Parasail at $0.70 /M.");
+    expect(view.bestPrice?.id).toBe("the-zone-bio");
+    expect(view.decision.details).toContain("Best price: THE ZONE BIO at $0.70 /M.");
     expect(view.modifiedPolicyFields).toEqual(["preference"]);
   });
 });

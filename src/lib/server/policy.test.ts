@@ -10,7 +10,7 @@ describe("policy wire inputs", () => {
   });
   it("leaves defaults to the shared engine", () => { expect(readPolicyOverrides(req())).toEqual({}); });
   it("reads numeric limits, preference, and pin", () => {
-    expect(readPolicyOverrides(req("?max_price=0.7&max_p95_ms=150&max_data_age_ms=1000&min_success_rate=0.999&preference=freshest-data&pin=parasail"))).toEqual({ maxPrice: 0.7, maxP95LatencyMs: 150, maxDataAgeMs: 1000, minSuccessRate: 0.999, preference: "freshest-data", mode: { kind: "pinned", providerId: "parasail" } });
+    expect(readPolicyOverrides(req("?max_price=0.7&max_p95_ms=150&max_data_age_ms=1000&min_success_rate=0.999&preference=freshest-data&pin=the-zone-bio"))).toEqual({ maxPrice: 0.7, maxP95LatencyMs: 150, maxDataAgeMs: 1000, minSuccessRate: 0.999, preference: "freshest-data", mode: { kind: "pinned", providerId: "the-zone-bio" } });
   });
   it("prefers a query parameter over its header, including zero", () => {
     expect(readPolicyOverrides(req("?max_price=0", { "Tender-Max-Price": "5", "Tender-Preference": "lowest-latency" }))).toEqual({ maxPrice: 0, preference: "lowest-latency" });

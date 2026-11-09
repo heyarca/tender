@@ -26,8 +26,8 @@ describe("default statuses", () => {
       modal: "stale-data",
       mistral: "over-budget",
       nebius: "unavailable",
-      parasail: "eligible",
-      "inference-net": "eligible",
+      the-zone-bio: "eligible",
+      "arca-labs": "eligible",
       coreweave: "eligible",
       baseten: "eligible",
       novita: "too-slow",
@@ -36,7 +36,7 @@ describe("default statuses", () => {
       wafer: "unreliable",
     });
     expect(weather.recommendedId).toBe("together");
-    expect(btc.recommendedId).toBe("parasail");
+    expect(btc.recommendedId).toBe("the-zone-bio");
   });
 
   it("uses the exact short reason copy", () => {
@@ -87,9 +87,9 @@ describe("ranking", () => {
     ["sf-weather", "lowest-cost", "together", ["together", "deepinfra", "fireworks", "digitalocean"]],
     ["sf-weather", "lowest-latency", "fireworks", ["fireworks", "deepinfra", "together", "digitalocean"]],
     ["sf-weather", "freshest-data", "deepinfra", ["deepinfra", "fireworks", "together", "digitalocean"]],
-    ["btc-usd", "lowest-cost", "parasail", ["parasail", "inference-net", "coreweave", "baseten"]],
-    ["btc-usd", "lowest-latency", "coreweave", ["coreweave", "baseten", "inference-net", "parasail"]],
-    ["btc-usd", "freshest-data", "baseten", ["baseten", "coreweave", "inference-net", "parasail"]],
+    ["btc-usd", "lowest-cost", "the-zone-bio", ["the-zone-bio", "arca-labs", "coreweave", "baseten"]],
+    ["btc-usd", "lowest-latency", "coreweave", ["coreweave", "baseten", "arca-labs", "the-zone-bio"]],
+    ["btc-usd", "freshest-data", "baseten", ["baseten", "coreweave", "arca-labs", "the-zone-bio"]],
   ] as const)("%s %s → %s", (marketId, preference, recommended, ranking) => {
     const ev = evaluateDefaults(marketId, preference);
     expect(ev.recommendedId).toBe(recommended);
@@ -101,7 +101,7 @@ describe("ranking", () => {
   it("marks the lowest-priced qualified provider as best price for every preference", () => {
     for (const preference of ["lowest-cost", "lowest-latency", "freshest-data"] as const) {
       expect(evaluateDefaults("sf-weather", preference).bestPriceId).toBe("together");
-      expect(evaluateDefaults("btc-usd", preference).bestPriceId).toBe("parasail");
+      expect(evaluateDefaults("btc-usd", preference).bestPriceId).toBe("the-zone-bio");
     }
     const ev = evaluateDefaults("sf-weather", "lowest-latency");
     expect(ev.byId.together.isBestPrice).toBe(true);

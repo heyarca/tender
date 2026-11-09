@@ -8,12 +8,12 @@ const T0 = Date.UTC(2026, 10, 9, 18, 30);
 const points: PricePoint[] = Array.from({ length: 40 }, (_, i) => ({
   t: T0 + i * 2_000,
   price: 75_230.75 + Math.sin(i / 3) * 20,
-  providerId: i < 20 ? "coreweave" : "parasail",
+  providerId: i < 20 ? "coreweave" : "the-zone-bio",
   status: i === 12 ? "failed" : "ok",
 }));
 const providers = {
   coreweave: { name: "CoreWeave", logo: "/providers/coreweave.svg" },
-  parasail: { name: "Parasail", logo: "/providers/parasail.png" },
+  the-zone-bio: { name: "THE ZONE BIO", logo: "/providers/the-zone-bio.jpg" },
 };
 
 const render = (element: Parameters<typeof renderToStaticMarkup>[0]) => renderToStaticMarkup(element);
@@ -119,14 +119,14 @@ describe("server render", () => {
   it("renders the provenance line and JSON", () => {
     const meta = render(
       createElement(ResultMeta, {
-        provider: { id: "parasail", name: "Parasail", logo: "/providers/parasail.png" },
+        provider: { id: "the-zone-bio", name: "THE ZONE BIO", logo: "/providers/the-zone-bio.jpg" },
         latencyMs: 84,
         dataAgeMs: 220,
         requestId: "req_000123",
       }),
     );
-    expect(meta).toContain('src="/providers/parasail.png"');
-    expect(meta.replace(/<[^>]+>/g, "")).toContain("Served byParasail·84 ms·data age 220 ms·req_000123");
+    expect(meta).toContain('src="/providers/the-zone-bio.jpg"');
+    expect(meta.replace(/<[^>]+>/g, "")).toContain("Served byTHE ZONE BIO·84 ms·data age 220 ms·req_000123");
     expect(render(createElement(JsonView, { value: { a: 1 } }))).toContain("&quot;a&quot;");
   });
 });

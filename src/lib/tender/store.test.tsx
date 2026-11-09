@@ -127,8 +127,8 @@ describe("TenderProvider", () => {
     const state = second.store.api.getState();
     expect(state.policiesHydrated).toBe(true);
     expect(state.markets["btc-usd"].policy).toMatchObject({ maxPrice: 1.2, preference: "freshest-data" });
-    // CoreWeave and Baseten bid above $1.20, so inference.net has the freshest qualifying data.
-    expect(state.markets["btc-usd"].route.activeProviderId).toBe("inference-net");
+    // CoreWeave and Baseten bid above $1.20, so Arca Labs has the freshest qualifying data.
+    expect(state.markets["btc-usd"].route.activeProviderId).toBe("arca-labs");
     expect(state.markets["sf-weather"].route.activeProviderId).toBe("fireworks");
     // Restoring saved policies does not raise toasts.
     expect(second.events).toHaveLength(0);

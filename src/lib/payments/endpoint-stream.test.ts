@@ -30,7 +30,7 @@ const settlement = { success: true, transaction: `0x${"a".repeat(64)}`, network:
 function setup(settle = vi.fn(async () => settlement)) {
   const facilitator = { getSupported: async () => ({ kinds: [{ x402Version: 2, scheme: "exact", network: PAYMENT_NETWORK }], extensions: [], signers: {} }), verify: vi.fn(async () => ({ isValid: true, payer })), settle };
   const server = createPaymentServer(facilitator);
-  const route = withX402Payment((_request, quote) => Response.json({ provider: quote.providerId, latency_ms: 80, data_age_ms: 200 }), () => quoteFromBid("parasail", 0.7, "Bitcoin"), server);
+  const route = withX402Payment((_request, quote) => Response.json({ provider: quote.providerId, latency_ms: 80, data_age_ms: 200 }), () => quoteFromBid("the-zone-bio", 0.7, "Bitcoin"), server);
   return { endpoint: createPaidRequestEndpoint((request) => route(request)), facilitator };
 }
 describe("payment event stream", () => {
@@ -41,7 +41,7 @@ describe("payment event stream", () => {
     expect(response.headers.get("Content-Type")).toBe("application/x-ndjson");
     const events = (await response.text()).trim().split("\n").map((line) => JSON.parse(line));
     expect(events.map((event) => event.type)).toEqual(["payment-required", "signed", "result"]);
-    expect(events[0]).toMatchObject({ providerId: "parasail", settled_atomic: "1" });
+    expect(events[0]).toMatchObject({ providerId: "the-zone-bio", settled_atomic: "1" });
     expect(events[2].result.receipt.txHash).toBe(settlement.transaction);
     expect(facilitator.verify).toHaveBeenCalledOnce();
     expect(facilitator.settle).toHaveBeenCalledOnce();
@@ -69,7 +69,7 @@ describe("payment event stream", () => {
     });
     const settle = vi.fn(async () => settlement);
     const server = createPaymentServer({ getSupported: async () => ({ kinds: [{ x402Version: 2, scheme: "exact", network: PAYMENT_NETWORK }], extensions: [], signers: {} }), verify: async () => ({ isValid: true, payer }), settle });
-    const route = withX402Payment(handler, () => quoteFromBid("parasail", 0.7, "Bitcoin"), server);
+    const route = withX402Payment(handler, () => quoteFromBid("the-zone-bio", 0.7, "Bitcoin"), server);
     const endpoint = createPaidRequestEndpoint((req) => route(req));
     const response = await endpoint(request());
     const providerRequest = await entered.promise;
@@ -82,7 +82,7 @@ describe("payment event stream", () => {
       await aborted.promise;
       expect(paymentRateLimiter.acquire()).toBeNull();
     } finally {
-      providerResult.resolve(Response.json({ provider: "parasail", latency_ms: 80, data_age_ms: 200 }));
+      providerResult.resolve(Response.json({ provider: "the-zone-bio", latency_ms: 80, data_age_ms: 200 }));
       await released.promise;
     }
     expect(handler).toHaveBeenCalledOnce();

@@ -104,8 +104,8 @@ min success rate **99.90%**, preference **Lowest cost**, mode **Automatic switch
 
 | id | name | bid $/M | P95 ms | data age | error rate | available | default status |
 |---|---|---|---|---|---|---|---|
-| parasail | Parasail | 0.70 | 87 | 220 ms | 0.03% | yes | **Active** (lowest-priced qualified) |
-| inference-net | inference.net | 0.95 | 64 | 140 ms | 0.02% | yes | Eligible |
+| the-zone-bio | THE ZONE BIO | 0.70 | 87 | 220 ms | 0.03% | yes | **Active** (lowest-priced qualified) |
+| arca-labs | Arca Labs | 0.95 | 64 | 140 ms | 0.02% | yes | Eligible |
 | coreweave | CoreWeave | 1.40 | 42 | 90 ms | 0.01% | yes | Eligible (fastest qualified) |
 | baseten | Baseten | 1.80 | 58 | 45 ms | 0.05% | yes | Eligible (freshest) |
 | novita | NovitaAI | 0.40 | 310 | 180 ms | 0.04% | yes | Too slow (cheapest overall) |
@@ -260,7 +260,7 @@ public/providers/                provider logos
 
 ## 8. Acceptance checklist
 
-- [ ] Both markets render with original provider logos, correct default statuses, and Together / Parasail active.
+- [ ] Both markets render with original provider logos, correct default statuses, and Together / THE ZONE BIO active.
 - [ ] Cheapest provider is never selected when it fails a requirement (Cloudflare, NovitaAI by default).
 - [ ] Editing a provider's bid/latency/age/error rate/availability updates its status, reason, sparkline,
       the routing decision, stat cards, and activity — immediately.

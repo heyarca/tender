@@ -108,12 +108,12 @@ describe("describeMarketChange", () => {
   it("works with BTC millisecond data ages", () => {
     const { change } = harness();
     const note = change(
-      { type: "update-provider", marketId: "btc-usd", providerId: "parasail", patch: { dataAgeMs: 1_220 } },
-      "parasail",
+      { type: "update-provider", marketId: "btc-usd", providerId: "the-zone-bio", patch: { dataAgeMs: 1_220 } },
+      "the-zone-bio",
       "btc-usd",
     );
-    expect(note.lines[0]).toBe("Parasail no longer qualifies: Data age 1.2 s exceeds 1 s.");
-    expect(note.lines[1]).toMatch(/^Route switched from Parasail to /);
+    expect(note.lines[0]).toBe("THE ZONE BIO no longer qualifies: Data age 1.2 s exceeds 1 s.");
+    expect(note.lines[1]).toMatch(/^Route switched from THE ZONE BIO to /);
   });
 });
 

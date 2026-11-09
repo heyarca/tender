@@ -41,7 +41,7 @@ describe("latency sampling", () => {
 });
 
 describe("sampleRequest", () => {
-  const base = { marketId: "btc-usd" as const, providerId: "parasail", requestId: "req_000010", now: E, seed: 99 };
+  const base = { marketId: "btc-usd" as const, providerId: "the-zone-bio", requestId: "req_000010", now: E, seed: 99 };
 
   it("is deterministic for the same input", () => {
     expect(sampleRequest(base)).toEqual(sampleRequest(base));
@@ -55,7 +55,7 @@ describe("sampleRequest", () => {
   });
 
   it("fails unavailable providers with 503", () => {
-    const conditions = { ...getDefaultConditions("btc-usd").parasail, available: false };
+    const conditions = { ...getDefaultConditions("btc-usd").the-zone-bio, available: false };
     const { result } = sampleRequest({ ...base, conditions });
     expect(result).toMatchObject({ status: "failed", error: { code: 503, message: "Service Unavailable" }, cost: 0 });
   });
@@ -165,7 +165,7 @@ describe("selectRoute", () => {
 
   it("pins a provider and reports violations", () => {
     const s = selectRoute("btc-usd", { pin: "wafer" });
-    expect(s).toMatchObject({ kind: "pinned-failing", providerId: "wafer", recommendedId: "parasail", policyViolation: true });
+    expect(s).toMatchObject({ kind: "pinned-failing", providerId: "wafer", recommendedId: "the-zone-bio", policyViolation: true });
     expect(s.summary).toBe("Pinned provider Wafer fails your policy: Success 99.15% is below 99.90%. Requests still go to Wafer.");
     expect(selectRoute("btc-usd", { pin: "coreweave" }).kind).toBe("pinned");
     expect(selectRoute("btc-usd", { pin: "unknown" })).toMatchObject({ kind: "no-eligible", providerId: null });

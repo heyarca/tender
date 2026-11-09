@@ -24,13 +24,13 @@ async function paidRequest(route: (request: Request) => Promise<Response>) {
 describe("x402 route wrapper", () => {
   it("returns a real SDK v2 402 with exact and rounded amounts, without serving data", async () => {
     const handler = vi.fn(() => Response.json({ protected: true }));
-    const quote = vi.fn(() => quoteFromBid("parasail", 0.7, "Tender Bitcoin price"));
+    const quote = vi.fn(() => quoteFromBid("the-zone-bio", 0.7, "Tender Bitcoin price"));
     const route = withX402Payment(handler, quote, createPaymentServer(testFacilitator()));
     const response = await route(new Request("https://tender.test/any-path"));
     expect(response.status).toBe(402);
     expect(handler).not.toHaveBeenCalled();
     expect(quote).toHaveBeenCalledTimes(1);
-    expect(response.headers.get("Tender-Provider")).toBe("parasail");
+    expect(response.headers.get("Tender-Provider")).toBe("the-zone-bio");
     expect(response.headers.get("Cache-Control")).toContain("no-store");
     const challenge = decodePaymentRequiredHeader(response.headers.get("PAYMENT-REQUIRED")!);
     expect(challenge).toMatchObject({ x402Version: 2, accepts: [{ scheme: "exact", network: PAYMENT_NETWORK, amount: "1", extra: { price_usd: 0.0000007, settled_atomic: "1", settled_usd: 0.000001 } }] });

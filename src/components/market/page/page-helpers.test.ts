@@ -100,8 +100,8 @@ describe("result mapping", () => {
     const failed: RequestResult = {
       status: "failed",
       marketId: "btc-usd",
-      providerId: "parasail",
-      providerName: "Parasail",
+      providerId: "the-zone-bio",
+      providerName: "THE ZONE BIO",
       latencyMs: 90,
       error: { code: 502, message: "Bad Gateway" },
       cost: 0,
@@ -111,7 +111,7 @@ describe("result mapping", () => {
     };
     const points = toPricePoints(btc.series, [failed, ...btc.recentResults]);
     expect(points).toHaveLength(btc.series.length + 1);
-    expect(points.at(-1)).toMatchObject({ status: "failed", providerId: "parasail", id: "req_000099" });
+    expect(points.at(-1)).toMatchObject({ status: "failed", providerId: "the-zone-bio", id: "req_000099" });
     for (let i = 1; i < points.length; i += 1) expect(points[i].t).toBeGreaterThanOrEqual(points[i - 1].t);
   });
 

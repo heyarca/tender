@@ -1,7 +1,7 @@
 import { writeFileSync, existsSync } from "node:fs";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 
-const ids = ["together", "deepinfra", "fireworks", "digitalocean", "cloudflare", "modal", "mistral", "nebius", "parasail", "inference-net", "coreweave", "baseten", "novita", "crusoe", "gmicloud", "wafer"];
+const ids = ["together", "deepinfra", "fireworks", "digitalocean", "cloudflare", "modal", "mistral", "nebius", "the-zone-bio", "arca-labs", "coreweave", "baseten", "novita", "crusoe", "gmicloud", "wafer"];
 const file = "src/lib/payments/payees.ts";
 if (existsSync(file)) throw new Error("Payees already exist; never rotate receiving addresses implicitly.");
 const entries = ids.map(id => `  "${id}": "${privateKeyToAccount(generatePrivateKey()).address}",`);
