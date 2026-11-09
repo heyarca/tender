@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { motion, type Transition } from "motion/react";
 import { Check, Pin, X } from "lucide-react";
 
@@ -189,7 +189,7 @@ export function ProvidersTable({ view, selectedId, onSelect }: ProvidersTablePro
 /** Flash the row that just became active (Web Animations, so hover and selection classes keep working). */
 function useActiveRowFlash(
   view: MarketView,
-  rowRefs: React.RefObject<Map<string, HTMLTableRowElement>>,
+  rowRefs: RefObject<Map<string, HTMLTableRowElement>>,
   reduceMotion: boolean,
 ) {
   const activeId = view.route.activeProviderId;
