@@ -10,7 +10,7 @@ import {
   type TenderState,
 } from "@/lib/tender";
 import { buildCurlSnippet, contractPath, contractUrl, policyQuery, settlementQuote } from "./api-snippets";
-import { isSectionId, topNavLinks } from "./market-top-nav";
+import { topNavLinks } from "./market-top-nav";
 import {
   providerIdsOf,
   toBitcoinQuote,
@@ -235,19 +235,7 @@ describe("page helpers", () => {
     expect(splitUnit("99.94%")).toEqual(["99.94%", ""]);
   });
 
-  it("links the TopNav to the market, its sections, and the API dialog", () => {
-    expect(topNavLinks().map((link) => link.href)).toEqual([
-      "/markets",
-      "/leaderboard",
-      "/account",
-      "#providers",
-      "#routing",
-      "#payments",
-      "#activity",
-      "/payouts",
-      "#api",
-    ]);
-    expect(isSectionId("conditions")).toBe(true);
-    expect(isSectionId("api")).toBe(false);
+  it("links the TopNav to the product pages and the API dialog", () => {
+    expect(topNavLinks().map((link) => link.href)).toEqual(["/markets", "/leaderboard", "/payouts", "/account", "#api"]);
   });
 });

@@ -27,8 +27,6 @@ export interface TopNavProps {
   searchLabel?: string;
   /** Logo link target. Default "/". */
   homeHref?: string;
-  /** Long link lists stay in the menu until a wide desktop viewport. */
-  wideNavigation?: boolean;
   className?: string;
 }
 
@@ -44,7 +42,7 @@ const NAV_BUTTON = cn(NAV_BUTTON_BASE, "[&_svg]:size-4 [&_svg]:shrink-0");
 
 /**
  * Sticky top bar like OpenRouter's: lockup, ⌘K search trigger, ghost links,
- * and one primary action. Links collapse into a menu below `lg`, or `2xl` for wide navigation.
+ * and one primary action. Below `lg` the links collapse into a menu.
  */
 export function TopNav({
   links,
@@ -53,7 +51,6 @@ export function TopNav({
   actions,
   searchLabel = "Search",
   homeHref = "/",
-  wideNavigation = false,
   className,
 }: TopNavProps) {
   return (
@@ -66,7 +63,7 @@ export function TopNav({
           <TenderLogo />
         </Link>
 
-        <div className={cn("ml-12 hidden min-w-8 shrink xl:ml-20", wideNavigation ? "2xl:block" : "lg:block")}>
+        <div className="ml-12 hidden min-w-8 shrink lg:block xl:ml-20">
           <button
             type="button"
             onClick={onSearch}
@@ -83,7 +80,7 @@ export function TopNav({
           </button>
         </div>
 
-        <nav aria-label="Main" className={cn("ml-auto hidden shrink-0 items-center gap-1 pl-10", wideNavigation ? "2xl:flex" : "lg:flex")}>
+        <nav aria-label="Main" className="ml-auto hidden shrink-0 items-center gap-1 pl-10 lg:flex">
           {links.map((link) => {
             const active = link.href === activeHref;
             return (
@@ -99,9 +96,9 @@ export function TopNav({
             );
           })}
         </nav>
-        {actions ? <div className={cn("ml-1 hidden shrink-0 items-center gap-1", wideNavigation ? "2xl:flex" : "lg:flex")}>{actions}</div> : null}
+        {actions ? <div className="ml-1 hidden shrink-0 items-center gap-1 lg:flex">{actions}</div> : null}
 
-        <div className={cn("-mr-2 ml-auto flex min-w-0 items-center justify-end gap-1", wideNavigation ? "2xl:hidden" : "lg:hidden")}>
+        <div className="-mr-2 ml-auto flex min-w-0 items-center justify-end gap-1 lg:hidden">
           <button
             type="button"
             onClick={onSearch}
