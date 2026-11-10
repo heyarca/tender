@@ -45,8 +45,8 @@ paid per call in USDC with x402.
 3. **Phase 1, parallel lanes.** Engine, UI kit, shell, charts (Opus) + API and x402 payments (Astra),
    one git worktree and one file-ownership list per lane.
 4. **Renames and infra.** ESCAPE → Tender, pnpm → bun, repo → `heyarca/tender`, Vercel → THE ZONE BIO team.
-5. **Real money moment.** First USDC settled on Base Sepolia, then a reroute payment (raise Together's
-   bid → DeepInfra gets paid).
+5. **Real money moment.** First USDC settled on Base Sepolia, then a reroute payment (raise Fernline's
+   bid → Kitefin gets paid).
 6. **Phase 2.** Page frame, providers table, controls, Pay with USDC lanes → market page live in production.
 7. **Brand.** PP Mori + lime palette applied across product and landing.
 8. **Audit.** 7 GLM-5.3-Flash auditors → 31 GitHub issues → GLM fixer lanes.

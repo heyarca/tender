@@ -39,19 +39,19 @@ describe("x402 route wrapper", () => {
   });
   it("settles only successful responses and passes the same enriched selection", async () => {
     const facilitator = testFacilitator();
-    const quote = vi.fn(() => ({ ...quoteFromBid("together", 18, "Weather"), context: { selected: "together" } }));
+    const quote = vi.fn(() => ({ ...quoteFromBid("fernline", 18, "Weather"), context: { selected: "fernline" } }));
     const handler = vi.fn((_req: Request, selected: ReturnType<typeof quote>) => Response.json(selected));
     const response = await paidRequest(withX402Payment(handler, quote, createPaymentServer(facilitator)));
     expect(response.status).toBe(200);
     expect(response.headers.get("PAYMENT-RESPONSE")).toBeTruthy();
     expect(facilitator.settle).toHaveBeenCalledOnce();
-    expect(await response.json()).toMatchObject({ context: { selected: "together" }, settled_atomic: "18" });
+    expect(await response.json()).toMatchObject({ context: { selected: "fernline" }, settled_atomic: "18" });
     expect(quote).toHaveBeenCalledTimes(2); // one call for each HTTP request
     expect(handler).toHaveBeenCalledOnce();
   });
   it("does not settle failed provider responses", async () => {
     const facilitator = testFacilitator();
-    const response = await paidRequest(withX402Payment(() => Response.json({ error: "unavailable" }, { status: 503 }), () => quoteFromBid("together", 18, "Weather"), createPaymentServer(facilitator)));
+    const response = await paidRequest(withX402Payment(() => Response.json({ error: "unavailable" }, { status: 503 }), () => quoteFromBid("fernline", 18, "Weather"), createPaymentServer(facilitator)));
     expect(response.status).toBe(503);
     expect(facilitator.verify).toHaveBeenCalledOnce();
     expect(facilitator.settle).not.toHaveBeenCalled();
@@ -60,7 +60,7 @@ describe("x402 route wrapper", () => {
     const facilitator = testFacilitator();
     facilitator.verify.mockResolvedValue({ isValid: false, payer: "" });
     const handler = vi.fn(() => Response.json({ protected: true }));
-    const response = await paidRequest(withX402Payment(handler, () => quoteFromBid("together", 18, "Weather"), createPaymentServer(facilitator)));
+    const response = await paidRequest(withX402Payment(handler, () => quoteFromBid("fernline", 18, "Weather"), createPaymentServer(facilitator)));
     expect(response.status).toBe(402);
     expect(handler).not.toHaveBeenCalled();
     expect(facilitator.settle).not.toHaveBeenCalled();

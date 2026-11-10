@@ -105,7 +105,7 @@ function pendingView(market: MarketState): PendingSwitchView | null {
   };
 }
 
-/** "Switching to Cloudflare in 7 s — switch cooldown". */
+/** "Switching to Slatework in 7 s — switch cooldown". */
 export function formatPendingSwitch(pending: Pick<PendingSwitchView, "providerName" | "executeAt">, now: number): string {
   return `Switching to ${pending.providerName} in ${format.countdown(pending.executeAt, now)} — switch cooldown`;
 }

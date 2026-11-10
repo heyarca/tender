@@ -61,12 +61,12 @@ describe("policyChips", () => {
     const view = viewAfter(
       "sf-weather",
       { type: "set-policy", marketId: "sf-weather", patch: { maxP95LatencyMs: 300 } },
-      { type: "set-routing-mode", marketId: "sf-weather", mode: { kind: "pinned", providerId: "cloudflare" } },
+      { type: "set-routing-mode", marketId: "sf-weather", mode: { kind: "pinned", providerId: "slatework" } },
     );
     const chips = policyChips(view);
     expect(chips.find((c) => c.key === "maxP95LatencyMs")).toMatchObject({ label: "P95 ≤ 300 ms", modified: true });
     expect(chips.find((c) => c.key === "maxPrice")?.modified).toBe(false);
-    expect(chips.find((c) => c.key === "mode")).toMatchObject({ label: "Pinned: Cloudflare", modified: true, failing: true });
+    expect(chips.find((c) => c.key === "mode")).toMatchObject({ label: "Pinned: Slatework", modified: true, failing: true });
   });
 });
 
@@ -81,37 +81,37 @@ describe("qualifyCountText", () => {
 describe("groupProviders", () => {
   it("keeps routing order and splits off excluded providers", () => {
     const { routed, excluded } = groupProviders(getInitialMarketView("sf-weather").providers);
-    expect(ids(routed)).toEqual(["together", "deepinfra", "fireworks", "digitalocean"]);
-    expect(ids(excluded)).toEqual(["nebius", "mistral", "cloudflare", "modal"]);
+    expect(ids(routed)).toEqual(["fernline", "kitefin", "cinderlane", "saltmarsh"]);
+    expect(ids(excluded)).toEqual(["kelpwave", "owlbridge", "slatework", "mossgate"]);
   });
 
   it("keeps a failing pinned provider in the routed group, first", () => {
     const view = viewAfter("sf-weather", {
       type: "set-routing-mode",
       marketId: "sf-weather",
-      mode: { kind: "pinned", providerId: "cloudflare" },
+      mode: { kind: "pinned", providerId: "slatework" },
     });
     const { routed, excluded } = groupProviders(view.providers);
-    expect(routed[0]).toMatchObject({ id: "cloudflare", role: "pinned-failing" });
-    expect(ids(excluded)).not.toContain("cloudflare");
+    expect(routed[0]).toMatchObject({ id: "slatework", role: "pinned-failing" });
+    expect(ids(excluded)).not.toContain("slatework");
   });
 
   it("moves a provider that fails over into the excluded group", () => {
     const view = viewAfter("sf-weather", {
       type: "update-provider",
       marketId: "sf-weather",
-      providerId: "together",
+      providerId: "fernline",
       patch: { p95LatencyMs: 520 },
     });
     const { routed, excluded } = groupProviders(view.providers);
-    expect(routed[0]).toMatchObject({ id: "deepinfra", role: "active" });
-    expect(ids(excluded)).toContain("together");
+    expect(routed[0]).toMatchObject({ id: "kitefin", role: "active" });
+    expect(ids(excluded)).toContain("fernline");
   });
 
   it("sorts inside each group", () => {
     const { routed, excluded } = groupProviders(getInitialMarketView("sf-weather").providers, { key: "bid", direction: "desc" });
-    expect(ids(routed)).toEqual(["digitalocean", "fireworks", "deepinfra", "together"]);
-    expect(ids(excluded)).toEqual(["mistral", "nebius", "modal", "cloudflare"]);
+    expect(ids(routed)).toEqual(["saltmarsh", "cinderlane", "kitefin", "fernline"]);
+    expect(ids(excluded)).toEqual(["owlbridge", "kelpwave", "mossgate", "slatework"]);
   });
 });
 
@@ -128,10 +128,10 @@ describe("sorting", () => {
   });
 
   it("sorts by each column and puts unavailable providers last by success", () => {
-    expect(ids(sortProviders(rows, { key: "latency", direction: "asc" })).slice(0, 3)).toEqual(["mistral", "fireworks", "deepinfra"]);
-    expect(ids(sortProviders(rows, { key: "dataAge", direction: "asc" }))[0]).toBe("mistral");
-    expect(ids(sortProviders(rows, { key: "name", direction: "asc" }))[0]).toBe("cloudflare");
-    expect(ids(sortProviders(rows, { key: "success", direction: "desc" })).at(-1)).toBe("nebius");
+    expect(ids(sortProviders(rows, { key: "latency", direction: "asc" })).slice(0, 3)).toEqual(["owlbridge", "cinderlane", "kitefin"]);
+    expect(ids(sortProviders(rows, { key: "dataAge", direction: "asc" }))[0]).toBe("owlbridge");
+    expect(ids(sortProviders(rows, { key: "name", direction: "asc" }))[0]).toBe("slatework");
+    expect(ids(sortProviders(rows, { key: "success", direction: "desc" })).at(-1)).toBe("kelpwave");
     expect(ids(sortProviders(rows, null))).toEqual(ids(rows));
   });
 });
@@ -141,19 +141,19 @@ describe("failing metrics", () => {
   const btc = getInitialMarketView("btc-usd").providersById;
 
   it("tints the metric that fails, amber for limits and red for reliability", () => {
-    expect(failingMetrics(weather.cloudflare)).toEqual({ latency: "warning" });
-    expect(failingMetrics(weather.modal)).toEqual({ dataAge: "warning" });
-    expect(failingMetrics(weather.mistral)).toEqual({ bid: "warning" });
-    expect(failingMetrics(weather.nebius)).toEqual({});
-    expect(failingMetrics(btc.wafer)).toEqual({ success: "negative" });
-    expect(failingMetrics(weather.together)).toEqual({});
+    expect(failingMetrics(weather.slatework)).toEqual({ latency: "warning" });
+    expect(failingMetrics(weather.mossgate)).toEqual({ dataAge: "warning" });
+    expect(failingMetrics(weather.owlbridge)).toEqual({ bid: "warning" });
+    expect(failingMetrics(weather.kelpwave)).toEqual({});
+    expect(failingMetrics(btc.heronway)).toEqual({ success: "negative" });
+    expect(failingMetrics(weather.fernline)).toEqual({});
   });
 
   it("explains the tinted cell with the engine's reason copy", () => {
-    expect(metricReason(weather.cloudflare, "latency")).toBe("P95 640 ms exceeds 400 ms");
-    expect(metricReason(weather.mistral, "bid")).toBe("Bid $58.00 exceeds $40.00 /M");
-    expect(metricReason(btc.wafer, "success")).toBe("Success 99.15% is below 99.90%");
-    expect(metricReason(weather.cloudflare, "bid")).toBeNull();
+    expect(metricReason(weather.slatework, "latency")).toBe("P95 640 ms exceeds 400 ms");
+    expect(metricReason(weather.owlbridge, "bid")).toBe("Bid $58.00 exceeds $40.00 /M");
+    expect(metricReason(btc.heronway, "success")).toBe("Success 99.15% is below 99.90%");
+    expect(metricReason(weather.slatework, "bid")).toBeNull();
   });
 
   it("maps statuses to badge tones", () => {
@@ -169,32 +169,32 @@ describe("failing metrics", () => {
 describe("route labels and tags", () => {
   it("names the route of every role", () => {
     const view = getInitialMarketView("sf-weather");
-    expect(routeLabel(view.providersById.together)).toEqual({ text: "Active", tone: "active" });
-    expect(routeLabel(view.providersById.deepinfra)).toEqual({ text: "#2 standby", tone: "neutral" });
-    expect(routeLabel(view.providersById.cloudflare)).toEqual({ text: "Excluded", tone: "faint" });
-    expect(providerTags(view.providersById.together)).toEqual(["active", "best-price"]);
-    expect(providerTags(view.providersById.deepinfra)).toEqual([]);
+    expect(routeLabel(view.providersById.fernline)).toEqual({ text: "Active", tone: "active" });
+    expect(routeLabel(view.providersById.kitefin)).toEqual({ text: "#2 standby", tone: "neutral" });
+    expect(routeLabel(view.providersById.slatework)).toEqual({ text: "Excluded", tone: "faint" });
+    expect(providerTags(view.providersById.fernline)).toEqual(["active", "best-price"]);
+    expect(providerTags(view.providersById.kitefin)).toEqual([]);
   });
 
   it("labels pins and the pending switch target", () => {
     const pinned = viewAfter("sf-weather", {
       type: "set-routing-mode",
       marketId: "sf-weather",
-      mode: { kind: "pinned", providerId: "cloudflare" },
+      mode: { kind: "pinned", providerId: "slatework" },
     });
-    expect(routeLabel(pinned.providersById.cloudflare)).toEqual({ text: "Pinned, failing", tone: "negative" });
-    expect(providerTags(pinned.providersById.cloudflare)).toEqual(["pinned"]);
+    expect(routeLabel(pinned.providersById.slatework)).toEqual({ text: "Pinned, failing", tone: "negative" });
+    expect(providerTags(pinned.providersById.slatework)).toEqual(["pinned"]);
 
-    // Failover to DeepInfra, then Together recovers inside the cooldown: switching back waits.
+    // Failover to Kitefin, then Fernline recovers inside the cooldown: switching back waits.
     const pending = viewAfter(
       "sf-weather",
-      { type: "update-provider", marketId: "sf-weather", providerId: "together", patch: { p95LatencyMs: 640 } },
-      { type: "update-provider", marketId: "sf-weather", providerId: "together", patch: { p95LatencyMs: 210 } },
+      { type: "update-provider", marketId: "sf-weather", providerId: "fernline", patch: { p95LatencyMs: 640 } },
+      { type: "update-provider", marketId: "sf-weather", providerId: "fernline", patch: { p95LatencyMs: 210 } },
     );
     expect(pending.decision.kind).toBe("pending-switch");
-    expect(routeLabel(pending.providersById.together)).toEqual({ text: "Next route", tone: "warning" });
-    expect(providerTags(pending.providersById.together)).toEqual(["best-price"]);
-    expect(providerTags(pending.providersById.deepinfra)).toEqual(["active"]);
+    expect(routeLabel(pending.providersById.fernline)).toEqual({ text: "Next route", tone: "warning" });
+    expect(providerTags(pending.providersById.fernline)).toEqual(["best-price"]);
+    expect(providerTags(pending.providersById.kitefin)).toEqual(["active"]);
   });
 });
 
@@ -203,25 +203,25 @@ describe("trend", () => {
   const btc = getInitialMarketView("btc-usd");
 
   it("follows the failing check, else the preference metric", () => {
-    expect(trendMetric(view.providersById.cloudflare, view.policy)).toBe("latency");
-    expect(trendMetric(view.providersById.modal, view.policy)).toBe("dataAge");
-    expect(trendMetric(view.providersById.mistral, view.policy)).toBe("bid");
-    expect(trendMetric(view.providersById.nebius, view.policy)).toBe("success");
-    expect(trendMetric(btc.providersById.wafer, btc.policy)).toBe("success");
-    expect(trendMetric(view.providersById.together, view.policy)).toBe("latency");
-    expect(trendMetric(view.providersById.together, { preference: "freshest-data" })).toBe("dataAge");
-    expect(trendMetric(view.providersById.together, { preference: "lowest-latency" })).toBe("latency");
+    expect(trendMetric(view.providersById.slatework, view.policy)).toBe("latency");
+    expect(trendMetric(view.providersById.mossgate, view.policy)).toBe("dataAge");
+    expect(trendMetric(view.providersById.owlbridge, view.policy)).toBe("bid");
+    expect(trendMetric(view.providersById.kelpwave, view.policy)).toBe("success");
+    expect(trendMetric(btc.providersById.heronway, btc.policy)).toBe("success");
+    expect(trendMetric(view.providersById.fernline, view.policy)).toBe("latency");
+    expect(trendMetric(view.providersById.fernline, { preference: "freshest-data" })).toBe("dataAge");
+    expect(trendMetric(view.providersById.fernline, { preference: "lowest-latency" })).toBe("latency");
   });
 
   it("returns the monitor series with the policy limit", () => {
-    const trend = providerTrend(view.providersById.together, view.policy);
+    const trend = providerTrend(view.providersById.fernline, view.policy);
     expect(trend.values).toHaveLength(30);
     expect(trend.limit).toBe(400);
     expect(trend.description).toMatch(/^P95 latency, last 30 samples, now \d+ ms, limit 400 ms$/);
-    const age = providerTrend(view.providersById.modal, view.policy);
+    const age = providerTrend(view.providersById.mossgate, view.policy);
     expect(age).toMatchObject({ metric: "dataAge", limit: 15 * 60_000 });
     expect(age.description).toContain("limit 15 min");
-    const success = providerTrend(btc.providersById.wafer, btc.policy);
+    const success = providerTrend(btc.providersById.heronway, btc.policy);
     expect(success.description).toContain("minimum 99.90%");
   });
 

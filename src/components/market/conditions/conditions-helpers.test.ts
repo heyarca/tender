@@ -72,13 +72,13 @@ describe("status and role badges", () => {
 
   it("summarizes the default weather providers", () => {
     const view = getInitialMarketView("sf-weather");
-    expect(roleSummary(view.providersById.together, "lowest-cost")).toBe(
+    expect(roleSummary(view.providersById.fernline, "lowest-cost")).toBe(
       "Serving requests. Ranked 1st for lowest cost.",
     );
-    expect(roleSummary(view.providersById.deepinfra, "lowest-cost")).toBe(
+    expect(roleSummary(view.providersById.kitefin, "lowest-cost")).toBe(
       "Standby. Qualifies and ranks 2nd for lowest cost.",
     );
-    expect(roleSummary(view.providersById.cloudflare, "lowest-cost")).toBe("Excluded: P95 640 ms exceeds 400 ms.");
-    expect(roleSummary(view.providersById.nebius, "lowest-cost")).toBe("Excluded: Provider is not responding.");
+    expect(roleSummary(view.providersById.slatework, "lowest-cost")).toBe("Excluded: P95 640 ms exceeds 400 ms.");
+    expect(roleSummary(view.providersById.kelpwave, "lowest-cost")).toBe("Excluded: Provider is not responding.");
   });
 });

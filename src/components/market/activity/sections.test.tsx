@@ -39,11 +39,11 @@ describe("RoutingPolicySection", () => {
 
     commit(within(section).getByRole("textbox", { name: "Max P95 latency" }), "700");
     expect(sf(store).policy.maxP95LatencyMs).toBe(700);
-    expect(sf(store).route.activeProviderId).toBe("cloudflare");
+    expect(sf(store).route.activeProviderId).toBe("slatework");
     expect(within(section).getByText("5 of 8 qualify")).toBeTruthy();
-    expect(within(section).getByText("Cloudflare now qualifies.")).toBeTruthy();
+    expect(within(section).getByText("Slatework now qualifies.")).toBeTruthy();
     expect(
-      within(section).getByText("Route switched from Together to Cloudflare, which ranks first for lowest cost."),
+      within(section).getByText("Route switched from Fernline to Slatework, which ranks first for lowest cost."),
     ).toBeTruthy();
 
     fireEvent.click(within(section).getByRole("button", { name: /Reset max p95 latency to the default, 400 ms/ }));
@@ -62,11 +62,11 @@ describe("RoutingPolicySection", () => {
     const section = document.getElementById("routing")!;
     fireEvent.click(within(section).getByRole("radio", { name: "Lowest latency" }));
     expect(sf(store).policy.preference).toBe("lowest-latency");
-    expect(sf(store).route.activeProviderId).toBe("fireworks");
+    expect(sf(store).route.activeProviderId).toBe("cinderlane");
 
     fireEvent.click(within(section).getByRole("radio", { name: "Pin a provider" }));
-    expect(sf(store).policy.mode).toEqual({ kind: "pinned", providerId: "fireworks" });
-    expect(within(section).getByRole("combobox", { name: "Pinned provider" }).textContent).toContain("Fireworks");
+    expect(sf(store).policy.mode).toEqual({ kind: "pinned", providerId: "cinderlane" });
+    expect(within(section).getByRole("combobox", { name: "Pinned provider" }).textContent).toContain("Cinderlane");
 
     fireEvent.click(within(section).getByRole("button", { name: "Reset policy" }));
     expect(sf(store).policy.preference).toBe("lowest-cost");
@@ -75,11 +75,11 @@ describe("RoutingPolicySection", () => {
 
   it("surfaces a failing pinned provider with explicit actions", () => {
     const store = setup(<RoutingPolicySection marketId="sf-weather" />);
-    act(() => store.actions.setRoutingMode("sf-weather", { kind: "pinned", providerId: "cloudflare" }));
+    act(() => store.actions.setRoutingMode("sf-weather", { kind: "pinned", providerId: "slatework" }));
     const alert = screen.getByRole("alert");
-    expect(alert.textContent).toContain("Pinned provider Cloudflare fails your policy: P95 640 ms exceeds 400 ms.");
-    fireEvent.click(within(alert).getByRole("button", { name: "Switch to Together" }));
-    expect(sf(store).policy.mode).toEqual({ kind: "pinned", providerId: "together" });
+    expect(alert.textContent).toContain("Pinned provider Slatework fails your policy: P95 640 ms exceeds 400 ms.");
+    fireEvent.click(within(alert).getByRole("button", { name: "Switch to Fernline" }));
+    expect(sf(store).policy.mode).toEqual({ kind: "pinned", providerId: "fernline" });
     expect(screen.queryByRole("alert")).toBeNull();
   });
 
@@ -95,20 +95,20 @@ describe("ProviderConditionsSection", () => {
   it("edits the serving provider, keeps it selected after failover, and explains the switch", () => {
     const store = setup(<ProviderConditionsSection marketId="sf-weather" />);
     const section = document.getElementById("conditions")!;
-    expect(within(section).getByRole("combobox", { name: "Provider" }).textContent).toContain("Together");
+    expect(within(section).getByRole("combobox", { name: "Provider" }).textContent).toContain("Fernline");
 
     fireEvent.click(within(section).getByRole("button", { name: "Add 300 ms latency" }));
-    const together = sf(store).providers.find((p) => p.id === "together")!;
-    expect(together.conditions.p95LatencyMs).toBe(510);
-    expect(sf(store).route.activeProviderId).toBe("deepinfra");
-    expect(within(section).getByRole("combobox", { name: "Provider" }).textContent).toContain("Together");
-    expect(within(section).getByText("Together no longer qualifies: P95 510 ms exceeds 400 ms.")).toBeTruthy();
+    const fernline = sf(store).providers.find((p) => p.id === "fernline")!;
+    expect(fernline.conditions.p95LatencyMs).toBe(510);
+    expect(sf(store).route.activeProviderId).toBe("kitefin");
+    expect(within(section).getByRole("combobox", { name: "Provider" }).textContent).toContain("Fernline");
+    expect(within(section).getByText("Fernline no longer qualifies: P95 510 ms exceeds 400 ms.")).toBeTruthy();
     expect(
-      within(section).getByText("Route switched from Together to DeepInfra, which ranks first for lowest cost."),
+      within(section).getByText("Route switched from Fernline to Kitefin, which ranks first for lowest cost."),
     ).toBeTruthy();
 
-    fireEvent.click(within(section).getByRole("button", { name: "Restore provider Together to default conditions" }));
-    expect(sf(store).providers.find((p) => p.id === "together")!.conditions.p95LatencyMs).toBe(210);
+    fireEvent.click(within(section).getByRole("button", { name: "Restore provider Fernline to default conditions" }));
+    expect(sf(store).providers.find((p) => p.id === "fernline")!.conditions.p95LatencyMs).toBe(210);
   });
 
   it("submits a bid only with Update bid", () => {
@@ -118,20 +118,20 @@ describe("ProviderConditionsSection", () => {
     expect(update.disabled).toBe(true);
     fireEvent.change(within(section).getByRole("textbox", { name: "Bid" }), { target: { value: "45" } });
     expect(update.disabled).toBe(false);
-    expect(sf(store).providers.find((p) => p.id === "together")!.conditions.bidPrice).toBe(18);
+    expect(sf(store).providers.find((p) => p.id === "fernline")!.conditions.bidPrice).toBe(18);
     fireEvent.click(update);
-    expect(sf(store).providers.find((p) => p.id === "together")!.conditions.bidPrice).toBe(45);
-    expect(within(section).getByText("Together no longer qualifies: Bid $45.00 exceeds $40.00 /M.")).toBeTruthy();
+    expect(sf(store).providers.find((p) => p.id === "fernline")!.conditions.bidPrice).toBe(45);
+    expect(within(section).getByText("Fernline no longer qualifies: Bid $45.00 exceeds $40.00 /M.")).toBeTruthy();
   });
 
   it("takes a provider offline and resets every provider", () => {
     const store = setup(<ProviderConditionsSection marketId="sf-weather" />);
     const section = document.getElementById("conditions")!;
     fireEvent.click(within(section).getByRole("button", { name: "Take offline" }));
-    expect(sf(store).providers.find((p) => p.id === "together")!.conditions.available).toBe(false);
+    expect(sf(store).providers.find((p) => p.id === "fernline")!.conditions.available).toBe(false);
     expect(within(section).getByRole("switch").getAttribute("aria-checked")).toBe("false");
     fireEvent.click(within(section).getByRole("button", { name: /Reset conditions for all providers/ }));
-    expect(sf(store).providers.find((p) => p.id === "together")!.conditions.available).toBe(true);
+    expect(sf(store).providers.find((p) => p.id === "fernline")!.conditions.available).toBe(true);
   });
 });
 
@@ -145,9 +145,9 @@ describe("ActivitySection", () => {
     expect(within(section).getByText("Policy updated: max P95 latency 400 ms → 700 ms")).toBeTruthy();
     fireEvent.click(within(section).getByRole("radio", { name: /^Routing/ }));
     const switchRow = section.querySelector('li[data-kind="route-switch"]')!;
-    expect(switchRow.textContent).toContain("Switched from Together to Cloudflare");
+    expect(switchRow.textContent).toContain("Switched from Fernline to Slatework");
     expect(switchRow.textContent).toContain("Policy change");
-    expect(switchRow.textContent).toContain("Why Cloudflare qualifies:");
+    expect(switchRow.textContent).toContain("Why Slatework qualifies:");
     expect(switchRow.textContent).toContain("P95 640 ms ≤ 700 ms");
   });
 

@@ -30,7 +30,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     },
     "listings": [
       {
-        "providerId": "together",
+        "providerId": "fernline",
         "bidPrice": 18,
         "p95LatencyMs": 210,
         "dataAgeMs": 360000,
@@ -39,7 +39,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.4
       },
       {
-        "providerId": "deepinfra",
+        "providerId": "kitefin",
         "bidPrice": 22,
         "p95LatencyMs": 180,
         "dataAgeMs": 120000,
@@ -48,7 +48,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.3
       },
       {
-        "providerId": "fireworks",
+        "providerId": "cinderlane",
         "bidPrice": 27.5,
         "p95LatencyMs": 150,
         "dataAgeMs": 300000,
@@ -57,7 +57,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.1
       },
       {
-        "providerId": "digitalocean",
+        "providerId": "saltmarsh",
         "bidPrice": 31,
         "p95LatencyMs": 260,
         "dataAgeMs": 480000,
@@ -66,7 +66,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.6
       },
       {
-        "providerId": "cloudflare",
+        "providerId": "slatework",
         "bidPrice": 12,
         "p95LatencyMs": 640,
         "dataAgeMs": 300000,
@@ -75,7 +75,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.7
       },
       {
-        "providerId": "modal",
+        "providerId": "mossgate",
         "bidPrice": 15,
         "p95LatencyMs": 190,
         "dataAgeMs": 2520000,
@@ -84,7 +84,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.8
       },
       {
-        "providerId": "mistral",
+        "providerId": "owlbridge",
         "bidPrice": 58,
         "p95LatencyMs": 95,
         "dataAgeMs": 60000,
@@ -93,7 +93,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.2
       },
       {
-        "providerId": "nebius",
+        "providerId": "kelpwave",
         "bidPrice": 20,
         "p95LatencyMs": 230,
         "dataAgeMs": 420000,
@@ -134,7 +134,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     },
     "listings": [
       {
-        "providerId": "together",
+        "providerId": "fernline",
         "bidPrice": 18,
         "p95LatencyMs": 210,
         "dataAgeMs": 360000,
@@ -143,7 +143,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.4
       },
       {
-        "providerId": "deepinfra",
+        "providerId": "kitefin",
         "bidPrice": 22,
         "p95LatencyMs": 180,
         "dataAgeMs": 120000,
@@ -152,7 +152,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.3
       },
       {
-        "providerId": "fireworks",
+        "providerId": "cinderlane",
         "bidPrice": 27.5,
         "p95LatencyMs": 150,
         "dataAgeMs": 300000,
@@ -161,7 +161,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.1
       },
       {
-        "providerId": "digitalocean",
+        "providerId": "saltmarsh",
         "bidPrice": 31,
         "p95LatencyMs": 260,
         "dataAgeMs": 480000,
@@ -170,7 +170,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.6
       },
       {
-        "providerId": "cloudflare",
+        "providerId": "slatework",
         "bidPrice": 12,
         "p95LatencyMs": 640,
         "dataAgeMs": 300000,
@@ -179,7 +179,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.7
       },
       {
-        "providerId": "modal",
+        "providerId": "mossgate",
         "bidPrice": 15,
         "p95LatencyMs": 190,
         "dataAgeMs": 2520000,
@@ -188,7 +188,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.8
       },
       {
-        "providerId": "mistral",
+        "providerId": "owlbridge",
         "bidPrice": 58,
         "p95LatencyMs": 95,
         "dataAgeMs": 60000,
@@ -197,7 +197,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.2
       },
       {
-        "providerId": "nebius",
+        "providerId": "kelpwave",
         "bidPrice": 20,
         "p95LatencyMs": 230,
         "dataAgeMs": 420000,
@@ -238,7 +238,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     },
     "listings": [
       {
-        "providerId": "together",
+        "providerId": "fernline",
         "bidPrice": 18,
         "p95LatencyMs": 210,
         "dataAgeMs": 360000,
@@ -247,7 +247,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.4
       },
       {
-        "providerId": "deepinfra",
+        "providerId": "kitefin",
         "bidPrice": 22,
         "p95LatencyMs": 180,
         "dataAgeMs": 120000,
@@ -256,7 +256,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.3
       },
       {
-        "providerId": "fireworks",
+        "providerId": "cinderlane",
         "bidPrice": 27.5,
         "p95LatencyMs": 150,
         "dataAgeMs": 300000,
@@ -265,7 +265,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.1
       },
       {
-        "providerId": "digitalocean",
+        "providerId": "saltmarsh",
         "bidPrice": 31,
         "p95LatencyMs": 260,
         "dataAgeMs": 480000,
@@ -274,7 +274,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.6
       },
       {
-        "providerId": "cloudflare",
+        "providerId": "slatework",
         "bidPrice": 12,
         "p95LatencyMs": 640,
         "dataAgeMs": 300000,
@@ -283,7 +283,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.7
       },
       {
-        "providerId": "modal",
+        "providerId": "mossgate",
         "bidPrice": 15,
         "p95LatencyMs": 190,
         "dataAgeMs": 2520000,
@@ -292,7 +292,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.8
       },
       {
-        "providerId": "mistral",
+        "providerId": "owlbridge",
         "bidPrice": 58,
         "p95LatencyMs": 95,
         "dataAgeMs": 60000,
@@ -301,7 +301,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.2
       },
       {
-        "providerId": "nebius",
+        "providerId": "kelpwave",
         "bidPrice": 20,
         "p95LatencyMs": 230,
         "dataAgeMs": 420000,
@@ -342,7 +342,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     },
     "listings": [
       {
-        "providerId": "together",
+        "providerId": "fernline",
         "bidPrice": 18,
         "p95LatencyMs": 210,
         "dataAgeMs": 360000,
@@ -351,7 +351,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.4
       },
       {
-        "providerId": "deepinfra",
+        "providerId": "kitefin",
         "bidPrice": 22,
         "p95LatencyMs": 180,
         "dataAgeMs": 120000,
@@ -360,7 +360,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.3
       },
       {
-        "providerId": "fireworks",
+        "providerId": "cinderlane",
         "bidPrice": 27.5,
         "p95LatencyMs": 150,
         "dataAgeMs": 300000,
@@ -369,7 +369,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.1
       },
       {
-        "providerId": "digitalocean",
+        "providerId": "saltmarsh",
         "bidPrice": 31,
         "p95LatencyMs": 260,
         "dataAgeMs": 480000,
@@ -378,7 +378,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.6
       },
       {
-        "providerId": "cloudflare",
+        "providerId": "slatework",
         "bidPrice": 12,
         "p95LatencyMs": 640,
         "dataAgeMs": 300000,
@@ -387,7 +387,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.7
       },
       {
-        "providerId": "modal",
+        "providerId": "mossgate",
         "bidPrice": 15,
         "p95LatencyMs": 190,
         "dataAgeMs": 2520000,
@@ -396,7 +396,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.8
       },
       {
-        "providerId": "mistral",
+        "providerId": "owlbridge",
         "bidPrice": 58,
         "p95LatencyMs": 95,
         "dataAgeMs": 60000,
@@ -405,7 +405,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.2
       },
       {
-        "providerId": "nebius",
+        "providerId": "kelpwave",
         "bidPrice": 20,
         "p95LatencyMs": 230,
         "dataAgeMs": 420000,
@@ -446,7 +446,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     },
     "listings": [
       {
-        "providerId": "together",
+        "providerId": "fernline",
         "bidPrice": 18,
         "p95LatencyMs": 210,
         "dataAgeMs": 360000,
@@ -455,7 +455,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.4
       },
       {
-        "providerId": "deepinfra",
+        "providerId": "kitefin",
         "bidPrice": 22,
         "p95LatencyMs": 180,
         "dataAgeMs": 120000,
@@ -464,7 +464,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.3
       },
       {
-        "providerId": "fireworks",
+        "providerId": "cinderlane",
         "bidPrice": 27.5,
         "p95LatencyMs": 150,
         "dataAgeMs": 300000,
@@ -473,7 +473,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.1
       },
       {
-        "providerId": "digitalocean",
+        "providerId": "saltmarsh",
         "bidPrice": 31,
         "p95LatencyMs": 260,
         "dataAgeMs": 480000,
@@ -482,7 +482,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.6
       },
       {
-        "providerId": "cloudflare",
+        "providerId": "slatework",
         "bidPrice": 12,
         "p95LatencyMs": 640,
         "dataAgeMs": 300000,
@@ -491,7 +491,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.7
       },
       {
-        "providerId": "modal",
+        "providerId": "mossgate",
         "bidPrice": 15,
         "p95LatencyMs": 190,
         "dataAgeMs": 2520000,
@@ -500,7 +500,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.8
       },
       {
-        "providerId": "mistral",
+        "providerId": "owlbridge",
         "bidPrice": 58,
         "p95LatencyMs": 95,
         "dataAgeMs": 60000,
@@ -509,7 +509,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.2
       },
       {
-        "providerId": "nebius",
+        "providerId": "kelpwave",
         "bidPrice": 20,
         "p95LatencyMs": 230,
         "dataAgeMs": 420000,
@@ -550,7 +550,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     },
     "listings": [
       {
-        "providerId": "together",
+        "providerId": "fernline",
         "bidPrice": 18,
         "p95LatencyMs": 210,
         "dataAgeMs": 360000,
@@ -559,7 +559,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.4
       },
       {
-        "providerId": "deepinfra",
+        "providerId": "kitefin",
         "bidPrice": 22,
         "p95LatencyMs": 180,
         "dataAgeMs": 120000,
@@ -568,7 +568,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.3
       },
       {
-        "providerId": "fireworks",
+        "providerId": "cinderlane",
         "bidPrice": 27.5,
         "p95LatencyMs": 150,
         "dataAgeMs": 300000,
@@ -577,7 +577,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.1
       },
       {
-        "providerId": "digitalocean",
+        "providerId": "saltmarsh",
         "bidPrice": 31,
         "p95LatencyMs": 260,
         "dataAgeMs": 480000,
@@ -586,7 +586,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.6
       },
       {
-        "providerId": "cloudflare",
+        "providerId": "slatework",
         "bidPrice": 12,
         "p95LatencyMs": 640,
         "dataAgeMs": 300000,
@@ -595,7 +595,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.7
       },
       {
-        "providerId": "modal",
+        "providerId": "mossgate",
         "bidPrice": 15,
         "p95LatencyMs": 190,
         "dataAgeMs": 2520000,
@@ -604,7 +604,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.8
       },
       {
-        "providerId": "mistral",
+        "providerId": "owlbridge",
         "bidPrice": 58,
         "p95LatencyMs": 95,
         "dataAgeMs": 60000,
@@ -613,7 +613,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.2
       },
       {
-        "providerId": "nebius",
+        "providerId": "kelpwave",
         "bidPrice": 20,
         "p95LatencyMs": 230,
         "dataAgeMs": 420000,
@@ -800,7 +800,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.2
       },
       {
-        "providerId": "huaqiang-desk",
+        "providerId": "tapeline",
         "bidPrice": 32,
         "p95LatencyMs": 420,
         "dataAgeMs": 1200000,
@@ -827,7 +827,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.5
       },
       {
-        "providerId": "seg-broker",
+        "providerId": "reelyard",
         "bidPrice": 58,
         "p95LatencyMs": 180,
         "dataAgeMs": 240000,
@@ -1235,7 +1235,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.4
       },
       {
-        "providerId": "coreweave",
+        "providerId": "bramblecore",
         "bidPrice": 1.4,
         "p95LatencyMs": 42,
         "dataAgeMs": 90,
@@ -1244,7 +1244,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.15
       },
       {
-        "providerId": "baseten",
+        "providerId": "quarrystone",
         "bidPrice": 1.8,
         "p95LatencyMs": 58,
         "dataAgeMs": 45,
@@ -1253,7 +1253,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.2
       },
       {
-        "providerId": "novita",
+        "providerId": "brindlewood",
         "bidPrice": 0.4,
         "p95LatencyMs": 310,
         "dataAgeMs": 180,
@@ -1262,7 +1262,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.6
       },
       {
-        "providerId": "crusoe",
+        "providerId": "hollowbrook",
         "bidPrice": 0.55,
         "p95LatencyMs": 72,
         "dataAgeMs": 2400,
@@ -1271,7 +1271,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.7
       },
       {
-        "providerId": "gmicloud",
+        "providerId": "basaltine",
         "bidPrice": 2.6,
         "p95LatencyMs": 38,
         "dataAgeMs": 60,
@@ -1280,7 +1280,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.05
       },
       {
-        "providerId": "wafer",
+        "providerId": "heronway",
         "bidPrice": 0.6,
         "p95LatencyMs": 95,
         "dataAgeMs": 300,
@@ -1331,7 +1331,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.4
       },
       {
-        "providerId": "coreweave",
+        "providerId": "bramblecore",
         "bidPrice": 1.4,
         "p95LatencyMs": 42,
         "dataAgeMs": 90,
@@ -1340,7 +1340,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.15
       },
       {
-        "providerId": "baseten",
+        "providerId": "quarrystone",
         "bidPrice": 1.8,
         "p95LatencyMs": 58,
         "dataAgeMs": 45,
@@ -1349,7 +1349,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.2
       },
       {
-        "providerId": "novita",
+        "providerId": "brindlewood",
         "bidPrice": 0.4,
         "p95LatencyMs": 310,
         "dataAgeMs": 180,
@@ -1358,7 +1358,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.6
       },
       {
-        "providerId": "crusoe",
+        "providerId": "hollowbrook",
         "bidPrice": 0.55,
         "p95LatencyMs": 72,
         "dataAgeMs": 2400,
@@ -1367,7 +1367,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.7
       },
       {
-        "providerId": "gmicloud",
+        "providerId": "basaltine",
         "bidPrice": 2.6,
         "p95LatencyMs": 38,
         "dataAgeMs": 60,
@@ -1376,7 +1376,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.05
       },
       {
-        "providerId": "wafer",
+        "providerId": "heronway",
         "bidPrice": 0.6,
         "p95LatencyMs": 95,
         "dataAgeMs": 300,
@@ -2077,7 +2077,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     "featured": false,
     "sample": {
       "model": "reasoning",
-      "output": "The cheapest qualifying provider is DeepInfra: it meets the 400 ms P95 limit and bids below your max price.",
+      "output": "The cheapest qualifying provider is Kitefin: it meets the 400 ms P95 limit and bids below your max price.",
       "inputTokens": 180,
       "outputTokens": 64
     },
@@ -2122,7 +2122,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     "featured": false,
     "sample": {
       "model": "json",
-      "output": "{\"provider\":\"deepinfra\",\"reason\":\"lowest qualifying bid\"}",
+      "output": "{\"provider\":\"kitefin\",\"reason\":\"lowest qualifying bid\"}",
       "inputTokens": 96,
       "outputTokens": 22
     },
@@ -2389,7 +2389,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     "source": "signal",
     "featured": false,
     "sample": {
-      "text": "A: Is the weather feed still on Together? B: It switched to DeepInfra after the latency spike.",
+      "text": "A: Is the weather feed still on Fernline? B: It switched to Kitefin after the latency spike.",
       "speakers": 2,
       "durationSeconds": 6.4
     },
@@ -3728,7 +3728,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.4
       },
       {
-        "providerId": "coreweave",
+        "providerId": "bramblecore",
         "bidPrice": 1.4,
         "p95LatencyMs": 42,
         "dataAgeMs": 90,
@@ -3737,7 +3737,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.15
       },
       {
-        "providerId": "baseten",
+        "providerId": "quarrystone",
         "bidPrice": 1.8,
         "p95LatencyMs": 58,
         "dataAgeMs": 45,
@@ -3746,7 +3746,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.2
       },
       {
-        "providerId": "novita",
+        "providerId": "brindlewood",
         "bidPrice": 0.4,
         "p95LatencyMs": 310,
         "dataAgeMs": 180,
@@ -3755,7 +3755,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.6
       },
       {
-        "providerId": "crusoe",
+        "providerId": "hollowbrook",
         "bidPrice": 0.55,
         "p95LatencyMs": 72,
         "dataAgeMs": 2400,
@@ -3764,7 +3764,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.7
       },
       {
-        "providerId": "gmicloud",
+        "providerId": "basaltine",
         "bidPrice": 2.6,
         "p95LatencyMs": 38,
         "dataAgeMs": 60,
@@ -3773,7 +3773,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.05
       },
       {
-        "providerId": "wafer",
+        "providerId": "heronway",
         "bidPrice": 0.6,
         "p95LatencyMs": 95,
         "dataAgeMs": 300,
@@ -3824,7 +3824,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.4
       },
       {
-        "providerId": "coreweave",
+        "providerId": "bramblecore",
         "bidPrice": 1.4,
         "p95LatencyMs": 42,
         "dataAgeMs": 90,
@@ -3833,7 +3833,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.15
       },
       {
-        "providerId": "baseten",
+        "providerId": "quarrystone",
         "bidPrice": 1.8,
         "p95LatencyMs": 58,
         "dataAgeMs": 45,
@@ -3842,7 +3842,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.2
       },
       {
-        "providerId": "novita",
+        "providerId": "brindlewood",
         "bidPrice": 0.4,
         "p95LatencyMs": 310,
         "dataAgeMs": 180,
@@ -3851,7 +3851,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.6
       },
       {
-        "providerId": "crusoe",
+        "providerId": "hollowbrook",
         "bidPrice": 0.55,
         "p95LatencyMs": 72,
         "dataAgeMs": 2400,
@@ -3860,7 +3860,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.7
       },
       {
-        "providerId": "gmicloud",
+        "providerId": "basaltine",
         "bidPrice": 2.6,
         "p95LatencyMs": 38,
         "dataAgeMs": 60,
@@ -3869,7 +3869,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.05
       },
       {
-        "providerId": "wafer",
+        "providerId": "heronway",
         "bidPrice": 0.6,
         "p95LatencyMs": 95,
         "dataAgeMs": 300,
@@ -3920,7 +3920,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.4
       },
       {
-        "providerId": "coreweave",
+        "providerId": "bramblecore",
         "bidPrice": 1.4,
         "p95LatencyMs": 42,
         "dataAgeMs": 90,
@@ -3929,7 +3929,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.15
       },
       {
-        "providerId": "baseten",
+        "providerId": "quarrystone",
         "bidPrice": 1.8,
         "p95LatencyMs": 58,
         "dataAgeMs": 45,
@@ -3938,7 +3938,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.2
       },
       {
-        "providerId": "novita",
+        "providerId": "brindlewood",
         "bidPrice": 0.4,
         "p95LatencyMs": 310,
         "dataAgeMs": 180,
@@ -3947,7 +3947,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.6
       },
       {
-        "providerId": "crusoe",
+        "providerId": "hollowbrook",
         "bidPrice": 0.55,
         "p95LatencyMs": 72,
         "dataAgeMs": 2400,
@@ -3956,7 +3956,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.7
       },
       {
-        "providerId": "gmicloud",
+        "providerId": "basaltine",
         "bidPrice": 2.6,
         "p95LatencyMs": 38,
         "dataAgeMs": 60,
@@ -3965,7 +3965,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.05
       },
       {
-        "providerId": "wafer",
+        "providerId": "heronway",
         "bidPrice": 0.6,
         "p95LatencyMs": 95,
         "dataAgeMs": 300,
@@ -4016,7 +4016,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.4
       },
       {
-        "providerId": "coreweave",
+        "providerId": "bramblecore",
         "bidPrice": 1.4,
         "p95LatencyMs": 42,
         "dataAgeMs": 90,
@@ -4025,7 +4025,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.15
       },
       {
-        "providerId": "baseten",
+        "providerId": "quarrystone",
         "bidPrice": 1.8,
         "p95LatencyMs": 58,
         "dataAgeMs": 45,
@@ -4034,7 +4034,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.2
       },
       {
-        "providerId": "novita",
+        "providerId": "brindlewood",
         "bidPrice": 0.4,
         "p95LatencyMs": 310,
         "dataAgeMs": 180,
@@ -4043,7 +4043,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.6
       },
       {
-        "providerId": "crusoe",
+        "providerId": "hollowbrook",
         "bidPrice": 0.55,
         "p95LatencyMs": 72,
         "dataAgeMs": 2400,
@@ -4052,7 +4052,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": -0.7
       },
       {
-        "providerId": "gmicloud",
+        "providerId": "basaltine",
         "bidPrice": 2.6,
         "p95LatencyMs": 38,
         "dataAgeMs": 60,
@@ -4061,7 +4061,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
         "bias": 0.05
       },
       {
-        "providerId": "wafer",
+        "providerId": "heronway",
         "bidPrice": 0.6,
         "p95LatencyMs": 95,
         "dataAgeMs": 300,

@@ -125,7 +125,7 @@ describe("PaymentsSection", () => {
     mount();
     expect(screen.getByRole("heading", { name: "Pay with USDC" })).toBeTruthy();
     const quote = document.querySelector('[data-slot="payment-quote"]') as HTMLElement;
-    expect(within(quote).getByText("Together")).toBeTruthy();
+    expect(within(quote).getByText("Fernline")).toBeTruthy();
     expect(within(quote).getByText("$0.000018")).toBeTruthy();
     expect(within(quote).getByText("0.000018")).toBeTruthy();
     expect(screen.getByText("Testnet")).toBeTruthy();
@@ -150,7 +150,7 @@ describe("PaymentsSection", () => {
       policy: { maxPrice: 40, maxP95LatencyMs: 400, maxDataAgeMs: 900_000, minSuccessRate: 0.995, preference: "lowest-cost", mode: { kind: "auto" } },
     });
 
-    await act(async () => stream.push({ type: "payment-required", providerId: "together", payTo: PAYEES.together, settled_atomic: "18" }));
+    await act(async () => stream.push({ type: "payment-required", providerId: "fernline", payTo: PAYEES.fernline, settled_atomic: "18" }));
     await waitFor(() => expect(stepStatus("payment-required")).toBe("complete"));
     expect(stepStatus("signed")).toBe("current");
 
@@ -158,38 +158,38 @@ describe("PaymentsSection", () => {
     await waitFor(() => expect(stepStatus("settled")).toBe("current"));
 
     await act(async () => {
-      stream.push({ type: "result", result: paidResult("together", "Together", 18) });
+      stream.push({ type: "result", result: paidResult("fernline", "Fernline", 18) });
       stream.close();
     });
     await waitFor(() => expect(stepStatus("served")).toBe("complete"));
     expect(runButton().textContent).toContain("Run paid request");
 
     const receipt = document.querySelector('[data-slot="payment-receipt"]') as HTMLElement;
-    expect(within(receipt).getByText("Together")).toBeTruthy();
+    expect(within(receipt).getByText("Fernline")).toBeTruthy();
     expect(within(receipt).getByText("61°F Overcast")).toBeTruthy();
     const txLink = within(receipt).getByRole("link", { name: new RegExp(`Transaction ${TX}`) });
     expect(txLink.getAttribute("href")).toBe(`https://sepolia.basescan.org/tx/${TX}`);
     expect(txLink.getAttribute("target")).toBe("_blank");
     expect(document.querySelector(`[data-tx="${TX}"]`)).toBeTruthy();
-    expect(screen.getByText(/Settled 0.000018 USDC to Together/)).toBeTruthy();
+    expect(screen.getByText(/Settled 0.000018 USDC to Fernline/)).toBeTruthy();
     expect(JSON.parse(window.localStorage.getItem(RECORDS_STORAGE_KEY)!).records["sf-weather"][0].id).toBe(TX);
     await waitFor(() => expect(calls.filter((call) => call.url.includes("balances")).length).toBeGreaterThanOrEqual(2));
   });
 
   it("sends edited provider conditions so the paid request pays the rerouted provider", async () => {
-    const calls = mockFetch(() => Response.json(paidResult("deepinfra", "DeepInfra", 22)));
+    const calls = mockFetch(() => Response.json(paidResult("kitefin", "Kitefin", 22)));
     const { store } = mount();
-    act(() => store.actions.updateProvider("sf-weather", "together", { bidPrice: 45 }));
+    act(() => store.actions.updateProvider("sf-weather", "fernline", { bidPrice: 45 }));
     const quote = document.querySelector('[data-slot="payment-quote"]') as HTMLElement;
-    await waitFor(() => expect(within(quote).getByText("DeepInfra")).toBeTruthy());
-    expect(screen.getByText(/edited conditions for Together/)).toBeTruthy();
+    await waitFor(() => expect(within(quote).getByText("Kitefin")).toBeTruthy());
+    expect(screen.getByText(/edited conditions for Fernline/)).toBeTruthy();
     await waitFor(() => expect(document.querySelector('[data-slot="payer-balance"]')).toBeTruthy());
 
     fireEvent.click(runButton());
     await waitFor(() => expect(document.querySelector('[data-slot="payment-receipt"]')).toBeTruthy());
     const body = JSON.parse(String(paidCalls(calls)[0].init?.body));
-    expect(body.conditions).toEqual({ together: { bidPrice: 45 } });
-    expect(document.querySelector('[data-slot="payment-receipt"]')?.textContent).toContain("DeepInfra");
+    expect(body.conditions).toEqual({ fernline: { bidPrice: 45 } });
+    expect(document.querySelector('[data-slot="payment-receipt"]')?.textContent).toContain("Kitefin");
   });
 
   it("shows the rate limit and blocks retries until Retry-After passes", async () => {
@@ -232,7 +232,7 @@ describe("PaymentsSection", () => {
   });
 
   it("keeps receipts per market across remounts and discloses rounding", async () => {
-    mockFetch(() => Response.json(paidResult("together", "Together", 18)));
+    mockFetch(() => Response.json(paidResult("fernline", "Fernline", 18)));
     const first = mount();
     await waitFor(() => expect(document.querySelector('[data-slot="payer-balance"]')).toBeTruthy());
     fireEvent.click(runButton());
@@ -245,12 +245,12 @@ describe("PaymentsSection", () => {
     cleanup();
 
     mount(createTenderStore(), "sf-weather");
-    expect(document.querySelector('[data-slot="payment-receipt"]')?.textContent).toContain("Together");
+    expect(document.querySelector('[data-slot="payment-receipt"]')?.textContent).toContain("Fernline");
   });
 
   it("previews five receipts and expands the table on request", async () => {
     mockFetch(() => Response.json({}));
-    const base = paidResult("together", "Together", 18).receipt;
+    const base = paidResult("fernline", "Fernline", 18).receipt;
     const records = Array.from({ length: 7 }, (_, index) => {
       const txHash = `0x${String(index + 1).padStart(2, "0").repeat(32)}`;
       return { id: txHash, at: 1_000 + index, receipt: { ...base, txHash, explorerUrl: `https://sepolia.basescan.org/tx/${txHash}` }, summary: "61°F Overcast" };

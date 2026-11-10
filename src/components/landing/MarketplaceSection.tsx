@@ -5,7 +5,7 @@ import { landingStyles as styles } from "./styles";
 
 const MARKET_ID = "btc-usd";
 /** Three Bitcoin price providers from the product fixtures, shown as offers. */
-const OFFER_IDS = ["arca-labs", "coreweave", "baseten"] as const;
+const OFFER_IDS = ["arca-labs", "bramblecore", "quarrystone"] as const;
 
 export interface MarketplaceOffer {
   id: string;

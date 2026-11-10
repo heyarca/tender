@@ -83,7 +83,7 @@ export interface ResultFieldSpec {
 export interface ProviderIdentity {
   id: ProviderId;
   name: string;
-  /** Public path of the original logo, e.g. `/providers/together.png`. */
+  /** Public path of the original logo, e.g. `/providers/fernline.svg`. */
   logo: string;
 }
 
@@ -304,7 +304,7 @@ export type Tone = "neutral" | "positive" | "warning" | "negative";
 export interface RoutingDecision {
   kind: RoutingDecisionKind;
   tone: Tone;
-  /** "Routing to Together" */
+  /** "Routing to Fernline" */
   title: string;
   /** One sentence. */
   summary: string;

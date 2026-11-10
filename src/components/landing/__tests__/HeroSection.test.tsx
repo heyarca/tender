@@ -72,10 +72,10 @@ describe("HeroSection", () => {
       .getAllByRole("row")
       .slice(1)
       .map((row) => row.querySelector("[role=cell]")?.textContent);
-    expect(names).toEqual(["THE ZONE BIO", "Arca Labs", "NovitaAI", "Crusoe"]);
+    expect(names).toEqual(["THE ZONE BIO", "Arca Labs", "Brindlewood", "Hollowbrook"]);
     expect(within(rowOf("THE ZONE BIO")).getByText("Active")).toBeTruthy();
-    expect(within(rowOf("NovitaAI")).getByText("Too slow")).toBeTruthy();
-    expect(within(rowOf("Crusoe")).getByText("Stale data")).toBeTruthy();
+    expect(within(rowOf("Brindlewood")).getByText("Too slow")).toBeTruthy();
+    expect(within(rowOf("Hollowbrook")).getByText("Stale data")).toBeTruthy();
     expect(rowOf("THE ZONE BIO").textContent).toContain("$0.70 /M req");
   });
 

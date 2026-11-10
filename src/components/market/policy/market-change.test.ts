@@ -42,12 +42,12 @@ describe("describeMarketChange", () => {
   it("explains a failover when the serving provider becomes too slow", () => {
     const { change } = harness();
     const note = change(
-      { type: "update-provider", marketId: "sf-weather", providerId: "together", patch: { p95LatencyMs: 640 } },
-      "together",
+      { type: "update-provider", marketId: "sf-weather", providerId: "fernline", patch: { p95LatencyMs: 640 } },
+      "fernline",
     );
     expect(note.lines).toEqual([
-      "Together no longer qualifies: P95 640 ms exceeds 400 ms.",
-      "Route switched from Together to DeepInfra, which ranks first for lowest cost.",
+      "Fernline no longer qualifies: P95 640 ms exceeds 400 ms.",
+      "Route switched from Fernline to Kitefin, which ranks first for lowest cost.",
     ]);
     expect(note.tone).toBe("warning");
   });
@@ -55,8 +55,8 @@ describe("describeMarketChange", () => {
   it("names providers that start qualifying after a policy edit", () => {
     const { change } = harness();
     const note = change({ type: "set-policy", marketId: "sf-weather", patch: { maxP95LatencyMs: 700 } });
-    expect(note.lines).toContain("Cloudflare now qualifies.");
-    expect(note.lines).toContain("Route switched from Together to Cloudflare, which ranks first for lowest cost.");
+    expect(note.lines).toContain("Slatework now qualifies.");
+    expect(note.lines).toContain("Route switched from Fernline to Slatework, which ranks first for lowest cost.");
     expect(note.tone).toBe("positive");
   });
 
@@ -69,13 +69,13 @@ describe("describeMarketChange", () => {
 
   it("reports a scheduled switch during the cooldown", () => {
     const { change } = harness();
-    change({ type: "update-provider", marketId: "sf-weather", providerId: "together", patch: { p95LatencyMs: 640 } });
+    change({ type: "update-provider", marketId: "sf-weather", providerId: "fernline", patch: { p95LatencyMs: 640 } });
     const note = change(
-      { type: "update-provider", marketId: "sf-weather", providerId: "cloudflare", patch: { p95LatencyMs: 200 } },
-      "cloudflare",
+      { type: "update-provider", marketId: "sf-weather", providerId: "slatework", patch: { p95LatencyMs: 200 } },
+      "slatework",
     );
-    expect(note.lines[0]).toBe("Cloudflare now qualifies.");
-    expect(note.lines[1]).toBe("Cloudflare now ranks first. The route switches when the 10 s cooldown ends.");
+    expect(note.lines[0]).toBe("Slatework now qualifies.");
+    expect(note.lines[1]).toBe("Slatework now ranks first. The route switches when the 10 s cooldown ends.");
   });
 
   it("surfaces a pinned provider that fails the policy", () => {
@@ -83,11 +83,11 @@ describe("describeMarketChange", () => {
     const note = change({
       type: "set-routing-mode",
       marketId: "sf-weather",
-      mode: { kind: "pinned", providerId: "cloudflare" },
+      mode: { kind: "pinned", providerId: "slatework" },
     });
-    expect(note.lines).toContain("Route switched from Together to Cloudflare.");
+    expect(note.lines).toContain("Route switched from Fernline to Slatework.");
     expect(note.lines).toContain(
-      "Pinned provider Cloudflare fails your policy: P95 640 ms exceeds 400 ms. Requests still go to Cloudflare.",
+      "Pinned provider Slatework fails your policy: P95 640 ms exceeds 400 ms. Requests still go to Slatework.",
     );
     expect(note.tone).toBe("negative");
   });
@@ -95,12 +95,12 @@ describe("describeMarketChange", () => {
   it("says the route is unchanged when an edit does not affect it", () => {
     const { change } = harness();
     const note = change(
-      { type: "update-provider", marketId: "sf-weather", providerId: "mistral", patch: { bidPrice: 60 } },
-      "mistral",
+      { type: "update-provider", marketId: "sf-weather", providerId: "owlbridge", patch: { bidPrice: 60 } },
+      "owlbridge",
     );
     expect(note.lines).toEqual([
-      "Mistral is still excluded: Bid $60.00 exceeds $40.00 /M.",
-      "Route unchanged: Together keeps serving.",
+      "Owlbridge is still excluded: Bid $60.00 exceeds $40.00 /M.",
+      "Route unchanged: Fernline keeps serving.",
     ]);
     expect(note.tone).toBe("neutral");
   });
@@ -140,10 +140,10 @@ describe("policy preview", () => {
 
     const preview = previewEligibility(current, { maxP95LatencyMs: { value: 700 } });
     expect(preview.policy.maxP95LatencyMs).toBe(700);
-    expect(preview.qualifiedIds.has("cloudflare")).toBe(true);
-    expect(preview.ranking[0]).toBe("cloudflare");
+    expect(preview.qualifiedIds.has("slatework")).toBe(true);
+    expect(preview.ranking[0]).toBe("slatework");
     expect(preview.passCounts.latency).toBe(8);
-    expect(preview.reasons.modal).toBe("Data age 42 min exceeds 15 min");
+    expect(preview.reasons.mossgate).toBe("Data age 42 min exceeds 15 min");
   });
 
   it("converts weather minutes and ignores empty drafts", () => {
@@ -151,7 +151,7 @@ describe("policy preview", () => {
     const policy = draftPolicy(view(), { maxDataAgeMs: { value: 45 }, maxPrice: { value: null } });
     expect(policy.maxDataAgeMs).toBe(45 * 60_000);
     expect(policy.maxPrice).toBe(40);
-    expect(previewEligibility(view(), { maxDataAgeMs: { value: 45 } }).qualifiedIds.has("modal")).toBe(true);
+    expect(previewEligibility(view(), { maxDataAgeMs: { value: 45 } }).qualifiedIds.has("mossgate")).toBe(true);
   });
 
   it("lists the four policy limits in form order", () => {

@@ -74,10 +74,10 @@ describe("request input", () => {
   it("sends only modified provider fields", () => {
     const view = getInitialMarketView("sf-weather");
     expect(modifiedConditions(view.providers)).toBeUndefined();
-    const edited = withConditions(view, { together: { bidPrice: 45 }, nebius: { available: true, errorRate: 0.001 } });
+    const edited = withConditions(view, { fernline: { bidPrice: 45 }, kelpwave: { available: true, errorRate: 0.001 } });
     expect(modifiedConditions(edited.providers)).toEqual({
-      together: { bidPrice: 45 },
-      nebius: { errorRate: 0.001, available: true },
+      fernline: { bidPrice: 45 },
+      kelpwave: { errorRate: 0.001, available: true },
     });
   });
 
@@ -91,7 +91,7 @@ describe("request input", () => {
       preference: "lowest-cost",
       mode: { kind: "auto" },
     });
-    expect(paymentPolicy({ ...view.policy, mode: { kind: "pinned", providerId: "novita" } }).mode).toEqual({ kind: "pinned", providerId: "novita" });
+    expect(paymentPolicy({ ...view.policy, mode: { kind: "pinned", providerId: "brindlewood" } }).mode).toEqual({ kind: "pinned", providerId: "brindlewood" });
   });
 });
 
@@ -99,12 +99,12 @@ describe("buildPaymentQuote", () => {
   it("quotes the default route with the provider's payee", () => {
     const quote = buildPaymentQuote(getInitialMarketView("sf-weather"));
     expect(quote).toMatchObject({
-      providerId: "together",
-      providerName: "Together",
-      logo: "/providers/together.png",
+      providerId: "fernline",
+      providerName: "Fernline",
+      logo: "/providers/fernline.svg",
       routeLabel: "Lowest cost",
       bidPrice: 18,
-      payTo: PAYEES.together,
+      payTo: PAYEES.fernline,
       blocker: null,
       violation: null,
       consoleProviderName: null,
@@ -118,14 +118,14 @@ describe("buildPaymentQuote", () => {
     expect(quote.amounts).toMatchObject({ settledAtomic: "1", rounded: true });
   });
 
-  it("follows edited conditions: Together above the max routes and pays DeepInfra", () => {
-    const view = withConditions(getInitialMarketView("sf-weather"), { together: { bidPrice: 45 } });
+  it("follows edited conditions: Fernline above the max routes and pays Kitefin", () => {
+    const view = withConditions(getInitialMarketView("sf-weather"), { fernline: { bidPrice: 45 } });
     const quote = buildPaymentQuote(view);
-    expect(quote.providerId).toBe("deepinfra");
-    expect(quote.payTo).toBe(PAYEES.deepinfra);
+    expect(quote.providerId).toBe("kitefin");
+    expect(quote.payTo).toBe(PAYEES.kitefin);
     expect(quote.amounts?.settledAtomic).toBe("22");
     // The console store would have failed over too; the stale route in this view shows the hint.
-    expect(quote.consoleProviderName).toBe("Together");
+    expect(quote.consoleProviderName).toBe("Fernline");
   });
 
   it("blocks when no provider qualifies", () => {
@@ -138,23 +138,23 @@ describe("buildPaymentQuote", () => {
 
   it("blocks a selected bid above the 100-unit spend cap", () => {
     const view = getInitialMarketView("sf-weather");
-    const quote = buildPaymentQuote({ ...view, policy: { ...view.policy, mode: { kind: "pinned", providerId: "mistral" } } });
-    expect(quote.providerId).toBe("mistral");
+    const quote = buildPaymentQuote({ ...view, policy: { ...view.policy, mode: { kind: "pinned", providerId: "owlbridge" } } });
+    expect(quote.providerId).toBe("owlbridge");
     expect(quote.blocker).toBeNull();
-    const expensive = withConditions(view, { mistral: { bidPrice: 120 } });
-    const capped = buildPaymentQuote({ ...expensive, policy: { ...view.policy, maxPrice: 200, mode: { kind: "pinned", providerId: "mistral" } } });
+    const expensive = withConditions(view, { owlbridge: { bidPrice: 120 } });
+    const capped = buildPaymentQuote({ ...expensive, policy: { ...view.policy, maxPrice: 200, mode: { kind: "pinned", providerId: "owlbridge" } } });
     expect(capped.blocker?.kind).toBe("spend-cap");
     expect(capped.amounts?.settledAtomic).toBe("120");
   });
 
   it("surfaces a pinned provider that fails the policy and blocks an unavailable pin", () => {
     const view = getInitialMarketView("sf-weather");
-    const slow = buildPaymentQuote({ ...view, policy: { ...view.policy, mode: { kind: "pinned", providerId: "cloudflare" } } });
+    const slow = buildPaymentQuote({ ...view, policy: { ...view.policy, mode: { kind: "pinned", providerId: "slatework" } } });
     expect(slow.routeLabel).toBe("Pinned");
-    expect(slow.providerId).toBe("cloudflare");
+    expect(slow.providerId).toBe("slatework");
     expect(slow.violation).toContain("P95 640 ms exceeds 400 ms");
     expect(slow.blocker).toBeNull();
-    const down = buildPaymentQuote({ ...view, policy: { ...view.policy, mode: { kind: "pinned", providerId: "nebius" } } });
+    const down = buildPaymentQuote({ ...view, policy: { ...view.policy, mode: { kind: "pinned", providerId: "kelpwave" } } });
     expect(down.blocker?.kind).toBe("unavailable");
   });
 });

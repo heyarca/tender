@@ -231,7 +231,7 @@ export function autoRunEntry(enabled: boolean): EntryFields {
 // Routing
 // ---------------------------------------------------------------------------
 
-/** Why rank 1 was selected, as one sentence: "Together is the lowest-priced provider that meets your policy." */
+/** Why rank 1 was selected, as one sentence: "Fernline is the lowest-priced provider that meets your policy." */
 export function recommendedSummaryText(preference: RoutingPreference, name: string): string {
   switch (preference) {
     case "lowest-cost":
@@ -398,7 +398,7 @@ export function switchCancelledEntry(marketId: MarketId, toId: ProviderId, activ
   };
 }
 
-/** Exact copy: "Pinned provider Together fails your policy: P95 640 ms exceeds 400 ms. Requests still go to Together." */
+/** Exact copy: "Pinned provider Fernline fails your policy: P95 640 ms exceeds 400 ms. Requests still go to Fernline." */
 export function pinViolationText(marketId: MarketId, providerId: ProviderId, reasons: readonly ExclusionReason[]): string {
   const name = providerName(marketId, providerId);
   return `Pinned provider ${name} fails your policy: ${reasons.map((r) => r.message).join("; ")}. Requests still go to ${name}.`;

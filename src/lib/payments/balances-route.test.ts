@@ -13,7 +13,7 @@ const snapshot: BalanceSnapshot = {
   asset: "USDC",
   tokenAddress: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
   payer: null,
-  payees: [{ id: "together", address: "0xE2A9aA9271235E39394865e6e9b3d614e98F5f5D", amountAtomic: "18", amountUsd: "0.000018" }],
+  payees: [{ id: "fernline", address: "0xE2A9aA9271235E39394865e6e9b3d614e98F5f5D", amountAtomic: "18", amountUsd: "0.000018" }],
 };
 
 let fresh: BalancesRateLimiter;

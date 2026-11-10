@@ -56,7 +56,7 @@ Props: `{ children: ReactNode; store?: TenderStore }` (`store` for tests/preview
 | `useNow()` | `number` store clock (ms) | Every second. Use it only where relative times/countdowns render. |
 | `useTenderActions()` | `TenderActions` (stable object) | Never. |
 | `useRouteEvents(marketId, onEvent)` | `void` | Never. Calls `onEvent(event: RouteEvent)` once per new route switch, no-eligible, or pinned violation (for toasts). Existing entries and entries written while restoring saved policies are not reported. `onEvent` may change between renders. |
-| `usePendingSwitch(marketId)` | `{ providerId, providerName, executeAt, secondsRemaining, label } \| null` — `label` is "Switching to Cloudflare in 7 s — switch cooldown" | Every second while a switch is pending. |
+| `usePendingSwitch(marketId)` | `{ providerId, providerName, executeAt, secondsRemaining, label } \| null` — `label` is "Switching to Slatework in 7 s — switch cooldown" | Every second while a switch is pending. |
 | `useMarketIds()` | `readonly MarketId[]` (all 75 registry markets, registry order) | Never. |
 | `useTenderSelector(selector)` | Raw `TenderState` selection (return a stable slice or primitive) | When the selection changes. |
 | `useTenderStore()` | `TenderStore` | Never. |
@@ -118,7 +118,7 @@ interface MarketView {
   conditionsModified: boolean;             // some provider differs from defaults
 }
 
-interface ProviderRow extends ProviderIdentity {        // id, name, logo ("/providers/together.png")
+interface ProviderRow extends ProviderIdentity {        // id, name, logo ("/providers/fernline.svg")
   identity: ProviderIdentity;
   conditions: ProviderConditions;          // current (what the monitor measures now)
   defaults: ProviderConditions;
@@ -141,7 +141,7 @@ interface ProviderRow extends ProviderIdentity {        // id, name, logo ("/pro
 interface RoutingDecision {
   kind: "routing" | "pending-switch" | "no-eligible" | "pinned" | "pinned-failing";
   tone: "neutral" | "positive" | "warning" | "negative";
-  title: string;                           // "Routing to Together"
+  title: string;                           // "Routing to Fernline"
   summary: string;                         // one sentence
   details: string[];                       // check lines, cheaper-but-excluded lines, best price
   activeProviderId: ProviderId | null;

@@ -15,7 +15,7 @@ export interface ResultStatusLineProps {
 
 const REJECTED_MESSAGE = "No eligible provider — request not sent";
 
-/** Text of the failure message, e.g. `Together failed: 503 Service Unavailable`. */
+/** Text of the failure message, e.g. `Fernline failed: 503 Service Unavailable`. */
 export function failureMessage(request: ResultRequest): string {
   const who = request.provider?.name ?? "Provider";
   return request.error ? `${who} failed: ${request.error}` : `${who} failed`;

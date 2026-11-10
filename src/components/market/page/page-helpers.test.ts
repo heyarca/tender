@@ -39,7 +39,7 @@ describe("result mapping", () => {
 
   it("maps a served request to the result request shape", () => {
     const request = toResultRequest(weather.lastResult, weather.providersById);
-    expect(request).toMatchObject({ status: "ok", provider: { id: "together", name: "Together", logo: "/providers/together.png" } });
+    expect(request).toMatchObject({ status: "ok", provider: { id: "fernline", name: "Fernline", logo: "/providers/fernline.svg" } });
     expect(request?.id).toMatch(/^req_\d{6}$/);
     expect(request?.latencyMs).toBeGreaterThan(0);
   });
@@ -48,8 +48,8 @@ describe("result mapping", () => {
     const failed: RequestResult = {
       status: "failed",
       marketId: "sf-weather",
-      providerId: "nebius",
-      providerName: "Nebius",
+      providerId: "kelpwave",
+      providerName: "Kelpwave",
       latencyMs: 120,
       error: { code: 503, message: "Service Unavailable" },
       cost: 0,
@@ -60,7 +60,7 @@ describe("result mapping", () => {
     expect(toResultRequest(failed, weather.providersById)).toEqual({
       id: "req_000010",
       status: "failed",
-      provider: { id: "nebius", name: "Nebius", logo: "/providers/nebius.png" },
+      provider: { id: "kelpwave", name: "Kelpwave", logo: "/providers/kelpwave.svg" },
       latencyMs: 120,
       error: "503 Service Unavailable",
     });
@@ -128,9 +128,9 @@ describe("result mapping", () => {
 
   it("gives every provider a stable color in fixture order", () => {
     const providers = vizProvidersOf(MARKETS["sf-weather"]);
-    expect(providerIdsOf(MARKETS["sf-weather"])[0]).toBe("together");
-    expect(providers.together).toMatchObject({ name: "Together", logo: "/providers/together.png", color: "var(--chart-1)" });
-    expect(providers.deepinfra.color).toBe("var(--chart-2)");
+    expect(providerIdsOf(MARKETS["sf-weather"])[0]).toBe("fernline");
+    expect(providers.fernline).toMatchObject({ name: "Fernline", logo: "/providers/fernline.svg", color: "var(--chart-1)" });
+    expect(providers.kitefin.color).toBe("var(--chart-2)");
   });
 });
 
@@ -139,8 +139,8 @@ describe("API snippets", () => {
     expect(policyQuery(getDefaultPolicy("sf-weather"))).toBe(
       "max_price=40&max_p95_ms=400&max_data_age_ms=900000&min_success_rate=0.995&preference=lowest-cost",
     );
-    const pinned = { ...getDefaultPolicy("btc-usd"), mode: { kind: "pinned" as const, providerId: "novita" } };
-    expect(policyQuery(pinned)).toContain("&pin=novita");
+    const pinned = { ...getDefaultPolicy("btc-usd"), mode: { kind: "pinned" as const, providerId: "brindlewood" } };
+    expect(policyQuery(pinned)).toContain("&pin=brindlewood");
   });
 
   it("points at each market's contract endpoint", () => {
@@ -180,12 +180,12 @@ describe("route toasts", () => {
 
   it("names the new provider and the trigger of a failover", () => {
     const state = run(createInitialState(), [
-      (now) => ({ type: "update-provider", marketId: "sf-weather", providerId: "together", patch: { p95LatencyMs: 640 }, now }),
+      (now) => ({ type: "update-provider", marketId: "sf-weather", providerId: "fernline", patch: { p95LatencyMs: 640 }, now }),
     ]);
     const [event] = events(state);
     expect(event.kind).toBe("route-switch");
     const toastSpec = routeEventToast(event, context);
-    expect(toastSpec).toMatchObject({ id: "route-sf-weather", title: "Switched to DeepInfra", tone: "warning" });
+    expect(toastSpec).toMatchObject({ id: "route-sf-weather", title: "Switched to Kitefin", tone: "warning" });
     expect(toastSpec.description).toContain("P95 640 ms exceeds 400 ms");
     expect(toastSpec.action).toBeUndefined();
   });
@@ -203,27 +203,27 @@ describe("route toasts", () => {
 
   it("surfaces a pinned violation with a switch action", () => {
     const state = run(createInitialState(), [
-      (now) => ({ type: "set-routing-mode", marketId: "sf-weather", mode: { kind: "pinned", providerId: "cloudflare" }, now }),
+      (now) => ({ type: "set-routing-mode", marketId: "sf-weather", mode: { kind: "pinned", providerId: "slatework" }, now }),
     ]);
     const event = events(state).find((entry) => entry.kind === "pin-violation");
     expect(event).toBeDefined();
-    const toastSpec = routeEventToast(event!, { ...context, recommendedProviderId: "together" });
+    const toastSpec = routeEventToast(event!, { ...context, recommendedProviderId: "fernline" });
     expect(toastSpec).toMatchObject({
       id: "pin-sf-weather",
-      title: "Pinned provider Cloudflare fails your policy",
-      description: "P95 640 ms exceeds 400 ms. Requests still go to Cloudflare.",
-      action: { kind: "switch-to-recommended", label: "Switch to Together" },
+      title: "Pinned provider Slatework fails your policy",
+      description: "P95 640 ms exceeds 400 ms. Requests still go to Slatework.",
+      action: { kind: "switch-to-recommended", label: "Switch to Fernline" },
     });
     expect(routeEventToast(event!, context).action).toEqual({ kind: "use-automatic", label: "Use automatic switching" });
   });
 
   it("prefixes events of the other market and offers to open it", () => {
     const state = run(createInitialState(), [
-      (now) => ({ type: "update-provider", marketId: "sf-weather", providerId: "together", patch: { available: false }, now }),
+      (now) => ({ type: "update-provider", marketId: "sf-weather", providerId: "fernline", patch: { available: false }, now }),
     ]);
     const [event] = events(state);
     const toastSpec = routeEventToast(event, { ...context, current: false });
-    expect(toastSpec.title).toBe("San Francisco Weather: Switched to DeepInfra");
+    expect(toastSpec.title).toBe("San Francisco Weather: Switched to Kitefin");
     expect(toastSpec.action).toEqual({ kind: "view-market", label: "View market", marketId: "sf-weather" });
   });
 });

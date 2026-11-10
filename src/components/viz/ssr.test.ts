@@ -8,11 +8,11 @@ const T0 = Date.UTC(2026, 10, 9, 18, 30);
 const points: PricePoint[] = Array.from({ length: 40 }, (_, i) => ({
   t: T0 + i * 2_000,
   price: 75_230.75 + Math.sin(i / 3) * 20,
-  providerId: i < 20 ? "coreweave" : "the-zone-bio",
+  providerId: i < 20 ? "bramblecore" : "the-zone-bio",
   status: i === 12 ? "failed" : "ok",
 }));
 const providers = {
-  coreweave: { name: "CoreWeave", logo: "/providers/coreweave.svg" },
+  bramblecore: { name: "Bramblecore", logo: "/providers/bramblecore.svg" },
   "the-zone-bio": { name: "THE ZONE BIO", logo: "/providers/the-zone-bio.jpg" },
 };
 
@@ -42,9 +42,9 @@ describe("server render", () => {
     const html = render(
       createElement(LatencyStrip, {
         requests: [
-          { id: "req_1", t: T0, latencyMs: 120, providerId: "together", status: "ok" },
+          { id: "req_1", t: T0, latencyMs: 120, providerId: "fernline", status: "ok" },
           { id: "req_2", t: T0 + 1, latencyMs: null, providerId: null, status: "rejected" },
-          { id: "req_3", t: T0 + 2, latencyMs: 90, providerId: "deepinfra", status: "ok" },
+          { id: "req_3", t: T0 + 2, latencyMs: 90, providerId: "kitefin", status: "ok" },
         ],
         limitMs: 400,
       }),
@@ -81,7 +81,7 @@ describe("server render", () => {
     const ok = render(
       createElement(WeatherResult, {
         reading,
-        request: { id: "req_000123", status: "ok", provider: { id: "together", name: "Together" }, latencyMs: 84 },
+        request: { id: "req_000123", status: "ok", provider: { id: "fernline", name: "Fernline" }, latencyMs: 84 },
       }),
     );
     expect(ok).toContain("61°F");
@@ -95,13 +95,13 @@ describe("server render", () => {
         request: {
           id: "req_000124",
           status: "failed",
-          provider: { id: "nebius", name: "Nebius" },
+          provider: { id: "kelpwave", name: "Kelpwave" },
           latencyMs: 1_240,
           error: "503 Service Unavailable",
         },
       }),
     );
-    expect(failed).toContain("Nebius failed: 503 Service Unavailable");
+    expect(failed).toContain("Kelpwave failed: 503 Service Unavailable");
 
     const rejected = render(
       createElement(BitcoinResult, {

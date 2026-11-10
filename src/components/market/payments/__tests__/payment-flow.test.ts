@@ -11,8 +11,8 @@ const receipt: PaymentReceipt = {
   asset: "USDC",
   payer: "0x1111111111111111111111111111111111111111",
   payTo: "0x463160c63D9306F684CE88DB65fF458A4Fe1b445",
-  providerId: "deepinfra",
-  providerName: "DeepInfra",
+  providerId: "kitefin",
+  providerName: "Kitefin",
   latency_ms: 121,
   data_age_ms: 118_000,
   network: "base-sepolia",
@@ -51,7 +51,7 @@ describe("describeFailure", () => {
   });
 
   it("classifies a provider error as served-failed and not settled", () => {
-    const details = { response: { error: { code: "provider_error", message: "503 Service Unavailable" }, provider: "nebius" } };
+    const details = { response: { error: { code: "provider_error", message: "503 Service Unavailable" }, provider: "kelpwave" } };
     const view = describeFailure({ status: 503, message: "Paid request did not complete; inspect the response before trying again", details }, null);
     expect(view).toMatchObject({ kind: "provider-error", step: "served", providerStatus: 503 });
     expect(view?.description).toContain("503");
@@ -97,7 +97,7 @@ describe("deriveSteps", () => {
       "22 atomic units to 0x4631…b445",
       "Signed by 0x1111…1111",
       "Transaction 0x3f3f3f…3f3f3f",
-      "DeepInfra · 121 ms",
+      "Kitefin · 121 ms",
     ]);
   });
 

@@ -1,14 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 import { PaymentResponseError, readPaidResponse } from "./client-response";
 
-const result = { response: { provider: "together", latency_ms: 20, data_age_ms: 10 }, receipt: { txHash: `0x${"a".repeat(64)}`, providerId: "together" } };
+const result = { response: { provider: "fernline", latency_ms: 20, data_age_ms: 10 }, receipt: { txHash: `0x${"a".repeat(64)}`, providerId: "fernline" } };
 function stream(chunks: string[]) {
   return new Response(new ReadableStream({ start(controller) { for (const chunk of chunks) controller.enqueue(new TextEncoder().encode(chunk)); controller.close(); } }), { headers: { "Content-Type": "application/x-ndjson" } });
 }
 describe("payment response parsing", () => {
   it("reads actual ordered progress across arbitrary chunk boundaries", async () => {
     const progress = vi.fn();
-    const text = [JSON.stringify({ type: "payment-required", providerId: "together", payTo: "0x1", settled_atomic: "18" }), JSON.stringify({ type: "signed" }), JSON.stringify({ type: "result", result })].join("\n") + "\n";
+    const text = [JSON.stringify({ type: "payment-required", providerId: "fernline", payTo: "0x1", settled_atomic: "18" }), JSON.stringify({ type: "signed" }), JSON.stringify({ type: "result", result })].join("\n") + "\n";
     expect(await readPaidResponse(stream([text.slice(0, 13), text.slice(13, 90), text.slice(90)]), progress)).toEqual(result);
     expect(progress.mock.calls.map(([event]) => event.type)).toEqual(["payment-required", "signed"]);
   });

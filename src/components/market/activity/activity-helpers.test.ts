@@ -27,14 +27,14 @@ function busyMarket(): ActivityEntry[] {
   step({
     type: "update-provider",
     marketId: "sf-weather",
-    providerId: "together",
+    providerId: "fernline",
     patch: { p95LatencyMs: 640 },
     now: (now += 1_000),
   });
   step({
     type: "update-provider",
     marketId: "sf-weather",
-    providerId: "deepinfra",
+    providerId: "kitefin",
     patch: { bidPrice: 30 },
     now: (now += 1_000),
   });
@@ -44,7 +44,7 @@ function busyMarket(): ActivityEntry[] {
   step({
     type: "set-routing-mode",
     marketId: "sf-weather",
-    mode: { kind: "pinned", providerId: "cloudflare" },
+    mode: { kind: "pinned", providerId: "slatework" },
     now: (now += 1_000),
   });
   return selectMarketView(state.markets["sf-weather"]).activity;
@@ -108,8 +108,8 @@ describe("parseRouteSwitchDetails", () => {
     const failover = entries.find((entry) => entry.kind === "route-switch" && entry.trigger === "failover");
     expect(failover).toBeDefined();
     const parts = parseRouteSwitchDetails(failover!.details);
-    expect(parts.trigger).toBe("Together failed the latency check: P95 640 ms exceeds 400 ms.");
-    expect(parts.qualifiedName).toBe("DeepInfra");
+    expect(parts.trigger).toBe("Fernline failed the latency check: P95 640 ms exceeds 400 ms.");
+    expect(parts.qualifiedName).toBe("Kitefin");
     expect(parts.checks).toEqual([
       "Bid $22.00 ≤ $40.00 /M",
       "P95 180 ms ≤ 400 ms",
@@ -122,11 +122,11 @@ describe("parseRouteSwitchDetails", () => {
 
   it("keeps the failure line of a pinned provider that fails the policy", () => {
     const entries = busyMarket();
-    const pinned = entries.find((entry) => entry.kind === "route-switch" && entry.toProviderId === "cloudflare");
+    const pinned = entries.find((entry) => entry.kind === "route-switch" && entry.toProviderId === "slatework");
     const parts = parseRouteSwitchDetails(pinned!.details);
-    expect(parts.failure).toBe("Cloudflare fails your policy: P95 640 ms exceeds 400 ms.");
+    expect(parts.failure).toBe("Slatework fails your policy: P95 640 ms exceeds 400 ms.");
     expect(parts.checks).toEqual([]);
-    expect(parts.notes).toEqual(["Pinned: requests always go to Cloudflare."]);
+    expect(parts.notes).toEqual(["Pinned: requests always go to Slatework."]);
   });
 
   it("keeps unknown lines as notes", () => {

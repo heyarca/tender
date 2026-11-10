@@ -26,9 +26,9 @@ A bid of `$X /M requests` is `X / 1,000,000` USD per request and `X` USDC atomic
 USDC cannot transfer a fractional atomic unit. Tender rounds **up**, never down to zero.
 The extra charge is always less than one atomic unit.
 
-- Together's `$18 /M` bid settles as `18` atomic units (`0.000018` USDC).
+- Fernline's `$18 /M` bid settles as `18` atomic units (`0.000018` USDC).
 - THE ZONE BIO's `$0.70 /M` bid has `price_usd: 0.0000007` and settles as `1` atomic unit (`0.000001` USDC).
-- Fireworks' `$27.50 /M` bid settles as `28` atomic units (`0.000028` USDC).
+- Cinderlane' `$27.50 /M` bid settles as `28` atomic units (`0.000028` USDC).
 
 Quotes, the 402 JSON body, payment requirements `extra`, paid JSON responses and receipt objects include:
 
@@ -54,13 +54,13 @@ The note is present whenever rounding applies. The requirement description also 
 `market` is `sf-weather` or `btc-usd`. Optional `policy` fields match the console:
 `maxPrice` (USD/M), `maxP95LatencyMs`, `maxDataAgeMs`, `minSuccessRate` (0–1),
 `preference` (`lowest-cost`, `lowest-latency`, `freshest-data`), and
-`mode` (`{"kind":"auto"}` or `{"kind":"pinned","providerId":"together"}`).
+`mode` (`{"kind":"auto"}` or `{"kind":"pinned","providerId":"fernline"}`).
 Optional `conditions` contains up to 16 provider-id keys, each with a partial patch of
 `bidPrice`, `p95LatencyMs`, `dataAgeMs`, `errorRate` (0–1), and `available`.
 Only providers in the requested market are allowed. Unknown fields and invalid types are rejected before any signature; finite numeric values are clamped with the same engine sanitizer as the console.
 The snapshot is passed to the contract handler in-process for both the challenge and signed retry. Public contract query parameters/headers cannot inject provider conditions.
 
-For example, `{ "market": "sf-weather", "conditions": { "together": { "bidPrice": 45 } } }` routes the paid request to DeepInfra under the default policy and pays DeepInfra's address.
+For example, `{ "market": "sf-weather", "conditions": { "fernline": { "bidPrice": 45 } } }` routes the paid request to Kitefin under the default policy and pays Kitefin's address.
 A selected bid above `$100 /M` exceeds the wallet's `100`-atomic cap and returns a clear 422 error before signing.
 
 The server-owned payer uses `@x402/fetch`. Its fetch transport dispatches directly to the same contract handler in-process, including the 402 challenge and signed retry. It does not trust incoming Host/forwarded-host headers and does not make an HTTP self-call. Vercel deployment protection cannot block that internal transport.
@@ -75,7 +75,7 @@ No success receipt is invented when the facilitator fails.
 
 Clients may send `Accept: application/x-ndjson`. Once validation and rate-limit checks pass, the endpoint returns HTTP 200 with newline-delimited events:
 
-- `{"type":"payment-required","providerId":"together","payTo":"0x…","settled_atomic":"18"}` after the real x402 402 challenge is decoded and checked.
+- `{"type":"payment-required","providerId":"fernline","payTo":"0x…","settled_atomic":"18"}` after the real x402 402 challenge is decoded and checked.
 - `{"type":"signed"}` immediately before dispatching the retry that actually carries `PAYMENT-SIGNATURE`.
 - `{"type":"result","result":...}` only after settlement and the contract response are verified.
 - Or `{"type":"error","status":409,"error":"...","details":...}` with the original failure status and structured details.

@@ -80,13 +80,13 @@ describe("product-backed scene state", () => {
       const row = view.providersById[identity.id];
       expect(row).toMatchObject({ id: identity.id, name: identity.name, logo: identity.logo, conditions: identity.defaults });
     }
-    expect(view.providersById.novita.status).toBe("too-slow");
-    expect(view.providersById.crusoe.status).toBe("stale-data");
+    expect(view.providersById.brindlewood.status).toBe("too-slow");
+    expect(view.providersById.hollowbrook.status).toBe("stale-data");
   });
 
   it("supplies stable UI row ids without changing the engine's ordering", () => {
-    expect(HERO_PROVIDER_IDS).toEqual(["the-zone-bio", "arca-labs", "novita", "crusoe"]);
-    expect(TABLE_PROVIDER_IDS).toEqual(["the-zone-bio", "arca-labs", "coreweave", "novita", "crusoe"]);
+    expect(HERO_PROVIDER_IDS).toEqual(["the-zone-bio", "arca-labs", "brindlewood", "hollowbrook"]);
+    expect(TABLE_PROVIDER_IDS).toEqual(["the-zone-bio", "arca-labs", "bramblecore", "brindlewood", "hollowbrook"]);
     const switched = sceneReducer(createSceneState(), { type: "latency" });
     const view = selectScene(switched);
     expect(view.providers[0].id).toBe("arca-labs");
@@ -223,11 +223,11 @@ describe("real policy, request, and validation behavior", () => {
 
   it("passes policy edits directly to the engine and immediately requests on the new route", () => {
     const state = tick(createSceneState(), 4);
-    const patch = { maxP95LatencyMs: fixture("novita").defaults.p95LatencyMs };
+    const patch = { maxP95LatencyMs: fixture("brindlewood").defaults.p95LatencyMs };
     const next = sceneReducer(state, { type: "policy", patch });
     expect(next).toEqual(applyAndRun(state, { type: "set-policy", marketId: "btc-usd", patch, now: state.now }));
-    expect(selectScene(next).route).toMatchObject({ activeProviderId: "novita", pending: null });
-    expect(selectScene(next).lastResult).toMatchObject({ status: "ok", providerId: "novita", requestedAt: state.now });
+    expect(selectScene(next).route).toMatchObject({ activeProviderId: "brindlewood", pending: null });
+    expect(selectScene(next).lastResult).toMatchObject({ status: "ok", providerId: "brindlewood", requestedAt: state.now });
   });
 
   it("fails over immediately when the active provider fails during a pending switch", () => {

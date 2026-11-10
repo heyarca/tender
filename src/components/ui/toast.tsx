@@ -91,7 +91,7 @@ const toastApi: ToastApi = Object.assign((options: ToastOptions) => toast(option
  *
  * @example
  * const toast = useToast();
- * toast({ title: "Switched to DeepInfra", description: "Together exceeded the P95 limit.", tone: "warning" });
+ * toast({ title: "Switched to Kitefin", description: "Fernline exceeded the P95 limit.", tone: "warning" });
  *
  * const { toast, dismiss } = useToast();
  */

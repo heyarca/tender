@@ -125,6 +125,6 @@ describe("RequirementsSection", () => {
     act(() => store.actions.resetPolicy("btc-usd"));
     fireEvent.click(screen.getByRole("radio", { name: "San Francisco Weather" }));
     expect(document.querySelector("input#policy-sf-weather-maxPrice")).toBeTruthy();
-    expect(summary().textContent).toBe("4 of 8 providers qualify.Together serves the next request.");
+    expect(summary().textContent).toBe("4 of 8 providers qualify.Fernline serves the next request.");
   });
 });

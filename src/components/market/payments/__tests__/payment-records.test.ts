@@ -10,8 +10,8 @@ const receipt = {
   asset: "USDC",
   payer: "0x1111111111111111111111111111111111111111",
   payTo: "0xE2A9aA9271235E39394865e6e9b3d614e98F5f5D",
-  providerId: "together",
-  providerName: "Together",
+  providerId: "fernline",
+  providerName: "Fernline",
   latency_ms: 140,
   data_age_ms: 360_000,
   network: "base-sepolia",
@@ -52,21 +52,21 @@ describe("parseRecords", () => {
 
 describe("parseBalances", () => {
   const payer = { id: "payer", address: "0x1111111111111111111111111111111111111111", amountAtomic: "19999820", amountUsd: "19.99982" };
-  const together = { id: "together", address: receipt.payTo, amountAtomic: "412", amountUsd: "0.000412" };
-  const body = { network: "base-sepolia", asset: "USDC", tokenAddress: "0x036CbD53842c5426634e7929541eC2318f3dCF7e", payer, payees: [together] };
+  const fernline = { id: "fernline", address: receipt.payTo, amountAtomic: "412", amountUsd: "0.000412" };
+  const body = { network: "base-sepolia", asset: "USDC", tokenAddress: "0x036CbD53842c5426634e7929541eC2318f3dCF7e", payer, payees: [fernline] };
 
   it("parses the balances response", () => {
     const parsed = parseBalances(body);
     expect(parsed?.payer).toEqual(payer);
-    expect(payeeBalance(parsed, "together")).toEqual(together);
-    expect(payeeBalance(parsed, "deepinfra")).toBeNull();
-    expect(payeeBalance(null, "together")).toBeNull();
+    expect(payeeBalance(parsed, "fernline")).toEqual(fernline);
+    expect(payeeBalance(parsed, "kitefin")).toBeNull();
+    expect(payeeBalance(null, "fernline")).toBeNull();
   });
 
   it("accepts a missing payer and rejects malformed balances", () => {
     expect(parseBalances({ ...body, payer: null })?.payer).toBeNull();
     expect(parseBalances({ ...body, payer: { ...payer, amountAtomic: "-1" } })).toBeNull();
-    expect(parseBalances({ ...body, payees: [{ ...together, address: "nope" }] })).toBeNull();
+    expect(parseBalances({ ...body, payees: [{ ...fernline, address: "nope" }] })).toBeNull();
     expect(parseBalances({ error: "Unable to read Base Sepolia USDC balances" })).toBeNull();
   });
 });

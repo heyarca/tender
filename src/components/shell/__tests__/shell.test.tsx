@@ -315,12 +315,12 @@ describe("CommandPalette", () => {
           groups={[
             {
               heading: "Actions",
-              // Fuzzy-matches "DeepInfra" through its description, worse than the provider itself.
+              // Fuzzy-matches "Kitefin" through its description, worse than the provider itself.
               items: [{ id: "reset", label: "Reset conditions", description: "Deep infrastructure diagnostics", onSelect: onReset }],
             },
             {
               heading: "Providers",
-              items: [{ id: "deepinfra", label: "DeepInfra", keywords: ["deepinfra"], onSelect: onSelectProvider }],
+              items: [{ id: "kitefin", label: "Kitefin", keywords: ["kitefin"], onSelect: onSelectProvider }],
             },
           ]}
         />
@@ -332,8 +332,8 @@ describe("CommandPalette", () => {
     const headings = () => screen.getAllByText(/^(Actions|Providers)$/).map((heading) => heading.textContent);
     expect(headings()).toEqual(["Actions", "Providers"]);
 
-    fireEvent.change(input, { target: { value: "DeepInfra" } });
-    await waitFor(() => expect(screen.getByText("DeepInfra")).toBeTruthy());
+    fireEvent.change(input, { target: { value: "Kitefin" } });
+    await waitFor(() => expect(screen.getByText("Kitefin")).toBeTruthy());
     expect(headings()).toEqual(["Providers", "Actions"]);
 
     fireEvent.keyDown(input, { key: "Enter" });
@@ -356,8 +356,8 @@ describe("toast", () => {
             type="button"
             onClick={() =>
               api.toast({
-                title: "Switched to DeepInfra",
-                description: "Together P95 640 ms exceeds 400 ms.",
+                title: "Switched to Kitefin",
+                description: "Fernline P95 640 ms exceeds 400 ms.",
                 tone: "warning",
                 action: { label: "Undo", onClick: onUndo },
               })
@@ -380,8 +380,8 @@ describe("toast", () => {
     expect(await screen.findByRole("img", { name: "Success" })).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Destructured" }));
-    expect((await screen.findAllByText("Switched to DeepInfra")).length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Together P95 640 ms exceeds 400 ms.").length).toBeGreaterThan(0);
+    expect((await screen.findAllByText("Switched to Kitefin")).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Fernline P95 640 ms exceeds 400 ms.").length).toBeGreaterThan(0);
     // Base UI announces high-priority toasts in a separate alert region and hides the visual card from AT.
     expect(await screen.findByRole("img", { name: "Warning", hidden: true })).toBeTruthy();
 
@@ -393,9 +393,9 @@ describe("toast", () => {
     render(<Toaster />);
     let id = "";
     act(() => {
-      id = toast({ id: "route", title: "Routing to Together", tone: "info" });
+      id = toast({ id: "route", title: "Routing to Fernline", tone: "info" });
     });
     expect(id).toBe("route");
-    expect((await screen.findAllByText("Routing to Together")).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText("Routing to Fernline")).length).toBeGreaterThan(0);
   });
 });

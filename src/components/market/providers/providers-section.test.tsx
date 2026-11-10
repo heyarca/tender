@@ -72,100 +72,100 @@ describe("ProvidersSection", () => {
     mount();
     expect(screen.getByRole("heading", { name: "Providers", level: 2 })).toBeTruthy();
     expect(rowIds()).toEqual([
-      "together",
-      "deepinfra",
-      "fireworks",
-      "digitalocean",
+      "fernline",
+      "kitefin",
+      "cinderlane",
+      "saltmarsh",
       "divider:Excluded by your policy (4)",
-      "nebius",
-      "mistral",
-      "cloudflare",
-      "modal",
+      "kelpwave",
+      "owlbridge",
+      "slatework",
+      "mossgate",
     ]);
-    const together = within(row("together"));
-    expect(together.getByText("Active", { selector: "[data-tag=active]" })).toBeTruthy();
-    expect(together.getByText("Best price")).toBeTruthy();
-    expect(together.getByText("$18.00")).toBeTruthy();
-    expect(row("cloudflare").querySelector("[data-slot=status-badge]")?.textContent).toBe("Too slow");
-    expect(row("cloudflare").querySelector("[data-slot=status-badge]")?.getAttribute("aria-label")).toBe(
+    const fernline = within(row("fernline"));
+    expect(fernline.getByText("Active", { selector: "[data-tag=active]" })).toBeTruthy();
+    expect(fernline.getByText("Best price")).toBeTruthy();
+    expect(fernline.getByText("$18.00")).toBeTruthy();
+    expect(row("slatework").querySelector("[data-slot=status-badge]")?.textContent).toBe("Too slow");
+    expect(row("slatework").querySelector("[data-slot=status-badge]")?.getAttribute("aria-label")).toBe(
       "Too slow. P95 640 ms exceeds 400 ms.",
     );
-    expect(row("modal").querySelector("[data-slot=status-badge]")?.textContent).toBe("Stale data");
-    expect(row("mistral").querySelector("[data-slot=status-badge]")?.textContent).toBe("Over budget");
-    expect(row("nebius").querySelector("[data-slot=status-badge]")?.textContent).toBe("Unavailable");
-    expect(row("deepinfra").querySelector("td:nth-child(8)")?.textContent).toBe("Rank #2 standby");
+    expect(row("mossgate").querySelector("[data-slot=status-badge]")?.textContent).toBe("Stale data");
+    expect(row("owlbridge").querySelector("[data-slot=status-badge]")?.textContent).toBe("Over budget");
+    expect(row("kelpwave").querySelector("[data-slot=status-badge]")?.textContent).toBe("Unavailable");
+    expect(row("kitefin").querySelector("td:nth-child(8)")?.textContent).toBe("Rank #2 standby");
     expect(screen.getByText(/of 8 qualify/).textContent).toBe("4 of 8 qualify");
     expect(decision().dataset.kind).toBe("routing");
-    expect(within(decision()).getByRole("heading", { name: "Routing to Together" })).toBeTruthy();
-    expect(within(decision()).getByText(/Cloudflare is cheaper/)).toBeTruthy();
+    expect(within(decision()).getByRole("heading", { name: "Routing to Fernline" })).toBeTruthy();
+    expect(within(decision()).getByText(/Slatework is cheaper/)).toBeTruthy();
   });
 
   it("renders the Bitcoin market defaults", () => {
     mount("btc-usd");
     expect(rowIds()[0]).toBe("the-zone-bio");
-    expect(row("novita").dataset.status).toBe("too-slow");
-    expect(row("crusoe").dataset.status).toBe("stale-data");
-    expect(row("gmicloud").dataset.status).toBe("over-budget");
-    expect(row("wafer").dataset.status).toBe("unreliable");
+    expect(row("brindlewood").dataset.status).toBe("too-slow");
+    expect(row("hollowbrook").dataset.status).toBe("stale-data");
+    expect(row("basaltine").dataset.status).toBe("over-budget");
+    expect(row("heronway").dataset.status).toBe("unreliable");
     expect(screen.getByRole("button", { name: /Max data age 1,000 ms/ })).toBeTruthy();
   });
 
   it("re-ranks when the routing preference changes", () => {
     mount();
     fireEvent.click(screen.getByRole("radio", { name: "Lowest latency" }));
-    expect(rowIds()[0]).toBe("fireworks");
-    expect(row("fireworks").dataset.role).toBe("active");
-    expect(within(decision()).getByRole("heading").textContent).toBe("Routing to Fireworks");
+    expect(rowIds()[0]).toBe("cinderlane");
+    expect(row("cinderlane").dataset.role).toBe("active");
+    expect(within(decision()).getByRole("heading").textContent).toBe("Routing to Cinderlane");
     // Best price still marks the cheapest qualified provider.
-    expect(within(row("together")).getByText("Best price")).toBeTruthy();
+    expect(within(row("fernline")).getByText("Best price")).toBeTruthy();
   });
 
   it("selects a provider on row click and clears it on a second click", () => {
     mount();
-    fireEvent.click(row("fireworks"));
-    expect(screen.getByTestId("selected").textContent).toBe("fireworks");
-    expect(row("fireworks").dataset.state).toBe("selected");
-    expect(within(row("fireworks")).getByRole("button", { name: "Fireworks, select to inspect" }).getAttribute("aria-pressed")).toBe("true");
-    fireEvent.click(row("fireworks"));
+    fireEvent.click(row("cinderlane"));
+    expect(screen.getByTestId("selected").textContent).toBe("cinderlane");
+    expect(row("cinderlane").dataset.state).toBe("selected");
+    expect(within(row("cinderlane")).getByRole("button", { name: "Cinderlane, select to inspect" }).getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(row("cinderlane"));
     expect(screen.getByTestId("selected").textContent).toBe("none");
   });
 
   it("fails over when the active provider stops qualifying", () => {
     const store = mount();
-    act(() => store.actions.updateProvider("sf-weather", "together", { p95LatencyMs: 520 }));
-    expect(rowIds()[0]).toBe("deepinfra");
-    expect(row("together").dataset.status).toBe("too-slow");
-    expect(rowIds().indexOf("together")).toBeGreaterThan(rowIds().findIndex((id) => id.startsWith("divider")));
-    expect(within(decision()).getByRole("heading").textContent).toBe("Routing to DeepInfra");
-    expect(document.querySelector("[aria-live=polite]")?.textContent).toBe("Routing to DeepInfra");
+    act(() => store.actions.updateProvider("sf-weather", "fernline", { p95LatencyMs: 520 }));
+    expect(rowIds()[0]).toBe("kitefin");
+    expect(row("fernline").dataset.status).toBe("too-slow");
+    expect(rowIds().indexOf("fernline")).toBeGreaterThan(rowIds().findIndex((id) => id.startsWith("divider")));
+    expect(within(decision()).getByRole("heading").textContent).toBe("Routing to Kitefin");
+    expect(document.querySelector("[aria-live=polite]")?.textContent).toBe("Routing to Kitefin");
   });
 
   it("shows the cooldown countdown for an optimization switch", () => {
     const store = mount();
-    act(() => store.actions.updateProvider("sf-weather", "together", { p95LatencyMs: 640 }));
-    act(() => store.actions.updateProvider("sf-weather", "together", { p95LatencyMs: 210 }));
+    act(() => store.actions.updateProvider("sf-weather", "fernline", { p95LatencyMs: 640 }));
+    act(() => store.actions.updateProvider("sf-weather", "fernline", { p95LatencyMs: 210 }));
     expect(decision().dataset.kind).toBe("pending-switch");
-    expect(within(decision()).getByText("Switching to Together in 10 s — switch cooldown")).toBeTruthy();
-    expect(within(row("together")).getByText("Next in 10 s")).toBeTruthy();
+    expect(within(decision()).getByText("Switching to Fernline in 10 s — switch cooldown")).toBeTruthy();
+    expect(within(row("fernline")).getByText("Next in 10 s")).toBeTruthy();
     act(() => {
       vi.advanceTimersByTime(3_000);
     });
-    expect(within(decision()).getByText("Switching to Together in 7 s — switch cooldown")).toBeTruthy();
+    expect(within(decision()).getByText("Switching to Fernline in 7 s — switch cooldown")).toBeTruthy();
     fireEvent.click(within(decision()).getByRole("button", { name: "Switch now" }));
-    expect(rowIds()[0]).toBe("together");
+    expect(rowIds()[0]).toBe("fernline");
     expect(decision().dataset.kind).toBe("routing");
   });
 
   it("surfaces a failing pinned provider with explicit actions", () => {
     const store = mount();
-    act(() => store.actions.setRoutingMode("sf-weather", { kind: "pinned", providerId: "cloudflare" }));
-    expect(rowIds()[0]).toBe("cloudflare");
-    expect(within(row("cloudflare")).getByText("Pinned, failing")).toBeTruthy();
+    act(() => store.actions.setRoutingMode("sf-weather", { kind: "pinned", providerId: "slatework" }));
+    expect(rowIds()[0]).toBe("slatework");
+    expect(within(row("slatework")).getByText("Pinned, failing")).toBeTruthy();
     expect(decision().dataset.kind).toBe("pinned-failing");
-    expect(screen.getByRole("button", { name: /Pinned to Cloudflare/ })).toBeTruthy();
-    fireEvent.click(within(decision()).getByRole("button", { name: "Switch to Together" }));
+    expect(screen.getByRole("button", { name: /Pinned to Slatework/ })).toBeTruthy();
+    fireEvent.click(within(decision()).getByRole("button", { name: "Switch to Fernline" }));
     expect(decision().dataset.kind).toBe("pinned");
-    expect(within(decision()).getByRole("heading").textContent).toBe("Pinned to Together");
+    expect(within(decision()).getByRole("heading").textContent).toBe("Pinned to Fernline");
     fireEvent.click(within(decision()).getByRole("button", { name: "Use automatic switching" }));
     expect(decision().dataset.kind).toBe("routing");
   });
@@ -194,9 +194,9 @@ describe("ProvidersSection", () => {
     const bid = screen.getByRole("button", { name: /^Bid/ });
     fireEvent.click(bid);
     fireEvent.click(bid);
-    expect(rowIds().slice(0, 4)).toEqual(["digitalocean", "fireworks", "deepinfra", "together"]);
+    expect(rowIds().slice(0, 4)).toEqual(["saltmarsh", "cinderlane", "kitefin", "fernline"]);
     expect(bid.closest("th")?.getAttribute("aria-sort")).toBe("descending");
     fireEvent.click(bid);
-    expect(rowIds()[0]).toBe("together");
+    expect(rowIds()[0]).toBe("fernline");
   });
 });

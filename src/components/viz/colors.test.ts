@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { CHART_COLORS, providerColor, providerColorMap, successTone } from "./colors";
 
-const IDS = ["together", "deepinfra", "fireworks", "digitalocean", "cloudflare", "modal", "mistral", "nebius"];
+const IDS = ["fernline", "kitefin", "cinderlane", "saltmarsh", "slatework", "mossgate", "owlbridge", "kelpwave"];
 
 describe("providerColor", () => {
   it("follows the fixture order", () => {
-    expect(providerColor("together", IDS)).toBe("var(--chart-1)");
-    expect(providerColor("nebius", IDS)).toBe("var(--chart-8)");
+    expect(providerColor("fernline", IDS)).toBe("var(--chart-1)");
+    expect(providerColor("kelpwave", IDS)).toBe("var(--chart-8)");
   });
 
   it("wraps after eight providers", () => {

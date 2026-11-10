@@ -25,7 +25,7 @@ function Separator() {
 }
 
 /**
- * Provenance line: `Served by [logo] Together · 84 ms · data age 220 ms · req_000123`.
+ * Provenance line: `Served by [logo] Fernline · 84 ms · data age 220 ms · req_000123`.
  * Fields that are not passed are left out.
  */
 export function ResultMeta({

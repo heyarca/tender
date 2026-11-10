@@ -29,7 +29,7 @@ describe("USDC balance batch", () => {
     expect(batch.contracts.every((contract: { address: string; abi: unknown; functionName: string }) => contract.address === USDC_ADDRESS && contract.abi === erc20Abi && contract.functionName === "balanceOf")).toBe(true);
     expect(batch.contracts.slice(1).map((contract: { args: string[] }) => contract.args[0])).toEqual(Object.values(PAYEES));
     expect(result.payer?.amountAtomic).toBe("0");
-    expect(result.payees[0]).toMatchObject({ id: "together", amountAtomic: "1000000", amountUsd: "1" });
+    expect(result.payees[0]).toMatchObject({ id: "fernline", amountAtomic: "1000000", amountUsd: "1" });
   });
   it("supports an unconfigured payer without omitting payees", async () => {
     vi.stubEnv("TENDER_DEMO_PAYER_PRIVATE_KEY", "");

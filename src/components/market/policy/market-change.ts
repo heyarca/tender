@@ -17,7 +17,7 @@ export interface ChangeNote {
 
 const TONE_RANK: Record<Tone, number> = { neutral: 0, positive: 1, warning: 2, negative: 3 };
 
-/** "Together", "Together and Modal", "Together, Modal and Mistral". */
+/** "Fernline", "Fernline and Mossgate", "Fernline, Mossgate and Owlbridge". */
 export function joinNames(names: readonly string[]): string {
   if (names.length <= 1) return names.join("");
   return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;

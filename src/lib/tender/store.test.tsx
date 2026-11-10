@@ -53,7 +53,7 @@ describe("TenderProvider", () => {
     const state = store.api.getState();
     expect(state.rebased).toBe(true);
     expect(state.now).toBe(WALL);
-    expect(state.markets["sf-weather"].route.activeProviderId).toBe("together");
+    expect(state.markets["sf-weather"].route.activeProviderId).toBe("fernline");
   });
 
   it("ticks the clock without re-rendering market views", () => {
@@ -77,9 +77,9 @@ describe("TenderProvider", () => {
 
   it("reports each route event once", () => {
     const { events, actions } = mount();
-    act(() => actions().updateProvider("sf-weather", "together", { p95LatencyMs: 640 }));
+    act(() => actions().updateProvider("sf-weather", "fernline", { p95LatencyMs: 640 }));
     expect(events).toHaveLength(1);
-    expect(events[0]).toMatchObject({ kind: "route-switch", fromProviderId: "together", toProviderId: "deepinfra", trigger: "failover" });
+    expect(events[0]).toMatchObject({ kind: "route-switch", fromProviderId: "fernline", toProviderId: "kitefin", trigger: "failover" });
     act(() => {
       vi.advanceTimersByTime(6_000);
     });
@@ -90,17 +90,17 @@ describe("TenderProvider", () => {
 
   it("executes a pending switch when the cooldown ends", () => {
     const { store, actions } = mount();
-    act(() => actions().updateProvider("sf-weather", "together", { p95LatencyMs: 640 }));
+    act(() => actions().updateProvider("sf-weather", "fernline", { p95LatencyMs: 640 }));
     act(() => {
       vi.advanceTimersByTime(2_000);
     });
-    act(() => actions().updateProvider("sf-weather", "together", { p95LatencyMs: 210 }));
-    expect(store.api.getState().markets["sf-weather"].route.pending?.providerId).toBe("together");
+    act(() => actions().updateProvider("sf-weather", "fernline", { p95LatencyMs: 210 }));
+    expect(store.api.getState().markets["sf-weather"].route.pending?.providerId).toBe("fernline");
     act(() => {
       vi.advanceTimersByTime(8_000);
     });
     const route = store.api.getState().markets["sf-weather"].route;
-    expect(route.activeProviderId).toBe("together");
+    expect(route.activeProviderId).toBe("fernline");
     expect(route.pending).toBeNull();
   });
 
@@ -117,19 +117,19 @@ describe("TenderProvider", () => {
   it("persists policies and rehydrates them on the next mount", () => {
     const first = mount();
     act(() => first.actions().setPolicy("btc-usd", { maxPrice: 1.2, preference: "freshest-data" }));
-    act(() => first.actions().setRoutingMode("sf-weather", { kind: "pinned", providerId: "fireworks" }));
+    act(() => first.actions().setRoutingMode("sf-weather", { kind: "pinned", providerId: "cinderlane" }));
     const stored = JSON.parse(window.localStorage.getItem(POLICIES_STORAGE_KEY)!);
     expect(stored.policies["btc-usd"]).toMatchObject({ maxPrice: 1.2, preference: "freshest-data" });
-    expect(stored.policies["sf-weather"].mode).toEqual({ kind: "pinned", providerId: "fireworks" });
+    expect(stored.policies["sf-weather"].mode).toEqual({ kind: "pinned", providerId: "cinderlane" });
     cleanup();
 
     const second = mount();
     const state = second.store.api.getState();
     expect(state.policiesHydrated).toBe(true);
     expect(state.markets["btc-usd"].policy).toMatchObject({ maxPrice: 1.2, preference: "freshest-data" });
-    // CoreWeave and Baseten bid above $1.20, so Arca Labs has the freshest qualifying data.
+    // Bramblecore and Quarrystone bid above $1.20, so Arca Labs has the freshest qualifying data.
     expect(state.markets["btc-usd"].route.activeProviderId).toBe("arca-labs");
-    expect(state.markets["sf-weather"].route.activeProviderId).toBe("fireworks");
+    expect(state.markets["sf-weather"].route.activeProviderId).toBe("cinderlane");
     // Restoring saved policies does not raise toasts.
     expect(second.events).toHaveLength(0);
   });

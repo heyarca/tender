@@ -15,7 +15,7 @@ const BANNED = /simulat|sample|illustrat|\bdemo\b|not a claim|\blive\b|powered b
 describe("buildMarketplaceScene", () => {
   it("uses the Bitcoin fixture bids and the engine's first-ranked offer", () => {
     const scene = buildMarketplaceScene();
-    const ids = ["arca-labs", "coreweave", "baseten"];
+    const ids = ["arca-labs", "bramblecore", "quarrystone"];
     expect(scene.offers.map((offer) => offer.id)).toEqual(ids);
     for (const offer of scene.offers) {
       const fixture = getProviderFixture("btc-usd", offer.id);
@@ -70,16 +70,16 @@ describe("MarketplaceSection", () => {
     const items = within(offers).getAllByRole("listitem");
     expect(items.map((item) => item.textContent)).toEqual([
       "Arca Labs$0.95 /M req",
-      "CoreWeave$1.40 /M req",
-      "Baseten$1.80 /M req",
+      "Bramblecore$1.40 /M req",
+      "Quarrystone$1.80 /M req",
     ]);
     expect(items[0]?.dataset.selected).toBe("true");
     expect(items[1]?.dataset.selected).toBeUndefined();
     expect(items[2]?.dataset.selected).toBeUndefined();
     expect(Array.from(offers.querySelectorAll("img")).map((img) => img.getAttribute("src"))).toEqual([
       "/providers/arca-labs.png",
-      "/providers/coreweave.svg",
-      "/providers/baseten.svg",
+      "/providers/bramblecore.svg",
+      "/providers/quarrystone.svg",
     ]);
   });
 

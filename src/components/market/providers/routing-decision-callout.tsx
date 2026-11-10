@@ -197,7 +197,7 @@ function ExclusionList({ view }: { view: MarketView }) {
   );
 }
 
-/** "Switching to Cloudflare in 7 s — switch cooldown" with a progress bar. Re-renders every second. */
+/** "Switching to Slatework in 7 s — switch cooldown" with a progress bar. Re-renders every second. */
 function CooldownProgress({ view }: { view: MarketView }) {
   const pending = usePendingSwitch(view.id);
   const now = useNow();

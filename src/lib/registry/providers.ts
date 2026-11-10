@@ -1,7 +1,7 @@
 // Generated from the Tender registry design (docs/DATA-MODEL.md). Edit the data here; the engine, pages, API, and SDK read it.
 import type { ProviderSpec } from "./types";
 
-/** Provider identities. Names and logos identify fixture providers; they are not partnership claims. */
+/** Provider identities. All providers are fictional except Arca Labs and THE ZONE BIO; logos are original marks (docs/provider-logos.md). */
 export const PROVIDERS: readonly ProviderSpec[] = [
   {
     "id": "arca-labs",
@@ -9,9 +9,9 @@ export const PROVIDERS: readonly ProviderSpec[] = [
     "logo": "/providers/arca-labs.png"
   },
   {
-    "id": "baseten",
-    "name": "Baseten",
-    "logo": "/providers/baseten.svg"
+    "id": "quarrystone",
+    "name": "Quarrystone",
+    "logo": "/providers/quarrystone.svg"
   },
   {
     "id": "bom-scout",
@@ -29,34 +29,34 @@ export const PROVIDERS: readonly ProviderSpec[] = [
     "logo": ""
   },
   {
-    "id": "cloudflare",
-    "name": "Cloudflare",
-    "logo": "/providers/cloudflare.png"
+    "id": "slatework",
+    "name": "Slatework",
+    "logo": "/providers/slatework.svg"
   },
   {
-    "id": "coreweave",
-    "name": "CoreWeave",
-    "logo": "/providers/coreweave.svg"
+    "id": "bramblecore",
+    "name": "Bramblecore",
+    "logo": "/providers/bramblecore.svg"
   },
   {
-    "id": "crusoe",
-    "name": "Crusoe",
-    "logo": "/providers/crusoe.png"
+    "id": "hollowbrook",
+    "name": "Hollowbrook",
+    "logo": "/providers/hollowbrook.svg"
   },
   {
-    "id": "deepinfra",
-    "name": "DeepInfra",
-    "logo": "/providers/deepinfra.webp"
+    "id": "kitefin",
+    "name": "Kitefin",
+    "logo": "/providers/kitefin.svg"
   },
   {
-    "id": "digitalocean",
-    "name": "DigitalOcean",
-    "logo": "/providers/digitalocean.svg"
+    "id": "saltmarsh",
+    "name": "Saltmarsh",
+    "logo": "/providers/saltmarsh.svg"
   },
   {
-    "id": "fireworks",
-    "name": "Fireworks",
-    "logo": "/providers/fireworks.png"
+    "id": "cinderlane",
+    "name": "Cinderlane",
+    "logo": "/providers/cinderlane.svg"
   },
   {
     "id": "futian-parts",
@@ -64,9 +64,9 @@ export const PROVIDERS: readonly ProviderSpec[] = [
     "logo": ""
   },
   {
-    "id": "gmicloud",
-    "name": "GMICloud",
-    "logo": "/providers/gmicloud.png"
+    "id": "basaltine",
+    "name": "Basaltine",
+    "logo": "/providers/basaltine.svg"
   },
   {
     "id": "harbor-quote",
@@ -74,8 +74,8 @@ export const PROVIDERS: readonly ProviderSpec[] = [
     "logo": ""
   },
   {
-    "id": "huaqiang-desk",
-    "name": "Huaqiang Desk",
+    "id": "tapeline",
+    "name": "Tapeline Parts",
     "logo": ""
   },
   {
@@ -89,24 +89,24 @@ export const PROVIDERS: readonly ProviderSpec[] = [
     "logo": ""
   },
   {
-    "id": "mistral",
-    "name": "Mistral",
-    "logo": "/providers/mistral.png"
+    "id": "owlbridge",
+    "name": "Owlbridge",
+    "logo": "/providers/owlbridge.svg"
   },
   {
-    "id": "modal",
-    "name": "Modal",
-    "logo": "/providers/modal.jpg"
+    "id": "mossgate",
+    "name": "Mossgate",
+    "logo": "/providers/mossgate.svg"
   },
   {
-    "id": "nebius",
-    "name": "Nebius",
-    "logo": "/providers/nebius.png"
+    "id": "kelpwave",
+    "name": "Kelpwave",
+    "logo": "/providers/kelpwave.svg"
   },
   {
-    "id": "novita",
-    "name": "NovitaAI",
-    "logo": "/providers/novita.png"
+    "id": "brindlewood",
+    "name": "Brindlewood",
+    "logo": "/providers/brindlewood.svg"
   },
   {
     "id": "pacific-lanes",
@@ -124,8 +124,8 @@ export const PROVIDERS: readonly ProviderSpec[] = [
     "logo": ""
   },
   {
-    "id": "seg-broker",
-    "name": "SEG Broker Net",
+    "id": "reelyard",
+    "name": "Reelyard Brokers",
     "logo": ""
   },
   {
@@ -134,14 +134,14 @@ export const PROVIDERS: readonly ProviderSpec[] = [
     "logo": "/providers/the-zone-bio.jpg"
   },
   {
-    "id": "together",
-    "name": "Together",
-    "logo": "/providers/together.png"
+    "id": "fernline",
+    "name": "Fernline",
+    "logo": "/providers/fernline.svg"
   },
   {
-    "id": "wafer",
-    "name": "Wafer",
-    "logo": "/providers/wafer.png"
+    "id": "heronway",
+    "name": "Heronway",
+    "logo": "/providers/heronway.svg"
   },
   {
     "id": "yichun-desk",

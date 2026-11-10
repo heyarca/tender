@@ -79,14 +79,14 @@ min success rate **99.50%**, preference **Lowest cost**, mode **Automatic switch
 
 | id | name | bid $/M | P95 ms | data age | error rate | available | default status |
 |---|---|---|---|---|---|---|---|
-| together | Together | 18.00 | 210 | 6 min | 0.06% | yes | **Active** (lowest-priced qualified) |
-| deepinfra | DeepInfra | 22.00 | 180 | 2 min | 0.03% | yes | Eligible (freshest) |
-| fireworks | Fireworks | 27.50 | 150 | 5 min | 0.04% | yes | Eligible (fastest qualified) |
-| digitalocean | DigitalOcean | 31.00 | 260 | 8 min | 0.10% | yes | Eligible |
-| cloudflare | Cloudflare | 12.00 | 640 | 5 min | 0.05% | yes | Too slow (cheapest overall) |
-| modal | Modal | 15.00 | 190 | 42 min | 0.08% | yes | Stale data |
-| mistral | Mistral | 58.00 | 95 | 1 min | 0.01% | yes | Over budget |
-| nebius | Nebius | 20.00 | 230 | 7 min | 0.20% | **no** | Unavailable |
+| fernline | Fernline | 18.00 | 210 | 6 min | 0.06% | yes | **Active** (lowest-priced qualified) |
+| kitefin | Kitefin | 22.00 | 180 | 2 min | 0.03% | yes | Eligible (freshest) |
+| cinderlane | Cinderlane | 27.50 | 150 | 5 min | 0.04% | yes | Eligible (fastest qualified) |
+| saltmarsh | Saltmarsh | 31.00 | 260 | 8 min | 0.10% | yes | Eligible |
+| slatework | Slatework | 12.00 | 640 | 5 min | 0.05% | yes | Too slow (cheapest overall) |
+| mossgate | Mossgate | 15.00 | 190 | 42 min | 0.08% | yes | Stale data |
+| owlbridge | Owlbridge | 58.00 | 95 | 1 min | 0.01% | yes | Over budget |
+| kelpwave | Kelpwave | 20.00 | 230 | 7 min | 0.20% | **no** | Unavailable |
 
 ### 3.2 Bitcoin Price (`btc-usd`)
 
@@ -106,12 +106,12 @@ min success rate **99.90%**, preference **Lowest cost**, mode **Automatic switch
 |---|---|---|---|---|---|---|---|
 | the-zone-bio | THE ZONE BIO | 0.70 | 87 | 220 ms | 0.03% | yes | **Active** (lowest-priced qualified) |
 | arca-labs | Arca Labs | 0.95 | 64 | 140 ms | 0.02% | yes | Eligible |
-| coreweave | CoreWeave | 1.40 | 42 | 90 ms | 0.01% | yes | Eligible (fastest qualified) |
-| baseten | Baseten | 1.80 | 58 | 45 ms | 0.05% | yes | Eligible (freshest) |
-| novita | NovitaAI | 0.40 | 310 | 180 ms | 0.04% | yes | Too slow (cheapest overall) |
-| crusoe | Crusoe | 0.55 | 72 | 2,400 ms | 0.03% | yes | Stale data |
-| gmicloud | GMICloud | 2.60 | 38 | 60 ms | 0.01% | yes | Over budget |
-| wafer | Wafer | 0.60 | 95 | 300 ms | 0.85% | yes | Unreliable (99.15% < 99.90%) |
+| bramblecore | Bramblecore | 1.40 | 42 | 90 ms | 0.01% | yes | Eligible (fastest qualified) |
+| quarrystone | Quarrystone | 1.80 | 58 | 45 ms | 0.05% | yes | Eligible (freshest) |
+| brindlewood | Brindlewood | 0.40 | 310 | 180 ms | 0.04% | yes | Too slow (cheapest overall) |
+| hollowbrook | Hollowbrook | 0.55 | 72 | 2,400 ms | 0.03% | yes | Stale data |
+| basaltine | Basaltine | 2.60 | 38 | 60 ms | 0.01% | yes | Over budget |
+| heronway | Heronway | 0.60 | 95 | 300 ms | 0.85% | yes | Unreliable (99.15% < 99.90%) |
 
 Provider logos live in `public/providers/<id>.<ext>` (see `docs/provider-logos.md`). Use them as-is.
 
@@ -162,7 +162,7 @@ Automatic mode:
 3. **Optimization (cooldown):** a different provider now outranks the active one because of a bid/condition
    change → switch only if `now − lastSwitchAt ≥ SWITCH_COOLDOWN_MS` (10,000 ms). Otherwise set `pending`
    and switch when the cooldown expires (if it still outranks the active provider). Show the countdown
-   ("Switching to Cloudflare in 7 s — switch cooldown") in the routing decision callout.
+   ("Switching to Slatework in 7 s — switch cooldown") in the routing decision callout.
 4. **No eligible provider:** set `activeProviderId = null`, show **No eligible provider**, and reject
    requests (they are not sent). Never silently violate the policy. When a provider qualifies again,
    route to it immediately.
@@ -170,8 +170,8 @@ Automatic mode:
 Pinned mode (`pinned(providerId)`):
 - Requests always go to the pinned provider. Never switch without permission.
 - If the pinned provider fails the policy, surface it everywhere (status, callout, toast, activity):
-  "Pinned provider Together fails your policy: P95 640 ms exceeds 400 ms. Requests still go to Together."
-  Offer explicit actions: **Switch to DeepInfra** (pins the recommended provider) and **Use automatic switching**.
+  "Pinned provider Fernline fails your policy: P95 640 ms exceeds 400 ms. Requests still go to Fernline."
+  Offer explicit actions: **Switch to Kitefin** (pins the recommended provider) and **Use automatic switching**.
 - If the pinned provider is unavailable, requests fail with a provider error (they are attempted, not rerouted).
 
 Every route change writes an activity entry stating: previous provider, new provider, trigger, and why the
@@ -260,8 +260,8 @@ public/providers/                provider logos
 
 ## 8. Acceptance checklist
 
-- [ ] Both markets render with original provider logos, correct default statuses, and Together / THE ZONE BIO active.
-- [ ] Cheapest provider is never selected when it fails a requirement (Cloudflare, NovitaAI by default).
+- [ ] Both markets render with original provider logos, correct default statuses, and Fernline / THE ZONE BIO active.
+- [ ] Cheapest provider is never selected when it fails a requirement (Slatework, Brindlewood by default).
 - [ ] Editing a provider's bid/latency/age/error rate/availability updates its status, reason, sparkline,
       the routing decision, stat cards, and activity — immediately.
 - [ ] Failover is immediate; optimization switches respect the 10 s cooldown with a visible countdown.

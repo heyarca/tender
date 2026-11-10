@@ -6,7 +6,7 @@ import { bidToAtomic, quoteFromBid, ROUNDING_NOTE, settlementAmounts, validateQu
 describe("USDC quotes", () => {
   it.each([[18, "18"], [0.7, "1"], [0.95, "1"], [27.5, "28"], [1.4, "2"], [1, "1"]])("rounds %s/M up to %s atomic", (bid, atomic) => {
     expect(bidToAtomic(bid)).toBe(atomic);
-    const quote = quoteFromBid("together", bid, "Weather");
+    const quote = quoteFromBid("fernline", bid, "Weather");
     expect(quote.settled_atomic).toBe(atomic);
     expect(quote.price_usd).toBe(bid / 1e6);
     expect(Number(atomic) - bid).toBeLessThan(1);
@@ -17,11 +17,11 @@ describe("USDC quotes", () => {
   });
   it("makes rounding explicit", () => {
     expect(quoteFromBid("the-zone-bio", 0.7, "Bitcoin")).toMatchObject({ price_usd: 0.0000007, settled_usd: 0.000001, settled_atomic: "1", settlement_note: ROUNDING_NOTE });
-    expect(quoteFromBid("together", 18, "Weather").settlement_note).toBeUndefined();
+    expect(quoteFromBid("fernline", 18, "Weather").settlement_note).toBeUndefined();
   });
   it.each([0, -1, NaN, Infinity, Number.MAX_VALUE])("rejects invalid bid %s", (bid) => expect(() => bidToAtomic(bid)).toThrow());
   it("validates recipients and descriptions", () => {
-    const quote = quoteFromBid("together", 18, "Weather");
+    const quote = quoteFromBid("fernline", 18, "Weather");
     expect(() => validateQuote({ ...quote, payTo: PAYEES["the-zone-bio"] })).toThrow("recipient");
     expect(() => validateQuote({ ...quote, description: "" })).toThrow("description");
     expect(() => getPayee("__proto__")).toThrow();

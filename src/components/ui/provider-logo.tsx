@@ -19,7 +19,7 @@ const fallbackText: Record<ProviderLogoSize, string> = {
 };
 
 export interface ProviderLogoProps extends Omit<React.ComponentProps<"span">, "children"> {
-  /** Image URL, for example `/providers/together.png`. Without it, the first letter of `name` is shown. */
+  /** Image URL, for example `/providers/fernline.svg`. Without it, the first letter of `name` is shown. */
   src?: string | null;
   /** Provider name. Used for the fallback letter and, with `decorative={false}`, as alt text. */
   name: string;

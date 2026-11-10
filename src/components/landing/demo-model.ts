@@ -16,8 +16,8 @@ export type SceneAction =
   | { type: "policy"; patch: PolicyPatch }
   | { type: "provider"; providerId: string; patch: ConditionsPatch };
 
-export const HERO_PROVIDER_IDS = ["the-zone-bio", "arca-labs", "novita", "crusoe"] as const;
-export const TABLE_PROVIDER_IDS = ["the-zone-bio", "arca-labs", "coreweave", "novita", "crusoe"] as const;
+export const HERO_PROVIDER_IDS = ["the-zone-bio", "arca-labs", "brindlewood", "hollowbrook"] as const;
+export const TABLE_PROVIDER_IDS = ["the-zone-bio", "arca-labs", "bramblecore", "brindlewood", "hollowbrook"] as const;
 
 function runBtc(state: TenderState): TenderState {
   return reduce(state, { type: "run-request", marketId: "btc-usd", now: state.now });

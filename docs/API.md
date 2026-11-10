@@ -177,7 +177,7 @@ curl -sS "$BASE/api/v1/categories"
 curl -sS "$BASE/api/v1/contracts"
 curl -sS "$BASE/api/v1/markets/btc-usd?preference=lowest-latency"
 curl -sS "$BASE/api/v1/markets/sf-weather?max_data_age_ms=120000"
-curl -sS "$BASE/api/v1/markets/btc-usd?pin=novita"
+curl -sS "$BASE/api/v1/markets/btc-usd?pin=brindlewood"
 curl -sS "$BASE/api/v1/openapi.json"
 
 # Inspect the x402 challenge; this does not pay.

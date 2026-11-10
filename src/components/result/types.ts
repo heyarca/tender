@@ -2,7 +2,7 @@
 export interface ResultProvider {
   id: string;
   name: string;
-  /** Logo path under `/public`, e.g. `/providers/together.png`. */
+  /** Logo path under `/public`, e.g. `/providers/fernline.svg`. */
   logo?: string;
 }
 

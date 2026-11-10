@@ -126,7 +126,7 @@ describe("Select", () => {
         value={null}
         placeholder="Choose a provider"
         onValueChange={() => {}}
-        items={[{ value: "together", label: "Together", image: "/providers/together.png" }]}
+        items={[{ value: "fernline", label: "Fernline", image: "/providers/fernline.svg" }]}
       />,
     );
     expect(screen.getByRole("combobox", { name: "Provider" }).textContent).toContain("Choose a provider");

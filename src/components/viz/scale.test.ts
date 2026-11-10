@@ -187,7 +187,7 @@ describe("nearestIndex", () => {
 describe("latencyScaleMax", () => {
   it("fits the slowest request and the limit with headroom", () => {
     const requests = [
-      { id: "a", t: 0, latencyMs: 120, providerId: "together", status: "ok" as const },
+      { id: "a", t: 0, latencyMs: 120, providerId: "fernline", status: "ok" as const },
       { id: "b", t: 1, latencyMs: null, providerId: null, status: "rejected" as const },
     ];
     expect(latencyScaleMax(requests, 400)).toBe(500);

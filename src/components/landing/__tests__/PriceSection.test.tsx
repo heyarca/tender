@@ -57,9 +57,9 @@ describe("PriceSection", () => {
     expect(stat("Best eligible offer")).toContain("$0.70");
     const offers = within(section()).getAllByRole("listitem").filter((item) => item.textContent?.includes("/M req"));
     expect(offers.map((item) => item.textContent)).toEqual([
-      expect.stringMatching(/^NovitaAI\$0\.40\/M reqToo slow/),
-      expect.stringMatching(/^Crusoe\$0\.55\/M reqStale data/),
-      expect.stringMatching(/^Wafer\$0\.60\/M reqUnreliable/),
+      expect.stringMatching(/^Brindlewood\$0\.40\/M reqToo slow/),
+      expect.stringMatching(/^Hollowbrook\$0\.55\/M reqStale data/),
+      expect.stringMatching(/^Heronway\$0\.60\/M reqUnreliable/),
     ]);
   });
 
@@ -120,6 +120,6 @@ describe("price helpers", () => {
   });
 
   it("list offers excluded by checks other than price, cheapest first", () => {
-    expect(stillExcluded(getInitialMarketView("btc-usd")).map((row) => row.id)).toEqual(["novita", "crusoe", "wafer"]);
+    expect(stillExcluded(getInitialMarketView("btc-usd")).map((row) => row.id)).toEqual(["brindlewood", "hollowbrook", "heronway"]);
   });
 });

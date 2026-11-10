@@ -4,7 +4,7 @@ import { assertSafePayment, BalancesRateLimiter, PaymentRateLimiter, PaymentSafe
 import { PAYMENT_NETWORK, USDC_ADDRESS } from "./config";
 import { PAYEES } from "./payees";
 
-const safe: PaymentRequirements = { scheme: "exact", network: PAYMENT_NETWORK, asset: USDC_ADDRESS, amount: "18", payTo: PAYEES.together, maxTimeoutSeconds: 60, extra: { providerId: "together" } };
+const safe: PaymentRequirements = { scheme: "exact", network: PAYMENT_NETWORK, asset: USDC_ADDRESS, amount: "18", payTo: PAYEES.fernline, maxTimeoutSeconds: 60, extra: { providerId: "fernline" } };
 describe("payer controls", () => {
   it("accepts the cap but never exceeds it", () => {
     expect(() => assertSafePayment({ ...safe, amount: "100" })).not.toThrow();
@@ -12,7 +12,7 @@ describe("payer controls", () => {
   });
   it("rejects mainnet, foreign assets and unknown recipients", () => {
     expect(() => assertSafePayment({ ...safe, network: "eip155:8453" })).toThrow();
-    expect(() => assertSafePayment({ ...safe, asset: PAYEES.together })).toThrow();
+    expect(() => assertSafePayment({ ...safe, asset: PAYEES.fernline })).toThrow();
     expect(() => assertSafePayment({ ...safe, payTo: PAYEES["the-zone-bio"] })).toThrow();
     expect(() => assertSafePayment({ ...safe, extra: {} })).toThrow();
     expect(() => assertSafePayment({ ...safe, extra: { ...safe.extra, paymentFlow: "escrow" } })).toThrow();

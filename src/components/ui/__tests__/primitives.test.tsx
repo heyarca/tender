@@ -145,7 +145,7 @@ describe("Table", () => {
         </TableHeader>
         <TableBody>
           <TableRow selected>
-            <TableCell>Together</TableCell>
+            <TableCell>Fernline</TableCell>
             <TableCell numeric>$18.00</TableCell>
             <TableCell numeric>210 ms</TableCell>
           </TableRow>
@@ -162,7 +162,7 @@ describe("Table", () => {
     fireEvent.click(screen.getByRole("button", { name: /Bid/ }));
     expect(onSort).toHaveBeenCalledTimes(1);
 
-    const row = screen.getByText("Together").closest("tr");
+    const row = screen.getByText("Fernline").closest("tr");
     expect(row?.getAttribute("data-state")).toBe("selected");
     expect(screen.getByText("$18.00").className).toContain("text-right");
     expect(screen.getByText("Not eligible under this policy:").closest("td")?.getAttribute("colspan")).toBe("3");
@@ -175,7 +175,7 @@ describe("Table rows and values", () => {
       <Table>
         <TableBody>
           <TableRow muted>
-            <TableRowHeader muted>Nebius</TableRowHeader>
+            <TableRowHeader muted>Kelpwave</TableRowHeader>
             <TableCell numeric>
               <TableValue pad={2} unit=" /M">
                 $0.50
@@ -185,7 +185,7 @@ describe("Table rows and values", () => {
         </TableBody>
       </Table>,
     );
-    const head = screen.getByRole("rowheader", { name: "Nebius" });
+    const head = screen.getByRole("rowheader", { name: "Kelpwave" });
     expect(head.className).toContain("text-muted-foreground");
     expect(head.closest("tr")?.className).toContain("bg-muted");
     const value = screen.getByText("$0.50");
@@ -242,11 +242,11 @@ describe("CopyButton", () => {
 
 describe("Display primitives", () => {
   it("ProviderLogo falls back to the first letter", () => {
-    const { container, rerender } = render(<ProviderLogo name="Nebius" />);
+    const { container, rerender } = render(<ProviderLogo name="Kelpwave" />);
     expect(container.textContent).toBe("N");
-    rerender(<ProviderLogo name="Together" src="/providers/together.png" decorative={false} />);
-    expect(screen.getByRole("img", { name: "Together" })).toBeTruthy();
-    expect(container.querySelector("img")?.getAttribute("src")).toBe("/providers/together.png");
+    rerender(<ProviderLogo name="Fernline" src="/providers/fernline.svg" decorative={false} />);
+    expect(screen.getByRole("img", { name: "Fernline" })).toBeTruthy();
+    expect(container.querySelector("img")?.getAttribute("src")).toBe("/providers/fernline.svg");
   });
 
   it("StatCard renders label, value, unit, and sub-line", () => {
