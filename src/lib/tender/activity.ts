@@ -149,6 +149,41 @@ export function conditionsEntry(
   };
 }
 
+/** Lowercase a leading pronoun or article so the reason reads as a clause after a colon. */
+function reasonClause(reason: string): string {
+  const text = reason.trim().replace(/\s+/g, " ");
+  const clause = /^(It|Its|It's|The|A|An|No|Nobody)\b/.test(text) ? text.charAt(0).toLowerCase() + text.slice(1) : text;
+  return /[.!?]$/.test(clause) ? clause : `${clause}.`;
+}
+
+/**
+ * Entry for a bid set by a provider's bidding agent:
+ * "Kitefin lowered its bid from $22.00 to $19.50: it lost the last 5 requests to Fernline."
+ */
+export function agentBidEntry(
+  marketId: MarketId,
+  providerId: ProviderId,
+  from: number,
+  to: number,
+  reason: string,
+  model: string,
+  statusBefore: QualificationStatus,
+  statusAfter: QualificationStatus,
+): EntryFields {
+  const name = providerName(marketId, providerId);
+  const verb = to < from ? "lowered" : "raised";
+  return {
+    kind: "bid-updated",
+    providerId,
+    from,
+    to,
+    agent: { reason, model },
+    title: `${name} ${verb} its bid from ${format.price(from)} to ${format.price(to)}: ${reasonClause(reason)}`,
+    details: statusLine(name, statusBefore, statusAfter),
+    tone: "neutral",
+  };
+}
+
 export function providerRestoredEntry(marketId: MarketId, providerId: ProviderId, changes: ConditionChange[]): EntryFields {
   return {
     kind: "provider-restored",
