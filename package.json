@@ -14,10 +14,12 @@
     "verify": "bun run typecheck && bun run lint && bun run test && bun run build",
     "payments:wallets": "bun scripts/payments/wallets.ts",
     "payments:balances": "bun scripts/payments/balances.ts",
-    "payments:smoke": "bun scripts/payments/smoke.ts"
+    "payments:smoke": "bun scripts/payments/smoke.ts",
+    "db:migrate": "bun scripts/db/migrate.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
+    "@neondatabase/serverless": "^1.2.0",
     "@x402/core": "^2.30.0",
     "@x402/evm": "^2.30.0",
     "@x402/fetch": "^2.30.0",
