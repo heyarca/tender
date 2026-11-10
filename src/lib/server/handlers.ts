@@ -24,7 +24,7 @@ import {
   type RouteSelection,
 } from "@/lib/tender";
 import { weatherLocationFor } from "@/lib/tender/signals";
-import { chargeForRequest, accountFromRequest, hasApiKey, wantsCredits, type Actor } from "@/lib/ledger";
+import { chargeForRequest, accountFromRequest, getAccount, hasApiKey, wantsCredits, type Actor } from "@/lib/ledger";
 import { bidToAtomic } from "@/lib/payments/quote";
 import { quoteFromBid, withX402Payment, type SettlementAmounts } from "@/lib/payments/server";
 import { ApiError, errorResponse, json } from "./http";
@@ -283,10 +283,13 @@ function insufficientCredits(balanceMicros: number): Response {
 /**
  * Serves the request, then charges the winning bid ($X per million requests = X micro-USD,
  * rounded up). Failed requests are not charged. A short balance or mandate answers 402 with no data.
+ * The balance is checked first, so an account that cannot pay never spends a model or upstream call.
  */
 async function chargeAndServe(selection: RouteSelection, inputs: Readonly<Record<string, string>>, payer: CreditsPayer): Promise<Response> {
   const bid = selection.bidPrice!;
   const amountMicros = Number(bidToAtomic(bid));
+  const balanceMicros = (await getAccount(payer.accountId))?.balanceMicros ?? 0;
+  if (balanceMicros < amountMicros) return insufficientCredits(balanceMicros);
   const served = await executeContract(selection, inputs);
   if (!served.ok) return served.response;
   const charge = await chargeForRequest({
