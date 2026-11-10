@@ -1,5 +1,14 @@
 import { randomUUID } from "node:crypto";
-import { getContract, getMarketSpec, listMarkets as listRegistryMarkets, readField, type ContractSpec, type MarketSpec } from "@/lib/registry";
+import {
+  getContract,
+  getMarketSpec,
+  inputParams,
+  listMarkets as listRegistryMarkets,
+  marketParams,
+  readField,
+  type ContractSpec,
+  type MarketSpec,
+} from "@/lib/registry";
 import {
   executeSelection,
   getMarketDefinition,
@@ -14,12 +23,14 @@ import {
   type ProviderId,
   type RouteSelection,
 } from "@/lib/tender";
+import { weatherLocationFor } from "@/lib/tender/signals";
 import { chargeForRequest, accountFromRequest, hasApiKey, wantsCredits, type Actor } from "@/lib/ledger";
 import { bidToAtomic } from "@/lib/payments/quote";
 import { quoteFromBid, withX402Payment, type SettlementAmounts } from "@/lib/payments/server";
 import { ApiError, errorResponse, json } from "./http";
 import { requestPolicy } from "./markets";
-import { getPriceReference, getWeatherReference } from "./reference";
+import { liveResult, LiveError } from "./live";
+import { loadPrice, loadWeather } from "./reference";
 
 /** Trusted in-process inputs only. Public contract routes never parse these from HTTP. */
 export interface ContractOptions {
@@ -63,10 +74,11 @@ export function contractMarkets(contractId: string): MarketSpec[] {
   return listRegistryMarkets().filter((market) => market.contractId === contractId);
 }
 
-/** Market a contract serves when the request names no params: its live-anchored market, else the first one. */
-function defaultMarket(contractId: string): MarketSpec | undefined {
-  const markets = contractMarkets(contractId);
-  return markets.find((market) => market.source === "upstream") ?? markets[0];
+/** Market a contract serves when the request names no params: the one bound to the contract's example values, else the first. */
+function defaultMarket(contract: ContractSpec): MarketSpec | undefined {
+  const markets = contractMarkets(contract.id);
+  const params = marketParams(contract);
+  return markets.find((market) => params.every((param) => sameValue(market.params[param.key] ?? "", param.example))) ?? markets[0];
 }
 
 const paramText = (market: MarketSpec) =>
@@ -83,7 +95,8 @@ export function marketSelectorKeys(contract: ContractSpec): readonly string[] {
 /**
  * Resolve the market of a contract request from its query: an explicit market id, the market whose
  * params match every given contract param (case-insensitive), or the contract's default market when
- * no contract param is given. Throws a 400 that lists the supported values when nothing matches.
+ * no contract param is given. Inputs never select a market. Throws a 400 that lists the supported
+ * values when nothing matches.
  */
 export function resolveContractMarket(contract: ContractSpec, query: URLSearchParams): MarketId {
   const markets = contractMarkets(contract.id);
@@ -94,7 +107,7 @@ export function resolveContractMarket(contract: ContractSpec, query: URLSearchPa
   const explicit = marketSelectorKeys(contract).flatMap((key) => query.getAll(key));
   if (explicit.length > 1) throw unsupported("Send one market value");
   const given: [string, string][] = [];
-  for (const param of contract.params) {
+  for (const param of marketParams(contract)) {
     const values = query.getAll(param.key);
     if (values.length > 1) throw unsupported(`Send one ${param.key} value`);
     if (values.length === 1) given.push([param.key, values[0]]);
@@ -105,7 +118,7 @@ export function resolveContractMarket(contract: ContractSpec, query: URLSearchPa
     if (!market || !matches(market)) throw unsupported(`Unsupported market: ${explicit[0]}`);
     return market.id;
   }
-  const market = given.length === 0 ? defaultMarket(contract.id) : markets.find(matches);
+  const market = given.length === 0 ? defaultMarket(contract) : markets.find(matches);
   if (!market) throw unsupported(`Unsupported ${given.map(([key, value]) => `${key}=${value}`).join("&")}`);
   return market.id;
 }
@@ -117,8 +130,11 @@ export class ContractInputError extends ApiError {
   }
 }
 
-/** Every contract param in the query must match the market (case-insensitive); a market selector, if given, must name it. */
-function validateContract(request: Request, marketId: MarketId) {
+/**
+ * Every contract param in the query must match the market (case-insensitive); a market selector, if given,
+ * must name it. Returns the request's inputs: each one trimmed, or the market's default when omitted.
+ */
+function validateContract(request: Request, marketId: MarketId): Record<string, string> {
   if (request.method !== "GET") throw new ApiError(405, "method_not_allowed", "Use GET for this contract");
   const spec = getMarketSpec(marketId);
   const query = new URL(request.url).searchParams;
@@ -133,6 +149,17 @@ function validateContract(request: Request, marketId: MarketId) {
       throw new ApiError(400, "unsupported_input", `Supported ${key}: ${value}`);
     }
   }
+  const inputs: Record<string, string> = {};
+  for (const param of contract ? inputParams(contract) : []) {
+    const values = query.getAll(param.key);
+    if (values.length > 1) throw new ApiError(400, "unsupported_input", `Send one ${param.key} value`);
+    const value = values[0]?.trim() || spec?.inputs?.[param.key] || param.example;
+    if (param.maxLength && [...value].length > param.maxLength) {
+      throw new ApiError(400, "unsupported_input", `${param.key} is longer than ${param.maxLength} characters`);
+    }
+    inputs[param.key] = value;
+  }
+  return inputs;
 }
 
 function routingHeaders(selection: RouteSelection) {
@@ -143,14 +170,24 @@ function routingHeaders(selection: RouteSelection) {
   };
 }
 
-/** Live reference inputs: San Francisco weather (Open-Meteo) and BTC/USD (Coinbase, Kraken). */
+/**
+ * Live reference input of a weather or spot market, which the engine's provider payloads are anchored to.
+ * Other markets, and a failed source, use the engine's deterministic signal.
+ */
 async function referenceFor(marketId: MarketId): Promise<{ reference: MarketReference | undefined; source: string; timestamp: string }> {
-  if (marketId === "btc-usd") {
-    const input = await getPriceReference();
-    return { source: input.source, timestamp: input.timestamp, reference: { kind: "btc", at: Date.parse(input.timestamp), priceUsd: input.value } };
+  const signal = { source: "signal", timestamp: new Date().toISOString(), reference: undefined };
+  const spec = getMarketSpec(marketId);
+  if (spec?.source !== "upstream") return signal;
+  if (spec.contractId === "prices.spot") {
+    const input = await loadPrice(spec.params.pair, spec.categoryId === "currencies" ? "currency" : "crypto");
+    if (!input) return signal;
+    // The reference is the current price (a daily ECB rate stays current until the next one), so anchor it
+    // at the request: the engine then moves it only by the provider's own data age.
+    return { source: input.source, timestamp: input.timestamp, reference: { kind: "btc", at: Date.now(), priceUsd: input.value } };
   }
-  if (marketId === "sf-weather") {
-    const input = await getWeatherReference();
+  if (spec.contractId === "weather.current") {
+    const input = await loadWeather(weatherLocationFor(marketId));
+    if (!input) return signal;
     const w = input.value;
     return { source: input.source, timestamp: input.timestamp, reference: {
       kind: "weather", at: Date.parse(input.timestamp), temperatureF: w.temperature_f, feelsLikeF: w.feels_like_f,
@@ -159,7 +196,7 @@ async function referenceFor(marketId: MarketId): Promise<{ reference: MarketRefe
       visibilityMi: w.visibility_mi, dewPointF: w.dew_point_f, cloudCoverPct: w.cloud_cover_percent,
     } };
   }
-  return { source: "signal", timestamp: new Date().toISOString(), reference: undefined };
+  return signal;
 }
 
 /** Required contract fields missing from a result (empty when the result matches the schema). */
@@ -173,7 +210,7 @@ type Served =
   | { ok: false; response: Response }
   | { ok: true; requestId: string; providerId: string; head: Record<string, unknown>; tail: Record<string, unknown> };
 
-async function executeContract(selection: RouteSelection): Promise<Served> {
+async function executeContract(selection: RouteSelection, inputs: Readonly<Record<string, string>>): Promise<Served> {
   const marketId = selection.marketId;
   const contractId = getMarketDefinition(marketId).contractId;
   const input = await referenceFor(marketId);
@@ -185,7 +222,18 @@ async function executeContract(selection: RouteSelection): Promise<Served> {
     return { ok: false, response: json({ error: { code: "provider_error", message: result.error.message }, provider: result.providerId, request_id: requestId,
       latency_ms: result.latencyMs, ...violations }, result.error.code) };
   }
-  const data = resultData(result);
+  let data = resultData(result);
+  let source = input.source;
+  let timestamp = input.timestamp;
+  try {
+    const live = await liveResult(getMarketSpec(marketId)!, inputs, data);
+    if (live) ({ data, source, timestamp } = live);
+  } catch (error) {
+    if (!(error instanceof LiveError)) throw error;
+    // The upstream failed: the request fails like a provider error, so it is neither charged nor settled.
+    return { ok: false, response: json({ error: { code: error.code, message: error.message }, provider: result.providerId, request_id: requestId,
+      latency_ms: result.latencyMs, ...violations }, error.status) };
+  }
   // A result that misses required contract fields counts as a failed request (no settlement).
   if (missingFields(contractId, data).length > 0) {
     return { ok: false, response: json({ error: { code: "provider_error", message: "Provider returned an incomplete result" }, provider: result.providerId,
@@ -197,12 +245,12 @@ async function executeContract(selection: RouteSelection): Promise<Served> {
     providerId: result.providerId,
     head: { request_id: result.requestId, market: marketId, contract: contractId, provider: result.providerId,
       latency_ms: result.latencyMs, data_age_ms: result.dataAgeMs },
-    tail: { ...violations, reference_source: input.source, reference_timestamp: input.timestamp, data },
+    tail: { ...violations, reference_source: source, reference_timestamp: timestamp, data },
   };
 }
 
-async function serveSelection(selection: RouteSelection, settlement: SettlementAmounts): Promise<Response> {
-  const served = await executeContract(selection);
+async function serveSelection(selection: RouteSelection, inputs: Readonly<Record<string, string>>, settlement: SettlementAmounts): Promise<Response> {
+  const served = await executeContract(selection, inputs);
   if (!served.ok) return served.response;
   return json({
     ...served.head,
@@ -234,10 +282,10 @@ function insufficientCredits(balanceMicros: number): Response {
  * Serves the request, then charges the winning bid ($X per million requests = X micro-USD,
  * rounded up). Failed requests are not charged. A short balance or mandate answers 402 with no data.
  */
-async function chargeAndServe(selection: RouteSelection, payer: CreditsPayer): Promise<Response> {
+async function chargeAndServe(selection: RouteSelection, inputs: Readonly<Record<string, string>>, payer: CreditsPayer): Promise<Response> {
   const bid = selection.bidPrice!;
   const amountMicros = Number(bidToAtomic(bid));
-  const served = await executeContract(selection);
+  const served = await executeContract(selection, inputs);
   if (!served.ok) return served.response;
   const charge = await chargeForRequest({
     accountId: payer.accountId, requestId: served.requestId, marketId: selection.marketId,
@@ -272,8 +320,9 @@ function contractHeaders(response: Response, selection: RouteSelection): Respons
  */
 export async function handleContract(request: Request, marketId: MarketId, options: ContractOptions = {}): Promise<Response> {
   let selection: RouteSelection;
+  let inputs: Record<string, string>;
   try {
-    validateContract(request, marketId);
+    inputs = validateContract(request, marketId);
     const market = getMarketDefinition(marketId);
     selection = selectRoute(marketId, { policy: requestPolicy(request, market), conditions: conditionOverrides(marketId, options.conditions) });
     if (!selection.providerId || selection.bidPrice === null) throw new ApiError(409, "no_eligible_provider", "No eligible provider");
@@ -283,7 +332,7 @@ export async function handleContract(request: Request, marketId: MarketId, optio
   let payer: CreditsPayer | null | Response;
   try {
     payer = await creditsPayer(request, options);
-    if (payer && !(payer instanceof Response)) return contractHeaders(await chargeAndServe(selected, payer), selected);
+    if (payer && !(payer instanceof Response)) return contractHeaders(await chargeAndServe(selected, inputs, payer), selected);
   } catch (error) {
     console.error("Tender credits error", error instanceof Error ? { name: error.name, message: error.message } : { name: "UnknownError" });
     return contractHeaders(json({ error: { code: "payment_unavailable", message: "Payment service unavailable" } }, 503), selected);
@@ -295,7 +344,7 @@ export async function handleContract(request: Request, marketId: MarketId, optio
   try {
     response = await withX402Payment(
       async (_request, paidQuote) => {
-        providerResponse = await serveSelection(selected, paidQuote);
+        providerResponse = await serveSelection(selected, inputs, paidQuote);
         return providerResponse;
       },
       () => quote,
