@@ -3,6 +3,7 @@ import { ExactEvmScheme } from "@x402/evm/exact/client";
 import { decodePaymentRequiredHeader } from "@x402/core/http";
 import { contractUrl as registryContractUrl, getMarketSpec, getProvider } from "@/lib/registry";
 import { isMarketId, PREFERENCES } from "@/lib/tender";
+import { parseRequestInputs } from "@/lib/tender/request-inputs";
 import { parsePaymentConditions } from "./conditions";
 import type { PaymentRequirements } from "@x402/core/types";
 import { EXPLORER_URL, PAYMENT_NETWORK, USDC_ADDRESS } from "./config";
@@ -14,10 +15,11 @@ import type { PaidRequestInput, PaidRequestResult, PaidResponsePayload, PaymentP
 export function parsePaidRequestInput(value: unknown): PaidRequestInput {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Expected a JSON object");
   const body = value as Record<string, unknown>;
-  if (Object.keys(body).some((key) => !["market", "policy", "conditions"].includes(key))) throw new Error("Unknown request field");
+  if (Object.keys(body).some((key) => !["market", "policy", "conditions", "params"].includes(key))) throw new Error("Unknown request field");
   if (!isMarketId(body.market)) throw new Error("Unknown market");
   const conditions = parsePaymentConditions(body.market, body.conditions);
-  if (body.policy === undefined) return { market: body.market, ...(conditions ? { conditions } : {}) };
+  const params = body.params === undefined ? undefined : parseRequestInputs(body.market, body.params);
+  if (body.policy === undefined) return { market: body.market, ...(params ? { params } : {}), ...(conditions ? { conditions } : {}) };
   if (!body.policy || typeof body.policy !== "object" || Array.isArray(body.policy)) throw new Error("Invalid routing policy");
   const policy = body.policy as Record<string, unknown>;
   const numericKeys = ["maxPrice", "maxP95LatencyMs", "maxDataAgeMs", "minSuccessRate"];
@@ -31,7 +33,7 @@ export function parsePaidRequestInput(value: unknown): PaidRequestInput {
     const mode = policy.mode as Record<string, unknown>;
     if (!mode || typeof mode !== "object" || Array.isArray(mode) || !["auto", "pinned"].includes(String(mode.kind)) || Object.keys(mode).some((key) => !["kind", "providerId"].includes(key)) || (mode.kind === "pinned" && (typeof mode.providerId !== "string" || !/^[a-z-]{1,40}$/.test(mode.providerId)))) throw new Error("Invalid routing mode");
   }
-  return { market: body.market, policy: policy as PaymentPolicy, ...(conditions ? { conditions } : {}) };
+  return { market: body.market, policy: policy as PaymentPolicy, ...(params ? { params } : {}), ...(conditions ? { conditions } : {}) };
 }
 
 /**
@@ -42,6 +44,7 @@ export function contractUrl(baseUrl: string, input: PaidRequestInput): URL {
   const spec = getMarketSpec(input.market);
   if (!spec) throw new Error("Unknown market");
   const url = new URL(registryContractUrl(spec), baseUrl);
+  for (const [key, value] of Object.entries(parseRequestInputs(input.market, input.params))) url.searchParams.set(key, value);
   const names = { maxPrice: "max_price", maxP95LatencyMs: "max_p95_ms", maxDataAgeMs: "max_data_age_ms", minSuccessRate: "min_success_rate", preference: "preference" } as const;
   for (const [key, name] of Object.entries(names)) {
     const value = input.policy?.[key as keyof typeof names];

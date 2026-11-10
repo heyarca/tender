@@ -45,6 +45,7 @@ export function servedResult(
     dataAgeMs: num(envelope.data_age_ms),
     cost: envelope.charged_micros !== undefined ? envelope.charged_micros / 1e6 : num(envelope.price_usd),
     source,
+    params: envelope.params ? { ...envelope.params } : undefined,
   };
   const kind = payloadKindOf(marketId);
   if (kind === "weather") {

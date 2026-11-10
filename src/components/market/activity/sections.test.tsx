@@ -134,9 +134,9 @@ describe("ActivitySection", () => {
   });
 
   it("paginates 20 entries at a time", () => {
-    const store = setup(<ActivitySection marketId="sf-weather" />);
+    const store = setup(<ActivitySection marketId="sz-mlcc" />);
     act(() => {
-      for (let i = 0; i < 30; i++) store.actions.runRequest("sf-weather");
+      for (let i = 0; i < 30; i++) store.actions.runRequest("sz-mlcc");
     });
     const section = document.getElementById("activity")!;
     expect(section.querySelectorAll("li[data-kind]")).toHaveLength(20);

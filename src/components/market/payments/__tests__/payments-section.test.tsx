@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { PAYEES } from "@/lib/payments/payees";
 import { createTenderStore, TenderProvider, type TenderStore } from "@/lib/tender/client";
 
+import { RequestInputs } from "../../page/request-inputs";
 import { MarketUiProvider } from "../../market-ui";
 import { PaymentsSection } from "../payments-section";
 import { paymentsStore, RECORDS_STORAGE_KEY } from "../payments-store";
@@ -92,11 +93,12 @@ function mockFetch(paid: Handler) {
   return calls;
 }
 
-function mount(store: TenderStore = createTenderStore(), marketId: "sf-weather" | "btc-usd" = "sf-weather") {
+function mount(store: TenderStore = createTenderStore(), marketId: string = "sf-weather") {
   const view = render(
     <TenderProvider store={store}>
       <TooltipProvider>
         <MarketUiProvider>
+          <RequestInputs marketId={marketId} />
           <PaymentsSection key={marketId} marketId={marketId} />
         </MarketUiProvider>
       </TooltipProvider>
@@ -120,6 +122,31 @@ afterEach(() => {
 });
 
 describe("PaymentsSection", () => {
+  it("sends typed inputs through USDC and records the actual source input", async () => {
+    const stream = streamResponse();
+    const calls = mockFetch(() => stream.response);
+    const { store } = mount(createTenderStore(), "translate-en-ko");
+    expect(paidCalls(calls)).toHaveLength(0);
+    const input = screen.getByRole("textbox", { name: "Text" });
+    fireEvent.change(input, { target: { value: "Where is the station?" } });
+    await waitFor(() => expect((runButton() as HTMLButtonElement).disabled).toBe(false));
+    fireEvent.click(runButton());
+    await waitFor(() => expect(paidCalls(calls)).toHaveLength(1));
+    expect(JSON.parse(paidCalls(calls)[0].init!.body as string).params).toEqual({ text: "Where is the station?" });
+    fireEvent.change(input, { target: { value: "Next request" } });
+    const paid = paidResult("the-zone-bio", "THE ZONE BIO", 2);
+    await act(async () => {
+      stream.push({ type: "result", result: { ...paid, response: {
+        ...paid.response, request_id: "req_translation", data: { translation: "역이 어디에 있나요?" },
+        params: { text: "Where is the station?" },
+      } } });
+      stream.close();
+    });
+    await waitFor(() => expect(store.api.getState().markets["translate-en-ko"].requests[0]).toMatchObject({
+      source: "usdc", params: { text: "Where is the station?" }, requestId: "req_translation",
+    }));
+  });
+
   it("quotes the next paid request and shows the payer balance", async () => {
     mockFetch(() => Response.json({}));
     mount();
@@ -147,6 +174,7 @@ describe("PaymentsSection", () => {
     const body = JSON.parse(String(paidCalls(calls)[0].init?.body));
     expect(body).toEqual({
       market: "sf-weather",
+      params: {},
       policy: { maxPrice: 40, maxP95LatencyMs: 400, maxDataAgeMs: 900_000, minSuccessRate: 0.995, preference: "lowest-cost", mode: { kind: "auto" } },
     });
 
@@ -170,7 +198,9 @@ describe("PaymentsSection", () => {
     const txLink = within(receipt).getByRole("link", { name: new RegExp(`Transaction ${TX}`) });
     expect(txLink.getAttribute("href")).toBe(`https://sepolia.basescan.org/tx/${TX}`);
     expect(txLink.getAttribute("target")).toBe("_blank");
-    expect(document.querySelector(`[data-tx="${TX}"]`)).toBeTruthy();
+    await waitFor(() => expect(document.querySelector('[data-slot="payment-receipts"] [row-id]')).toBeTruthy());
+    const table = document.querySelector('[data-slot="payment-receipts"]') as HTMLElement;
+    await waitFor(() => expect(within(table).getByRole("link", { name: new RegExp(`Transaction ${TX}`) })).toBeTruthy());
     expect(screen.getByText(/Settled 0.000018 USDC to Fernline/)).toBeTruthy();
     expect(JSON.parse(window.localStorage.getItem(RECORDS_STORAGE_KEY)!).records["sf-weather"][0].id).toBe(TX);
     await waitFor(() => expect(calls.filter((call) => call.url.includes("balances")).length).toBeGreaterThanOrEqual(2));
@@ -263,7 +293,7 @@ describe("PaymentsSection", () => {
       return element!;
     });
     // Removed rows animate out before AG Grid drops them, so wait for the count to settle.
-    const rows = () => grid.querySelectorAll(".ag-center-cols-container .ag-row[row-id]").length;
+    const rows = () => grid.querySelectorAll(".ag-row[row-id]").length;
     await waitFor(() => expect(rows()).toBe(5));
     fireEvent.click(screen.getByRole("button", { name: "Show all 7" }));
     await waitFor(() => expect(rows()).toBe(7));

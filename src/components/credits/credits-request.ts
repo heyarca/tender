@@ -1,13 +1,15 @@
 import { contractUrl, getMarketSpec } from "@/lib/registry";
+import { parseRequestInputs } from "@/lib/tender/request-inputs";
 import { POLICY_PARAMETERS } from "@/lib/server/policy";
 import type { MarketId, RoutingPolicy } from "@/lib/tender";
 
 /** Same-origin contract URL of a market with the console policy as query parameters. */
-export function creditsRequestUrl(marketId: MarketId, policy: RoutingPolicy): string {
+export function creditsRequestUrl(marketId: MarketId, policy: RoutingPolicy, inputs?: Record<string, string>): string {
   const spec = getMarketSpec(marketId);
   if (!spec) throw new Error("Unknown market");
   const [path, query = ""] = contractUrl(spec).split("?");
   const params = new URLSearchParams(query);
+  for (const [key, value] of Object.entries(parseRequestInputs(marketId, inputs))) params.set(key, value);
   for (const parameter of POLICY_PARAMETERS) params.set(parameter.query, String(policy[parameter.field]));
   params.set("preference", policy.preference);
   if (policy.mode.kind === "pinned") params.set("pin", policy.mode.providerId);
@@ -16,6 +18,7 @@ export function creditsRequestUrl(marketId: MarketId, policy: RoutingPolicy): st
 
 /** 200 body of a contract request paid with credits. */
 export interface CreditsResponse {
+  params?: Record<string, string>;
   request_id: string;
   provider: string;
   latency_ms: number;

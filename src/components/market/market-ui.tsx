@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { defaultRequestInputs, parseRequestInputs } from "@/lib/tender/request-inputs";
 import type { MarketId, ProviderId } from "@/lib/tender";
 
 /**
@@ -12,6 +13,7 @@ export const MARKET_SECTIONS = [
   { id: "providers", label: "Providers" },
   { id: "routing", label: "Routing policy" },
   { id: "conditions", label: "Provider conditions" },
+  { id: "credits", label: "Pay with credits" },
   { id: "payments", label: "Pay with USDC" },
   { id: "activity", label: "Activity" },
 ] as const;
@@ -24,6 +26,8 @@ export interface MarketSectionProps {
 }
 
 interface MarketUiValue {
+  requestInputs: Record<MarketId, Record<string, string>>;
+  setRequestInput: (marketId: MarketId, key: string, value: string) => void;
   selectedProviders: Partial<Record<MarketId, ProviderId | null>>;
   selectProvider: (marketId: MarketId, providerId: ProviderId | null) => void;
 }
@@ -41,7 +45,11 @@ export function MarketUiProvider({ children }: { children: ReactNode }) {
       current[marketId] === providerId ? current : { ...current, [marketId]: providerId },
     );
   }, []);
-  const value = useMemo(() => ({ selectedProviders, selectProvider }), [selectedProviders, selectProvider]);
+  const [requestInputs, setInputs] = useState<MarketUiValue["requestInputs"]>({});
+  const setRequestInput = useCallback((marketId: MarketId, key: string, value: string) => {
+    setInputs((current) => ({ ...current, [marketId]: { ...(current[marketId] ?? defaultRequestInputs(marketId)), [key]: value } }));
+  }, []);
+  const value = useMemo(() => ({ selectedProviders, selectProvider, requestInputs, setRequestInput }), [selectedProviders, selectProvider, requestInputs, setRequestInput]);
   return <MarketUiContext.Provider value={value}>{children}</MarketUiContext.Provider>;
 }
 
@@ -61,6 +69,17 @@ export function useSelectedProvider(
   const { selectedProviders, selectProvider } = useMarketUi();
   const select = useCallback((providerId: ProviderId | null) => selectProvider(marketId, providerId), [marketId, selectProvider]);
   return [selectedProviders[marketId] ?? null, select];
+}
+
+/** Draft inputs shared by both explicit paid request methods. Never used as result provenance. */
+export function useRequestInputs(marketId: MarketId) {
+  const { requestInputs, setRequestInput } = useMarketUi();
+  const values = requestInputs[marketId] ?? defaultRequestInputs(marketId);
+  let error: string | null = null;
+  let params: Record<string, string> = {};
+  try { params = parseRequestInputs(marketId, values); }
+  catch (cause) { error = cause instanceof Error ? cause.message : "Check request inputs"; }
+  return { values, params, error, setInput: (key: string, value: string) => setRequestInput(marketId, key, value) };
 }
 
 /** Smooth-scroll to a section and move keyboard focus to its heading. */

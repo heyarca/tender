@@ -11,10 +11,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { InfoTooltip } from "@/components/ui/tooltip";
 import { usePaidRequest } from "@/lib/payments/client";
 import { format, getMarketDefinition, type MarketId, PREFERENCE_LABELS } from "@/lib/tender";
-import { useMarketView, useNow, usePendingSwitch } from "@/lib/tender/client";
+import { useMarketView, useNow, usePendingSwitch, useTenderStore } from "@/lib/tender/client";
 import { cn } from "@/lib/utils";
 
-import { focusSection, type MarketSectionProps } from "../market-ui";
+import { focusSection, useRequestInputs, type MarketSectionProps } from "../market-ui";
 import { deriveSteps, describeFailure } from "./payment-flow";
 import {
   buildPaymentQuote,
@@ -113,6 +113,8 @@ function routingNote(quote: PaymentQuoteView, edited: string[]): string {
  */
 export function PaymentsSection({ marketId }: MarketSectionProps) {
   const view = useMarketView(marketId);
+  const store = useTenderStore();
+  const { params, error: inputError } = useRequestInputs(marketId);
   const definition = getMarketDefinition(marketId);
   const { run, pending, error, failure, stage } = usePaidRequest(marketId);
   const payments = usePaymentsState();
@@ -152,7 +154,7 @@ export function PaymentsSection({ marketId }: MarketSectionProps) {
     if (failure?.status === 429) paymentsStore.setRetryAt(Date.now() + (failure.retryAfterSeconds ?? 60) * 1000);
   }, [failure]);
 
-  const blockedReason = quote.blocker?.message
+  const blockedReason = inputError ?? quote.blocker?.message
     ?? (payerMissing ? "The payer wallet is not configured." : null)
     ?? (insufficient ? "The payer balance is below the settled amount." : null)
     ?? (inFlightElsewhere ? `A paid request for ${getMarketDefinition(payments.inFlight!.marketId).name} is still settling.` : null);
@@ -171,11 +173,20 @@ export function PaymentsSection({ marketId }: MarketSectionProps) {
     });
     paymentsStore.start(marketId, startedAt);
     try {
-      const result = await run({ policy: paymentPolicy(view.policy), conditions: modifiedConditions(view.providers) });
+      const result = await run({ params, policy: paymentPolicy(view.policy), conditions: modifiedConditions(view.providers) });
       const finishedAt = Date.now();
       setAttempt((current) => (current && current.startedAt === startedAt ? { ...current, elapsedMs: finishedAt - startedAt } : current));
       if (result) {
         paymentsStore.addRecord(marketId, result.receipt, summarizePayload(marketId, result.response), finishedAt);
+        const response = result.response;
+        if (typeof response.request_id === "string" && response.data && typeof response.data === "object" && !Array.isArray(response.data)) {
+          store.actions.ingestServed("usdc", [{
+            request_id: response.request_id, market: marketId, provider: response.provider,
+            latency_ms: response.latency_ms, data_age_ms: response.data_age_ms,
+            price_usd: result.receipt.settled_usd, served_at: new Date(finishedAt).toISOString(),
+            data: response.data as Record<string, unknown>, params: response.params ?? params,
+          }]);
+        }
       }
     } finally {
       paymentsStore.finish();
@@ -183,7 +194,7 @@ export function PaymentsSection({ marketId }: MarketSectionProps) {
       void paymentsStore.refreshBalances();
       setTimeout(() => void paymentsStore.refreshBalances(), BALANCES_RECHECK_MS);
     }
-  }, [disabled, marketId, quote.amounts, quote.payTo, quote.providerName, run, view.policy, view.providers]);
+  }, [disabled, marketId, quote.amounts, quote.payTo, quote.providerName, run, view.policy, view.providers, params, store]);
 
   const steps = deriveSteps({
     pending: inFlightHere,

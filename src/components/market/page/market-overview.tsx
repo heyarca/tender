@@ -10,7 +10,7 @@ import { InfoTooltip } from "@/components/ui/tooltip";
 import { LatencyStrip } from "@/components/viz/LatencyStrip";
 import { getContract, getMarketSpec, type ContractSpec } from "@/lib/registry";
 import { format, type MarketView } from "@/lib/tender";
-import { useNow, usePendingSwitch } from "@/lib/tender/client";
+import { useNow, usePendingSwitch, useTenderSelector } from "@/lib/tender/client";
 import { cn } from "@/lib/utils";
 import {
   providerIdsOf,
@@ -68,12 +68,12 @@ function ResultCard({ view }: { view: MarketView }) {
     [kind, view.series, view.recentResults],
   );
   const timeZone = definition.timeZone;
-  const timeZoneLabel = definition.timeZoneLabel;
+
 
   let body: ReactNode;
   if (kind === "weather") {
     body = (
-      <WeatherResult reading={toWeatherReading(view.lastServed)} request={request} timeZone={timeZone} timeZoneLabel={timeZoneLabel} />
+      <WeatherResult reading={toWeatherReading(view.lastServed)} request={request} timeZone={timeZone} />
     );
   } else if (kind === "btc" || !contract) {
     body = (
@@ -83,7 +83,7 @@ function ResultCard({ view }: { view: MarketView }) {
         points={points}
         providers={providers}
         timeZone={timeZone}
-        timeZoneLabel={timeZoneLabel}
+
         chartHeight={120}
       />
     );
@@ -97,7 +97,7 @@ function ResultCard({ view }: { view: MarketView }) {
         points={points}
         providers={providers}
         timeZone={timeZone}
-        timeZoneLabel={timeZoneLabel}
+
         chartHeight={120}
       />
     );
@@ -110,7 +110,7 @@ function ResultCard({ view }: { view: MarketView }) {
         points={points}
         providers={providers}
         timeZone={timeZone}
-        timeZoneLabel={timeZoneLabel}
+
       />
     );
   }
@@ -128,6 +128,16 @@ function ResultCard({ view }: { view: MarketView }) {
           <UpdatedAgo at={view.lastResult?.requestedAt ?? null} />
         </div>
       </CardHeader>
+      {view.lastServed?.params && Object.keys(view.lastServed.params).length ? (
+        <dl aria-label="Source input" className="mb-4 space-y-2 rounded-md bg-muted p-3">
+          {Object.entries(view.lastServed.params).map(([key, value]) => (
+            <div key={key}>
+              <dt className="text-caption text-muted-foreground">{contract?.params.find((field) => field.key === key)?.label ?? key}</dt>
+              <dd className="text-body whitespace-pre-wrap [overflow-wrap:anywhere]">{value}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
       {body}
     </Card>
   );
@@ -145,6 +155,7 @@ function ActiveProviderCard({ view, className }: { view: MarketView; className?:
   const { definition, route } = view;
   const active = route.activeProvider;
   const pending = usePendingSwitch(view.id);
+  const rebased = useTenderSelector((state) => state.rebased);
   const highlight = useChangeHighlight(route.activeProviderId);
   const providers = useMemo(() => vizProvidersOf(definition), [definition]);
   const providerIds = useMemo(() => providerIdsOf(definition), [definition]);
@@ -187,7 +198,7 @@ function ActiveProviderCard({ view, className }: { view: MarketView; className?:
           {pending
             ? `Switching in ${pending.secondsRemaining} s`
             : active
-              ? `Since ${format.time(route.since, definition.timeZone, { milliseconds: false })}`
+              ? rebased ? `Since ${format.time(route.since, definition.timeZone, { milliseconds: false })}` : "Selected route"
               : "Requests rejected"}
         </span>
       </div>
@@ -209,7 +220,6 @@ function ActiveProviderCard({ view, className }: { view: MarketView; className?:
           height={30}
           barWidth={5}
           timeZone={definition.timeZone}
-          timeZoneLabel={definition.timeZoneLabel}
           showMilliseconds={definition.timeZone === "UTC"}
         />
       </div>

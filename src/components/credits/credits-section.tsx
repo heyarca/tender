@@ -2,6 +2,7 @@
 
 import { CircleAlert, LoaderCircle, Wallet } from "lucide-react";
 import { useCallback, useRef, useState, type ReactNode } from "react";
+import { useRequestInputs } from "@/components/market/market-ui";
 import { Notice } from "@/components/market/payments/payment-ui";
 import { summarizePayload } from "@/components/market/payments/payment-model";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -39,6 +40,7 @@ function Stat({ label, children }: { label: string; children: ReactNode }) {
 export function CreditsSection({ marketId }: { marketId: MarketId }) {
   const view = useMarketView(marketId);
   const store = useTenderStore();
+  const { params, error: inputError } = useRequestInputs(marketId);
   const status = useCreditsStore((state) => state.status);
   const balanceMicros = useCreditsStore((state) => state.balanceMicros);
   const [run, setRun] = useState<RunState>({ kind: "idle" });
@@ -48,7 +50,7 @@ export function CreditsSection({ marketId }: { marketId: MarketId }) {
   const routeLabel = policy.mode.kind === "pinned" ? "your pinned provider" : `your routing policy (${PREFERENCE_LABELS[policy.preference]})`;
 
   const handleRun = useCallback(async () => {
-    if (running.current) return;
+    if (running.current || inputError) return;
     if (useCreditsStore.getState().status === "ready" && useCreditsStore.getState().balanceMicros === 0) {
       setAddFundsOpen(true);
       return;
@@ -56,7 +58,7 @@ export function CreditsSection({ marketId }: { marketId: MarketId }) {
     running.current = true;
     setRun({ kind: "running" });
     try {
-      const response = await fetch(creditsRequestUrl(marketId, policy), {
+      const response = await fetch(creditsRequestUrl(marketId, policy, params), {
         headers: { "Tender-Payment": "credits", Accept: "application/json" },
         cache: "no-store",
       });
@@ -81,6 +83,7 @@ export function CreditsSection({ marketId }: { marketId: MarketId }) {
             charged_micros: body.payment.charged_micros,
             served_at: new Date().toISOString(),
             data: body.data,
+            params: body.params ?? params,
           },
         ]);
       }
@@ -89,7 +92,7 @@ export function CreditsSection({ marketId }: { marketId: MarketId }) {
     } finally {
       running.current = false;
     }
-  }, [marketId, policy, store]);
+  }, [marketId, policy, store, params, inputError]);
 
   const done = run.kind === "done" ? run.response : null;
   const provider = done ? getProviderFixture(marketId, done.provider) : undefined;
@@ -114,7 +117,7 @@ export function CreditsSection({ marketId }: { marketId: MarketId }) {
     >
       <div className="flex flex-col gap-5">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
-          <Button variant="primary" onClick={handleRun} disabled={run.kind === "running"} data-slot="run-with-credits">
+          <Button variant="primary" onClick={handleRun} disabled={run.kind === "running" || !!inputError} data-slot="run-with-credits">
             {run.kind === "running" ? <LoaderCircle aria-hidden="true" className="motion-safe:animate-spin" /> : <Wallet aria-hidden="true" />}
             {run.kind === "running" ? "Running…" : "Run with credits"}
           </Button>
