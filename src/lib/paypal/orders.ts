@@ -60,15 +60,12 @@ export async function createTopUpOrder(input: {
         description: "Tender credits",
         amount: { currency_code: "USD", value: microsToUsd(amountMicros) },
       }],
-      ...(input.returnUrl
-        ? { payment_source: { paypal: { experience_context: {
-            brand_name: "Tender",
-            shipping_preference: "NO_SHIPPING",
-            user_action: "PAY_NOW",
-            return_url: input.returnUrl,
-            cancel_url: input.cancelUrl ?? input.returnUrl,
-          } } } }
-        : {}),
+      payment_source: { paypal: { experience_context: {
+        brand_name: "Tender",
+        shipping_preference: "NO_SHIPPING",
+        user_action: "PAY_NOW",
+        ...(input.returnUrl ? { return_url: input.returnUrl, cancel_url: input.cancelUrl ?? input.returnUrl } : {}),
+      } } },
     },
   });
   await ensureAccount(accountId);
