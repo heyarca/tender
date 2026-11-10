@@ -3,6 +3,7 @@
 import { Play } from "lucide-react";
 import type * as React from "react";
 import { useMemo } from "react";
+import { BalanceChip } from "@/components/credits/balance-chip";
 import { TopNav, type TopNavLink } from "@/components/shell/top-nav";
 import { Button } from "@/components/ui/button";
 import { focusSection, MARKET_SECTIONS, type MarketSectionId } from "@/components/market/market-ui";
@@ -17,7 +18,7 @@ export function isSectionId(value: string): value is MarketSectionId {
   return SECTION_IDS.has(value);
 }
 
-/** TopNav links: the API directory, this market's sections, and the API dialog. */
+/** TopNav links: the API directory, this market's sections, provider payouts, and the API dialog. */
 export function topNavLinks(marketId: MarketId): TopNavLink[] {
   return [
     { label: "Markets", href: "/markets" },
@@ -25,6 +26,7 @@ export function topNavLinks(marketId: MarketId): TopNavLink[] {
     { label: "Routing", href: "#routing" },
     { label: "Payments", href: "#payments" },
     { label: "Activity", href: "#activity" },
+    { label: "Payouts", href: "/payouts" },
     { label: "API", href: API_HASH },
   ];
 }
@@ -83,10 +85,13 @@ export function MarketTopNav({ marketId, onSearch, onOpenApi, onRun }: MarketTop
       onSearch={onSearch}
       searchLabel="Search"
       actions={
-        <Button variant="primary" onClick={onRun} aria-keyshortcuts="Meta+Enter Control+Enter">
-          <Play aria-hidden />
-          <span className="max-sm:sr-only">Run request</span>
-        </Button>
+        <>
+          <BalanceChip />
+          <Button variant="primary" onClick={onRun} aria-keyshortcuts="Meta+Enter Control+Enter">
+            <Play aria-hidden />
+            <span className="max-sm:sr-only">Run request</span>
+          </Button>
+        </>
       }
     />
   );

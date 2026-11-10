@@ -14,6 +14,7 @@ import { parsePersistedPolicies, policiesChanged, serializePolicies } from "./pe
 import { getInitialState } from "./sample-state";
 import { formatPendingSwitch, pendingSecondsRemaining, selectMarketView } from "./selectors";
 import type {
+  AgentBidUpdate,
   ConditionsPatch,
   MarketId,
   MarketView,
@@ -34,6 +35,8 @@ export interface TenderActions {
   resetPolicy(marketId: MarketId): void;
   updateProvider(marketId: MarketId, providerId: ProviderId, patch: ConditionsPatch): void;
   restoreProvider(marketId: MarketId, providerId: ProviderId): void;
+  /** Apply new bids from the providers' bidding agents (re-routes like a bid edit). */
+  applyAgentBids(marketId: MarketId, bids: readonly AgentBidUpdate[], model: string): void;
   resetConditions(marketId: MarketId): void;
   /** Pinned: pin the rank-1 provider. Automatic: switch to rank 1 now (skips the cooldown). */
   switchToRecommended(marketId: MarketId): void;
@@ -102,6 +105,8 @@ export function createTenderStore(options: CreateTenderStoreOptions = {}): Tende
     updateProvider: (marketId, providerId, patch) =>
       act((now) => ({ type: "update-provider", marketId, providerId, patch, now })),
     restoreProvider: (marketId, providerId) => act((now) => ({ type: "restore-provider", marketId, providerId, now })),
+    applyAgentBids: (marketId, bids, model) =>
+      act((now) => ({ type: "apply-agent-bids", marketId, bids, model, now })),
     resetConditions: (marketId) => act((now) => ({ type: "reset-conditions", marketId, now })),
     switchToRecommended: (marketId) => act((now) => ({ type: "switch-to-recommended", marketId, now })),
   };

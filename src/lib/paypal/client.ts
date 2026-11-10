@@ -65,6 +65,18 @@ export async function requestToken(extra: Record<string, string> = {}): Promise<
   return (await response.json()) as { access_token: string; expires_in: number };
 }
 
+/** Script URL of the JS SDK v6 on the host that matches the REST API (sandbox or live). */
+export function paypalSdkUrl(): string {
+  const live = new URL(paypalApiBase()).hostname === "api-m.paypal.com";
+  return `https://${live ? "www.paypal.com" : "www.sandbox.paypal.com"}/web-sdk/v6/core`;
+}
+
+/** Browser-safe client token for the JS SDK v6 (`response_type=client_token`, `intent=sdk_init`). */
+export async function getClientToken(): Promise<{ clientToken: string; expiresIn: number }> {
+  const { access_token, expires_in } = await requestToken({ response_type: "client_token", intent: "sdk_init" });
+  return { clientToken: access_token, expiresIn: expires_in };
+}
+
 let cached: { token: string; expiresAt: number } | undefined;
 let pending: Promise<string> | undefined;
 

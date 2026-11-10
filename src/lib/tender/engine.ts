@@ -3,6 +3,7 @@
  * Every action carries `now` so the reducer never reads the clock.
  */
 import {
+  agentBidEntry,
   autoRunEntry,
   conditionsEntry,
   conditionsResetEntry,
@@ -26,6 +27,7 @@ import { btcProviderPrice, fieldsPayload, payloadKindOf, runRequest, seriesValue
 import { evaluateMarketState, isPendingDue, reconcileRoute, type ReconcileCause } from "./router";
 import { sanitizeConditionsPatch, sanitizePolicy, sanitizePolicyPatch } from "./sanitize";
 import type {
+  AgentBidUpdate,
   ConditionChange,
   ConditionsPatch,
   MarketId,
@@ -66,6 +68,11 @@ export type TenderAction =
   | { type: "update-provider"; marketId: MarketId; providerId: ProviderId; patch: ConditionsPatch; now: number }
   | { type: "restore-provider"; marketId: MarketId; providerId: ProviderId; now: number }
   | { type: "reset-conditions"; marketId: MarketId; now: number }
+  /**
+   * Apply bids from the providers' bidding agents: one `bid-updated` entry per changed bid, then one
+   * re-evaluation (failover and switch rules apply as for a bid edit). Stale updates are skipped.
+   */
+  | { type: "apply-agent-bids"; marketId: MarketId; bids: readonly AgentBidUpdate[]; model: string; now: number }
   /** Pinned: pin the rank-1 provider. Automatic: switch to rank 1 now (skips the cooldown). */
   | { type: "switch-to-recommended"; marketId: MarketId; now: number }
   /** Apply persisted policies (once, after mount). Unknown/invalid entries are ignored. */
@@ -290,6 +297,26 @@ function updateProvider(market: MarketState, ctx: StepContext, providerId: Provi
   let updated = setConditions(market, providerId, next, ctx.now);
   updated = pushActivity(ctx, updated, conditionsEntry(market.id, providerId, changes, before, statusOf(updated, providerId)));
   return reconcileRoute(updated, ctx, { kind: "conditions" });
+}
+
+function applyAgentBids(market: MarketState, ctx: StepContext, bids: readonly AgentBidUpdate[], model: string): MarketState {
+  let updated = market;
+  for (const update of bids) {
+    const provider = updated.providers.find((p) => p.id === update.providerId);
+    // Skip bids made against a price that changed while the round ran (an operator edit wins).
+    if (!provider || provider.conditions.bidPrice !== update.from) continue;
+    const clean = sanitizeConditionsPatch(market.id, { bidPrice: update.bid });
+    if (clean.bidPrice === undefined || clean.bidPrice === provider.conditions.bidPrice) continue;
+    const before = statusOf(updated, provider.id);
+    const from = provider.conditions.bidPrice;
+    updated = setConditions(updated, provider.id, { ...provider.conditions, bidPrice: clean.bidPrice }, ctx.now);
+    updated = pushActivity(
+      ctx,
+      updated,
+      agentBidEntry(market.id, provider.id, from, clean.bidPrice, update.reason, model, before, statusOf(updated, provider.id)),
+    );
+  }
+  return updated === market ? market : reconcileRoute(updated, ctx, { kind: "conditions" });
 }
 
 function restoreProvider(market: MarketState, ctx: StepContext, providerId: ProviderId): MarketState {
@@ -517,6 +544,8 @@ export function reduce(state: TenderState, action: TenderAction): TenderState {
       return updateMarket(state, action.marketId, action.now, (m, ctx) => resetPolicy(m, ctx));
     case "update-provider":
       return updateMarket(state, action.marketId, action.now, (m, ctx) => updateProvider(m, ctx, action.providerId, action.patch));
+    case "apply-agent-bids":
+      return updateMarket(state, action.marketId, action.now, (m, ctx) => applyAgentBids(m, ctx, action.bids, action.model));
     case "restore-provider":
       return updateMarket(state, action.marketId, action.now, (m, ctx) => restoreProvider(m, ctx, action.providerId));
     case "reset-conditions":

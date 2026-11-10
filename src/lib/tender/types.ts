@@ -182,6 +182,17 @@ export interface ProviderConditions {
 
 export type ConditionsPatch = Partial<ProviderConditions>;
 
+/** A new bid from a provider's bidding agent (see `@/lib/bidding`). */
+export interface AgentBidUpdate {
+  providerId: ProviderId;
+  /** Bid the agent saw. The update is skipped when the bid changed since then. */
+  from: number;
+  /** New bid, USD per 1M requests. */
+  bid: number;
+  /** One short sentence from the model. */
+  reason: string;
+}
+
 // ---------------------------------------------------------------------------
 // Evaluation
 // ---------------------------------------------------------------------------
@@ -573,6 +584,8 @@ export interface BidUpdatedEntry extends ActivityBase {
   providerId: ProviderId;
   from: number;
   to: number;
+  /** Set when the provider's bidding agent changed the bid (`reason` is the model's sentence). */
+  agent?: { reason: string; model: string };
 }
 export interface ConditionChange {
   field: keyof ProviderConditions;

@@ -49,7 +49,6 @@ export async function createTopUpOrder(input: {
   if (!Number.isSafeInteger(amountMicros) || amountMicros < MIN_TOP_UP_MICROS || amountMicros > MAX_TOP_UP_MICROS || amountMicros % MICROS_PER_CENT !== 0) {
     throw new PayPalError("Top-ups are $1.00 to $100.00 in whole cents", 400);
   }
-  await ensureAccount(accountId);
   const order = await paypalFetch<PayPalOrder>("/v2/checkout/orders", {
     method: "POST",
     requestId: `topup-${randomUUID()}`,
@@ -72,6 +71,7 @@ export async function createTopUpOrder(input: {
         : {}),
     },
   });
+  await ensureAccount(accountId);
   await sql.query(
     "insert into paypal_orders (id, account_id, amount_micros, status, actor) values ($1, $2, $3, 'CREATED', $4) on conflict (id) do nothing",
     [order.id, accountId, amountMicros, actor],

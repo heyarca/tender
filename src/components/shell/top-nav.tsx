@@ -70,7 +70,7 @@ export function TopNav({
             aria-label={searchLabel}
             aria-keyshortcuts="Meta+K Control+K"
             className={cn(
-              "inline-flex h-8 w-60 max-w-full cursor-pointer items-center gap-1.5 rounded-md border border-input bg-input-bg px-3 text-left text-button font-normal whitespace-nowrap text-muted-foreground transition-colors duration-quick select-none hover:border-focus-border [&_svg]:size-4 [&_svg]:shrink-0",
+              "inline-flex h-8 w-60 max-w-full cursor-pointer items-center gap-1.5 overflow-hidden rounded-md border border-input bg-input-bg px-3 text-left text-button font-normal whitespace-nowrap text-muted-foreground transition-colors duration-quick select-none hover:border-focus-border [&_svg]:size-4 [&_svg]:shrink-0",
               FOCUS,
             )}
           >
