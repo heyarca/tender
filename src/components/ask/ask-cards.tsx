@@ -149,7 +149,7 @@ export function SpendingLimitCard({ input, output, onAnswer }: { input: LimitInp
   );
 }
 
-type TopUpOutput = { order_id: string; approve_url: string; amount: string; automatic_refused?: string };
+type TopUpOutput = { order_id: string; approve_url: string; amount: string };
 type TopUpState =
   | { kind: "idle" }
   | { kind: "waiting"; note?: string }
@@ -210,7 +210,7 @@ export function TopUpCard({ output }: { output: TopUpOutput }) {
     <CardFrame icon={<Wallet aria-hidden="true" />} title={`Add ${output.amount} with PayPal`}>
       <p className="text-caption leading-snug text-muted-foreground">
         {state.kind === "idle"
-          ? `${output.automatic_refused ? `Automatic top-up refused: ${output.automatic_refused}. ` : ""}Approve the payment in PayPal. Credits arrive right after.`
+          ? "Approve this one-off payment in PayPal. Your automatic top-up allowance stays unchanged."
           : (state.kind === "waiting" && state.note) || "Waiting for PayPal…"}
       </p>
       <div className="flex justify-end gap-2">

@@ -4,7 +4,7 @@ import { getAccount, getAutopay, listLedger, lowBalanceThreshold } from "@/lib/l
 import { PayPalError } from "@/lib/paypal/client";
 import { paypalIssue } from "@/lib/paypal/http";
 import { createTopUpOrder } from "@/lib/paypal/orders";
-import { createVaultedTopUp, topUpBeforeAgentCharge, type VaultedTopUp } from "@/lib/paypal/vault";
+import { topUpBeforeAgentCharge, type VaultedTopUp } from "@/lib/paypal/vault";
 import { serveWithCredits } from "@/lib/server/credits";
 import { ApiError } from "@/lib/server/http";
 import { getMarketDefinition, isMarketId, providerName, type MarketId, type RoutingPolicy, type ServedEnvelope } from "@/lib/tender";
@@ -275,24 +275,21 @@ function serverTools(accountId: string) {
 }
 
 /**
- * PayPal top-up for the account. With a saved PayPal and an approved weekly limit it is charged
- * right away, with no approval; otherwise the user approves it from the panel and
- * `/api/ask/top-up` captures it.
+ * A one-off top-up the user approves in PayPal, even when PayPal is saved.
+ * Only run_request may initiate automatic, allowance-reserved vault charges.
  */
 function topUpTool(accountId: string, origin: string) {
   return tool({
     description:
-      "Add Tender credits with PayPal. With a saved PayPal the top-up happens right away (automatic: true), within the weekly limit. Otherwise the user approves it in PayPal from the panel; credits arrive after approval.",
+      "Offer a one-off Tender credits top-up. The user must approve this payment in PayPal, even with a saved account. It does not use the automatic top-up allowance. Credits arrive only after approval and capture.",
     inputSchema: z.object({ amountUsd: z.union([z.literal(5), z.literal(10), z.literal(20)]).describe("5, 10 or 20") }),
     execute: async ({ amountUsd }) => {
       const amountMicros = usdToMicros(amountUsd);
       try {
-        const automatic = await createVaultedTopUp({ accountId, amountMicros, actor: "agent" });
-        if (automatic.status !== "REFUSED") return { automatic: true as const, ...autoTopUpView(automatic) };
         const order = await createTopUpOrder({
           accountId,
           amountMicros,
-          actor: "agent",
+          actor: "user",
           returnUrl: `${origin}/api/ask/top-up`,
           cancelUrl: `${origin}/api/ask/top-up?cancel=1`,
         });
@@ -301,8 +298,6 @@ function topUpTool(accountId: string, origin: string) {
           approve_url: order.approveUrl,
           amount: formatMicros(amountMicros),
           status: "waiting_for_approval",
-          // Over the weekly limit the saved PayPal is not charged; the user can still approve this one.
-          ...(automatic.reason === "weekly_limit" ? { automatic_refused: weeklyLimitReached(automatic) } : {}),
         };
       } catch (error) {
         return { error: errorMessage(error) };
@@ -317,7 +312,6 @@ function topUpTool(accountId: string, origin: string) {
           order_id: output.order_id,
           amount: output.amount,
           status: output.status,
-          ...("automatic_refused" in output ? { automatic_refused: output.automatic_refused } : {}),
           approval: "The panel shows an Approve in PayPal button.",
         },
       };
