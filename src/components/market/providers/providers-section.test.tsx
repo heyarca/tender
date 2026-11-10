@@ -9,6 +9,13 @@ import { createTenderStore, TenderProvider, type TenderStore } from "@/lib/tende
 
 import { ProvidersSection } from "./providers-section";
 
+// `DataGrid` loads AG Grid when it nears the viewport (jsdom has no IntersectionObserver); render the grid itself.
+vi.mock("@/components/ui/data-grid", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/components/ui/data-grid")>();
+  const { DataGridCore } = await import("@/components/ui/data-grid-core");
+  return { ...actual, DataGrid: DataGridCore };
+});
+
 const WALL = FIXTURE_EPOCH + 86_400_000;
 
 beforeEach(() => {

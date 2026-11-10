@@ -18,11 +18,8 @@ import type {
 import type { CustomCellRendererProps } from "ag-grid-react";
 import { Pin } from "lucide-react";
 
-import { DataGrid, type DataGridColumn } from "@/components/ui/data-grid";
+import { DataGrid, type DataGridColumn, type DataGridFeature } from "@/components/ui/data-grid";
 import {
-  COLUMN_STATE_MODULES,
-  EXPORT_MODULES,
-  FILTER_MODULES,
   GridEmptyOverlay,
   LimitFloatingFilter,
   type EmptyOverlayParams,
@@ -46,7 +43,7 @@ import {
 } from "./directory-model";
 import { MarketThumbnail } from "./market-thumbnail";
 
-const MODULES = [...FILTER_MODULES, ...EXPORT_MODULES, ...COLUMN_STATE_MODULES];
+const FEATURES: DataGridFeature[] = ["quickFilter", "externalFilter", "numberFilter", "csvExport", "columnState"];
 
 const ROW_HEIGHT = 52;
 const HEADER_HEIGHT = 43;
@@ -327,7 +324,7 @@ export function DirectoryGrid({ rows, query, visibleCount, onSortChange, onLimit
     <DataGrid<DirectoryRow>
       aria-label="Markets"
       data-slot="directory-grid"
-      modules={MODULES}
+      features={FEATURES}
       density="tight"
       rowData={rows}
       columnDefs={columns}

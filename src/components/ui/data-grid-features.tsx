@@ -2,26 +2,7 @@
 
 import { useState } from "react";
 import { Download } from "lucide-react";
-import {
-  CheckboxEditorModule,
-  ClientSideRowModelApiModule,
-  ColumnApiModule,
-  CsvExportModule,
-  DateFilterModule,
-  ExternalFilterModule,
-  NumberEditorModule,
-  NumberFilterModule,
-  PinnedRowModule,
-  QuickFilterModule,
-  TextFilterModule,
-  TooltipModule,
-  UndoRedoEditModule,
-  type DateFilterModel,
-  type GridApi,
-  type Module,
-  type NumberFilterModel,
-  type TextFilterModel,
-} from "ag-grid-community";
+import type { DateFilterModel, GridApi, NumberFilterModel, TextFilterModel } from "ag-grid-community";
 import type { CustomFloatingFilterDisplayProps, CustomNoRowsOverlayProps } from "ag-grid-react";
 
 import { Button } from "@/components/ui/button";
@@ -29,23 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Select, type SelectOption } from "@/components/ui/select";
 
 /*
- * Opt-in AG Grid features for `DataGrid` (pinned columns, overlays, and the checkbox renderer are in the core set). `data-grid.tsx` registers only what every grid needs (it ships on
- * the landing page); a grid that filters, edits, exports, or pins rows passes these through its `modules` prop,
- * so the code loads with that grid's page. All Community modules.
+ * Pieces that grids share on top of `DataGrid`: CSV export, Tender floating filters, and the empty overlay.
+ * Type-only AG Grid imports: the AG Grid runtime stays in the `DataGrid` chunk.
  */
-
-/** Quick filter text, an external filter, and number, text, and date column filters (floating filters included). */
-export const FILTER_MODULES: Module[] = [QuickFilterModule, ExternalFilterModule, NumberFilterModule, TextFilterModule, DateFilterModule];
-/** Inline editing: number and checkbox editors, undo/redo shortcuts, and validation tooltips. */
-export const EDIT_MODULES: Module[] = [NumberEditorModule, CheckboxEditorModule, UndoRedoEditModule, TooltipModule];
-/** `api.exportDataAsCsv`. */
-export const EXPORT_MODULES: Module[] = [CsvExportModule];
-/** `pinnedBottomRowData` (totals rows). */
-export const TOTALS_MODULES: Module[] = [PinnedRowModule];
-/** `api.applyTransaction` and `forEachNodeAfterFilterAndSort`. */
-export const TRANSACTION_MODULES: Module[] = [ClientSideRowModelApiModule];
-/** `api.applyColumnState` / `getColumnState` (sort state kept outside the grid, for example in the URL). */
-export const COLUMN_STATE_MODULES: Module[] = [ColumnApiModule];
 
 /**
  * Download the rows the grid shows (filtered and sorted) as CSV. Cells export their raw value (numbers stay
