@@ -368,7 +368,7 @@ export function PriceChart({
               title={provider ? `Switched to ${provider.name}` : undefined}
             >
               {provider?.logo ? (
-                <ProviderLogo src={provider.logo} name={provider.name} size={16} />
+                <ProviderLogo src={provider.logo} name={provider.name} size={14} fallbackColor={provider.color} />
               ) : (
                 <span className="max-w-20 truncate rounded-sm bg-card px-1 text-[10px] leading-4 text-muted-foreground">
                   {provider?.name ?? m.providerId}
@@ -418,7 +418,7 @@ function PriceTooltip({
   timeZone: string;
   zoneLabel: string;
   formatPrice: (price: number) => string;
-  provider?: { name: string; logo?: string };
+  provider?: { name: string; logo?: string; color?: string };
 }) {
   const left = x + 12 + TOOLTIP_WIDTH > width ? x - 12 - TOOLTIP_WIDTH : x + 12;
   const top = clamp(y - TOOLTIP_HEIGHT / 2, 0, Math.max(0, height - TOOLTIP_HEIGHT));
@@ -438,7 +438,12 @@ function PriceTooltip({
       </div>
       {(provider || point.providerId) && (
         <div className="mt-1 flex items-center gap-1.5 text-foreground">
-          <ProviderLogo src={provider?.logo} name={provider?.name ?? point.providerId ?? ""} size={16} />
+          <ProviderLogo
+            src={provider?.logo}
+            name={provider?.name ?? point.providerId ?? ""}
+            size={14}
+            fallbackColor={provider?.color}
+          />
           <span className="truncate">{provider?.name ?? point.providerId}</span>
           {point.id && <span className="ml-auto font-mono text-[11px] text-muted-foreground">{point.id}</span>}
         </div>

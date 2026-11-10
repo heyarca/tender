@@ -29,6 +29,11 @@ export function topNavLinks(marketId: MarketId): TopNavLink[] {
   ];
 }
 
+/** Left click without modifiers, so shortcut- or new-tab clicks keep following the href. */
+function isPlainLeftClick(event: React.MouseEvent<HTMLAnchorElement>): boolean {
+  return event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
+}
+
 export interface MarketTopNavProps {
   marketId: MarketId;
   onSearch: () => void;
@@ -42,38 +47,47 @@ export interface MarketTopNavProps {
  * Plain hrefs keep the links usable in a new tab.
  */
 export function MarketTopNav({ marketId, onSearch, onOpenApi, onRun }: MarketTopNavProps) {
-  const links = useMemo(() => topNavLinks(marketId), [marketId]);
-
-  // TopNav renders next/link anchors without click hooks; intercept in the capture phase
-  // (this also covers the mobile menu, whose portal still bubbles through React).
-  const onClickCapture = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-    const anchor = (event.target as Element | null)?.closest?.("a[href]");
-    const href = anchor?.getAttribute("href");
-    if (!href) return;
-    if (href === API_HASH) {
-      event.preventDefault();
-      onOpenApi();
-    } else if (href.startsWith("#") && isSectionId(href.slice(1))) {
-      event.preventDefault();
-      focusSection(href.slice(1) as MarketSectionId);
-    }
-  };
+  const links = useMemo(
+    () =>
+      topNavLinks(marketId).map((link) => {
+        if (link.href === API_HASH) {
+          return {
+            ...link,
+            onClick: (event: React.MouseEvent<HTMLAnchorElement>) => {
+              if (!isPlainLeftClick(event)) return;
+              event.preventDefault();
+              onOpenApi();
+            },
+          };
+        }
+        if (link.href.startsWith("#") && isSectionId(link.href.slice(1))) {
+          const section = link.href.slice(1) as MarketSectionId;
+          return {
+            ...link,
+            onClick: (event: React.MouseEvent<HTMLAnchorElement>) => {
+              if (!isPlainLeftClick(event)) return;
+              event.preventDefault();
+              focusSection(section);
+            },
+          };
+        }
+        return link;
+      }),
+    [marketId, onOpenApi],
+  );
 
   return (
-    <div className="contents" onClickCapture={onClickCapture}>
-      <TopNav
-        links={links}
-        homeHref="/landing"
-        onSearch={onSearch}
-        searchLabel="Search"
-        actions={
-          <Button variant="primary" onClick={onRun} aria-keyshortcuts="Meta+Enter Control+Enter">
-            <Play aria-hidden />
-            <span className="max-sm:sr-only">Run request</span>
-          </Button>
-        }
-      />
-    </div>
+    <TopNav
+      links={links}
+      homeHref="/landing"
+      onSearch={onSearch}
+      searchLabel="Search"
+      actions={
+        <Button variant="primary" onClick={onRun} aria-keyshortcuts="Meta+Enter Control+Enter">
+          <Play aria-hidden />
+          <span className="max-sm:sr-only">Run request</span>
+        </Button>
+      }
+    />
   );
 }

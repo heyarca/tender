@@ -2,9 +2,10 @@ import type * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-export type ProviderLogoSize = 16 | 20 | 24 | 28;
+export type ProviderLogoSize = 14 | 16 | 20 | 24 | 28;
 
 const boxSize: Record<ProviderLogoSize, string> = {
+  14: "size-3.5",
   16: "size-4",
   20: "size-5",
   24: "size-6",
@@ -12,6 +13,7 @@ const boxSize: Record<ProviderLogoSize, string> = {
 };
 
 const fallbackText: Record<ProviderLogoSize, string> = {
+  14: "text-[8px]",
   16: "text-[9px]",
   20: "text-micro",
   24: "text-caption",
@@ -25,6 +27,8 @@ export interface ProviderLogoProps extends Omit<React.ComponentProps<"span">, "c
   name: string;
   /** Box size in px (the 1px frame is added outside, like OpenRouter). Defaults to 20. */
   size?: ProviderLogoSize;
+  /** Background of the letter fallback (any CSS color, e.g. "var(--chart-3)"). Without it the fallback is muted. */
+  fallbackColor?: string;
   /**
    * When the name is rendered next to the logo (the usual case), keep the image decorative.
    * Set to `false` to expose `name` as the image's alt text.
@@ -40,6 +44,7 @@ export function ProviderLogo({
   src,
   name,
   size = 20,
+  fallbackColor,
   decorative = true,
   className,
   ...props
@@ -71,8 +76,10 @@ export function ProviderLogo({
         />
       ) : (
         <span
+          style={fallbackColor ? { backgroundColor: fallbackColor } : undefined}
           className={cn(
-            "flex size-full items-center justify-center rounded-sm bg-muted font-medium text-muted-foreground uppercase",
+            "flex size-full items-center justify-center rounded-sm",
+            fallbackColor ? "font-medium text-white uppercase" : "bg-muted font-medium text-muted-foreground uppercase",
             fallbackText[size],
           )}
         >
