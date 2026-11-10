@@ -7,7 +7,6 @@ import { BalanceChip } from "@/components/credits/balance-chip";
 import { TopNav, type TopNavLink } from "@/components/shell/top-nav";
 import { Button } from "@/components/ui/button";
 import { focusSection, MARKET_SECTIONS, type MarketSectionId } from "@/components/market/market-ui";
-import type { MarketId } from "@/lib/tender";
 
 /** Hash of the TopNav link that opens the API dialog. */
 export const API_HASH = "#api";
@@ -19,7 +18,7 @@ export function isSectionId(value: string): value is MarketSectionId {
 }
 
 /** TopNav links: the API directory, this market's sections, provider payouts, and the API dialog. */
-export function topNavLinks(marketId: MarketId): TopNavLink[] {
+export function topNavLinks(): TopNavLink[] {
   return [
     { label: "Markets", href: "/markets" },
     { label: "Providers", href: "#providers" },
@@ -37,7 +36,6 @@ function isPlainLeftClick(event: React.MouseEvent<HTMLAnchorElement>): boolean {
 }
 
 export interface MarketTopNavProps {
-  marketId: MarketId;
   onSearch: () => void;
   onOpenApi: () => void;
   onRun: () => void;
@@ -48,10 +46,10 @@ export interface MarketTopNavProps {
  * focus to its heading, "API" opens the API dialog, and "Markets" opens the API directory.
  * Plain hrefs keep the links usable in a new tab.
  */
-export function MarketTopNav({ marketId, onSearch, onOpenApi, onRun }: MarketTopNavProps) {
+export function MarketTopNav({ onSearch, onOpenApi, onRun }: MarketTopNavProps) {
   const links = useMemo(
     () =>
-      topNavLinks(marketId).map((link) => {
+      topNavLinks().map((link) => {
         if (link.href === API_HASH) {
           return {
             ...link,
@@ -75,7 +73,7 @@ export function MarketTopNav({ marketId, onSearch, onOpenApi, onRun }: MarketTop
         }
         return link;
       }),
-    [marketId, onOpenApi],
+    [onOpenApi],
   );
 
   return (
