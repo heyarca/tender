@@ -1,6 +1,6 @@
 import { convertToModelMessages, createUIMessageStreamResponse, isStepCount, streamText, toUIMessageStream, validateUIMessages } from "ai";
 import { askInstructions } from "@/lib/agent/instructions";
-import { ASK_MODEL } from "@/lib/agent/model";
+import { ASK_FALLBACK_MODELS, ASK_MODEL } from "@/lib/agent/model";
 import { hasPayPalCredentials } from "@/lib/agent/paypal-tools";
 import { createAskTools } from "@/lib/agent/tools";
 import { cookieAccountForWrite } from "@/lib/ledger";
@@ -29,6 +29,7 @@ export async function POST(request: Request) {
   const { accountId, setCookie } = cookieAccountForWrite(request);
   const result = streamText({
     model: ASK_MODEL,
+    providerOptions: { gateway: { models: ASK_FALLBACK_MODELS } },
     instructions: askInstructions(marketId, hasPayPalCredentials()),
     messages: await convertToModelMessages(messages.slice(-MAX_MESSAGES)),
     tools: await createAskTools({ accountId, origin: new URL(request.url).origin }),
