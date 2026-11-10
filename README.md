@@ -51,15 +51,15 @@ Status of each flow:
 
 | Flow | PayPal API | Status |
 |---|---|---|
-| Buyers add funds to their Tender credits | Checkout: JS SDK v6, Orders v2 create and capture | Built |
-| Credits are added once, when PayPal confirms the capture | Webhooks: `PAYMENT.CAPTURE.COMPLETED`, signature verification | Built |
+| Buyers add funds to their Tender credits | Checkout: JS SDK v6, Orders v2 create and capture | Live |
+| Credits are added once, when PayPal confirms the capture | Webhooks: `PAYMENT.CAPTURE.COMPLETED`, signature verification | Live |
 | Each successful request deducts the winning bid from the balance | Tender ledger (integer micro-USD) | Live |
-| Agents spend only within a weekly limit you approve, and ask you to approve each top-up | Orders v2 approve link | Built (the weekly limit is Live) |
-| Providers receive their earnings | Payouts (batch payouts), payout webhooks | Built |
-| Ask Tender reads orders and transactions and sends invoices | PayPal Agent Toolkit | Built |
+| Agents spend only within a weekly limit you approve, and ask you to approve each top-up | Orders v2 approve link | Live |
+| Providers receive their earnings | Payouts (batch payouts), payout webhooks | Live |
+| Ask Tender looks up orders, sends invoices, and lists transactions | PayPal Agent Toolkit | Live (transaction listing starts working once PayPal enables transaction search on the app) |
 
-**Built** means the code is on `main` and verified up to the PayPal call. Each flow goes **Live** once the
-PayPal sandbox app credentials are added.
+Everything runs on the PayPal sandbox with test accounts, so no real money moves. Testing credentials for
+a sandbox buyer are in the submission's testing instructions.
 
 Credentials go in `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, and `PAYPAL_WEBHOOK_ID` (see
 [`.env.example`](.env.example)). The plan: [`docs/PAYPAL-HACKATHON.md`](docs/PAYPAL-HACKATHON.md).

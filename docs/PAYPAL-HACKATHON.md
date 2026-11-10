@@ -84,8 +84,9 @@ Keep USDC/x402 as an "also supports stablecoins" footnote, off the main demo pat
       show third-party names and logos (a Cloudflare outage headline, a TechCrunch clipping, old provider
       tables). Replace them, or keep them off the submission path.
 - [ ] Video: our own footage, screen recording, royalty-free or no music.
-- [ ] Hosted demo at https://tender.heyarca.app with a PayPal **sandbox buyer account** (email +
-      password) in the testing instructions, and a "reset demo" button so judges start clean.
+- [x] Hosted demo at https://tender.heyarca.app with a PayPal **sandbox buyer account** (email +
+      password, in the Devpost testing instructions only, never in the repo), and a "Start over" button
+      (Account page) so judges start clean.
 - [ ] README: done: what it is, how PayPal and AI are used (with a status per flow), setup, deploy, and
       `.env.example` with `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_WEBHOOK_ID`, and
       `AI_GATEWAY_API_KEY`. To do: switch each PayPal and AI row to "Live" as its lane lands, and add the
