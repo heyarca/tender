@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { tool, type FlexibleSchema, type Tool } from "ai";
 import { paypalApiBase, paypalCredentials, paypalFetch } from "@/lib/paypal/client";
 import { listLedger } from "@/lib/ledger";
@@ -63,9 +64,12 @@ function prepareInvoice(input: Record<string, unknown>): string | null {
 
 const INVOICE_ID = /^INV2(?:-[A-Z0-9]{4}){4}$/;
 
-/** PayPal invoice reference that identifies the Tender account whose usage was invoiced. */
-function invoiceReference(accountId: string): string {
-  return `tender:${accountId}`;
+/**
+ * PayPal invoice reference that ties an invoice to one Tender account. The account id also works as
+ * the browser's account cookie, so the reference holds a one-way hash of it, never the id itself.
+ */
+export function invoiceReference(accountId: string): string {
+  return `tender:${createHash("sha256").update(accountId).digest("base64url")}`;
 }
 
 function ownsInvoice(invoice: unknown, accountId: string): boolean {

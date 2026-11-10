@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { paypalToolkitTools } from "./paypal-tools";
+import { invoiceReference, paypalToolkitTools } from "./paypal-tools";
 
 const mocks = vi.hoisted(() => ({ create: vi.fn(), send: vi.fn(), fetch: vi.fn() }));
 vi.mock("@/lib/paypal/client", () => ({ paypalApiBase: () => "https://api-m.sandbox.paypal.com", paypalCredentials: () => ({ clientId: "test", secret: "test" }), paypalFetch: mocks.fetch }));
@@ -16,7 +16,7 @@ vi.mock("@paypal/agent-toolkit/ai-sdk", () => ({ PayPalAgentToolkit: class {
 } }));
 const invoiceId = "INV2-AAAA-BBBB-CCCC-DDDD";
 const url = "https://www.sandbox.paypal.com/invoice/p/#RETURNED-BY-PAYPAL";
-const owned = { detail: { reference: "tender:account" } };
+const owned = { detail: { reference: invoiceReference("account") } };
 async function send(accountId = "account") {
   const tools = await paypalToolkitTools(accountId);
   return tools.paypal_send_invoice.execute!({ invoice_id: invoiceId }, { toolCallId: "call", messages: [], context: undefined });
@@ -29,7 +29,9 @@ describe("sent invoice result", () => {
     const tools = await paypalToolkitTools("account");
     const input = { primary_recipients: [{ billing_info: { email_address: "buyer@example.com" } }], reference: "other" };
     await tools.paypal_create_invoice.execute!(input, { toolCallId: "call", messages: [], context: undefined });
-    expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ reference: "tender:account" }), {});
+    expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ reference: invoiceReference("account") }), {});
+    // The account id doubles as the account cookie, so it must never reach PayPal.
+    expect(mocks.create.mock.calls[0][0].reference).not.toContain("account");
   });
   it("exposes the validated payer link from an owned invoice", async () => {
     mocks.fetch.mockResolvedValue(owned);
@@ -44,7 +46,7 @@ describe("sent invoice result", () => {
     expect(mocks.fetch).toHaveBeenNthCalledWith(2, `/v2/invoicing/invoices/${invoiceId}`);
   });
   it("does not send another account's invoice or expose its link", async () => {
-    mocks.fetch.mockResolvedValue({ detail: { reference: "tender:other", metadata: { recipient_view_url: url } } });
+    mocks.fetch.mockResolvedValue({ detail: { reference: invoiceReference("other"), metadata: { recipient_view_url: url } } });
     expect(await send()).toEqual({ error: "Invoice not found" });
     expect(mocks.send).not.toHaveBeenCalled();
   });
