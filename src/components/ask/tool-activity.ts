@@ -24,25 +24,21 @@ const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ?
 const PAYPAL_LABELS: Record<string, [pending: string, done: string]> = {
   paypal_get_order: ["Looking up a PayPal order…", "Looked up a PayPal order"],
   paypal_list_transactions: ["Listing PayPal transactions…", "Listed PayPal transactions"],
-  paypal_create_invoice: ["Creating a PayPal invoice…", "Created a PayPal invoice"],
-  paypal_send_invoice: ["Sending the PayPal invoice…", "Sent the PayPal invoice"],
+  paypal_create_invoice: ["Creating a PayPal invoice…", "Created PayPal invoice"],
+  paypal_send_invoice: ["Sending the PayPal invoice…", "Sent PayPal invoice"],
 };
 
-/** The `error` of a tool result: `{ error }` from Tender tools, or the JSON text the PayPal Agent Toolkit returns. */
+/** Invoice id of a PayPal invoice call: its input, or the invoice link PayPal returns. */
+function invoiceId(part: ToolPartState): string | null {
+  const input = part.input as { invoice_id?: unknown } | undefined;
+  if (typeof input?.invoice_id === "string") return input.invoice_id;
+  const href = (part.output as { href?: unknown } | undefined)?.href;
+  return typeof href === "string" ? (/INV2(?:-[A-Z0-9]{4}){4}/.exec(href)?.[0] ?? null) : null;
+}
+
+/** The `error` of a tool result (`{ error }`). */
 function outputError(output: unknown): string | null {
-  let value = output;
-  if (typeof value === "string" && value.startsWith("{")) {
-    try {
-      value = JSON.parse(value);
-    } catch {
-      return null;
-    }
-  }
-  if (!value || typeof value !== "object" || !("error" in value)) return null;
-  const error = (value as { error: unknown }).error;
-  if (typeof error === "string") return error;
-  const message = error && typeof error === "object" && "message" in error ? (error as { message: unknown }).message : null;
-  return typeof message === "string" ? message : "PayPal could not finish this step";
+  return output && typeof output === "object" && "error" in output ? String((output as { error: unknown }).error) : null;
 }
 
 /** Plain-English row for one tool call, or `null` when a card shows it instead. */
@@ -114,7 +110,10 @@ export function toolActivity(name: string, part: ToolPartState): Activity | null
       return null;
     default: {
       const labels = PAYPAL_LABELS[name];
-      if (labels) return { tone: done ? "done" : "pending", text: done ? labels[1] : labels[0] };
+      if (labels) {
+        const invoice = invoiceId(part);
+        return { tone: done ? "done" : "pending", text: done ? `${labels[1]}${invoice ? ` ${invoice}` : ""}` : labels[0] };
+      }
       return { tone: done ? "done" : "pending", text: done ? `Used ${name}` : `Using ${name}…` };
     }
   }

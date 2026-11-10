@@ -23,11 +23,13 @@ export function askInstructions(marketId: string | null, paypal: boolean): strin
     "- Requests you run are real and paid with credits. Call them requests, not test requests.",
     ...(paypal
       ? [
-          "- When credits run low, offer top_up ($5, $10 or $20). The user approves it in PayPal.",
-          "- The paypal_ tools read PayPal orders and transactions and create and send invoices. Ask for the email address before you invoice.",
+          "- When credits run low, offer top_up ($5, $10 or $20). The panel shows an Approve in PayPal button. Never write PayPal links.",
+          "- The paypal_ tools use Tender's PayPal account. They read the user's own top-up orders and transactions, and create and send invoices. Users never connect a PayPal account. Ask for the email address before you invoice.",
+          "- To invoice usage, read usage_this_week from get_balance. PayPal amounts have two decimals: round up to the next cent, at least $0.01. Create the invoice in USD with paypal_create_invoice (the email goes in primary_recipients[0].billing_info.email_address; leave the invoicer fields out), then send it with paypal_send_invoice.",
         ]
       : []),
     "- Write amounts in plain dollars, for example $5.00 or $0.000018. Never show micro-USD.",
+    "- Write times as plain dates, for example Nov 10, 08:14 UTC.",
     "- Reply in short, plain sentences. No headings, tables or bold text.",
     market ? `\nThe user has the ${market.name} market (${market.id}) open.` : "",
   ].join("\n");
