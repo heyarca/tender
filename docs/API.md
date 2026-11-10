@@ -166,6 +166,24 @@ to connect to Open-Meteo, Coinbase, or Kraken.
 - Live reference inputs exist for `sf-weather` and `btc-usd`. Every other market serves the market
   signal of the shared engine (`reference_source: "signal"`), anchored to the registry sample.
 
+## MCP server
+
+The npm package `@heyarca/tender` (`packages/tender`) runs a stdio MCP server over this API:
+`npx -y @heyarca/tender@latest mcp` (add `--base-url <origin>` for another deployment).
+`npx @heyarca/tender@latest` (init) writes it into `.mcp.json`, `.cursor/mcp.json`, and
+`.vscode/mcp.json`. The tools are read-only and never pay:
+
+| Tool | API calls | Returns |
+| --- | --- | --- |
+| `list_markets` | `GET /api/v1/markets`, then `GET /api/v1/markets/{id}` per match | Compact rows with the cheapest bid and the routed provider. Filters: `group`, `category`, `query`. |
+| `list_categories` | `GET /api/v1/categories` | Groups and categories with market counts. |
+| `list_contracts` | `GET /api/v1/contracts` | Contract summaries, or one contract with `output_schema` when `id` is set. |
+| `get_market` | `GET /api/v1/markets/{id}?{policy}` | Provider bids, evaluation status and reasons, and the routing decision. |
+| `quote` | unpaid `GET {contract_url}&{policy}` | The decoded 402 challenge: provider, price, `payTo`, amount, network, asset. |
+
+Policy inputs use the query parameter names above (`max_price`, `max_p95_ms`, `max_data_age_ms`,
+`min_success_rate`, `preference`, `pin`). HTTP failures come back as tool results with `isError: true`.
+
 ## Curl examples
 
 Set the base URL to a local server or your deployed Tender origin:
