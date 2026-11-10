@@ -12,7 +12,8 @@ export function SimpleHeader() {
     <header className="sticky top-0 z-40 h-(--navbar-height) w-full border-b border-border bg-background">
       <div className="mx-auto flex h-full w-full items-center px-4 lg:px-6">
         <Link href={marketHref(DEFAULT_MARKET_ID)} aria-label="Tender home" className={`${NAV_LINK} -ml-2 text-foreground lg:ml-0`}>
-          <TenderLogo />
+          <TenderLogo markOnly className="sm:hidden" />
+          <TenderLogo className="max-sm:hidden" />
         </Link>
         {/* On narrow screens the links scroll sideways instead of widening the page. */}
         <nav aria-label="Main" className="-mr-2 ml-auto flex min-w-0 items-center gap-0.5 overflow-x-auto [scrollbar-width:none] sm:mr-0 sm:gap-1">

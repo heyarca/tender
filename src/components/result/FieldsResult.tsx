@@ -99,7 +99,7 @@ function Headline({
     return <p className="text-base leading-snug font-medium whitespace-normal text-foreground">{text}</p>;
   }
   return (
-    <div className="truncate text-[32px] leading-none font-semibold tracking-[-0.02em] text-foreground">
+    <div className="text-[32px] leading-tight font-semibold tracking-[-0.02em] text-foreground [overflow-wrap:anywhere]">
       {text}
       {displayUnit(field) ? <FieldUnit unit={displayUnit(field)!} /> : null}
     </div>

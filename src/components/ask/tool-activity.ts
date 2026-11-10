@@ -36,9 +36,10 @@ function invoiceId(part: ToolPartState): string | null {
   return typeof href === "string" ? (/INV2(?:-[A-Z0-9]{4}){4}/.exec(href)?.[0] ?? null) : null;
 }
 
-/** An automatic top-up from the saved PayPal, or why it was refused. */
-function autoTopUpText(topUp: { added: string } | { refused: string }): string {
-  return "added" in topUp ? `Topped up ${topUp.added} automatically with your saved PayPal` : `Automatic top-up refused: ${topUp.refused}`;
+/** A top-up from the saved PayPal (automatic before a run, or asked for), or why it was refused. */
+function savedPayPalTopUpText(topUp: { added: string } | { refused: string }, automatic: boolean): string {
+  if ("refused" in topUp) return `${automatic ? "Automatic top-up" : "Top-up"} refused: ${topUp.refused}`;
+  return automatic ? `Topped up ${topUp.added} automatically with your saved PayPal` : `Added ${topUp.added} from your saved PayPal`;
 }
 
 /** The `error` of a tool result (`{ error }`). */
@@ -61,6 +62,8 @@ export function toolActivity(name: string, part: ToolPartState): Activity | null
       const output = part.output as Output<"list_markets">;
       if (!done || !output) return { tone: "pending", text: "Searching markets…" };
       const count = output.markets.length;
+      const best = output.markets[0]?.name;
+      if (input?.query && best) return { tone: "done", text: `Searched markets for “${input.query}”: best match ${best}` };
       return { tone: "done", text: input?.query ? `Found ${plural(count, "market")} for “${input.query}”` : `Found ${plural(count, "market")}` };
     }
     case "get_market": {
@@ -95,7 +98,7 @@ export function toolActivity(name: string, part: ToolPartState): Activity | null
       if (output.ran === 0 && refused) return { tone: "error", text: `Request refused: ${refused.message}` };
       if (!("market" in output)) return { tone: "error", text: "Request refused" };
       const topUp = "auto_top_up" in output ? output.auto_top_up : undefined;
-      const ran = `${topUp ? `${autoTopUpText(topUp)}. ` : ""}Ran ${plural(output.ran, "request")} on ${output.market}: ${output.charged_total} charged to credits`;
+      const ran = `${topUp ? `${savedPayPalTopUpText(topUp, true)}. ` : ""}Ran ${plural(output.ran, "request")} on ${output.market}: ${output.charged_total} charged to credits`;
       return refused ? { tone: "error", text: `${ran}. Then refused: ${refused.message}` } : { tone: "done", text: ran };
     }
     case "apply_policy": {
@@ -114,11 +117,13 @@ export function toolActivity(name: string, part: ToolPartState): Activity | null
     }
     case "top_up": {
       const output = part.output as Output<"top_up">;
-      return done && output && "automatic" in output ? { tone: "done", text: autoTopUpText(output) } : null;
+      return done && output && "automatic" in output ? { tone: "done", text: savedPayPalTopUpText(output, false) } : null;
     }
     default: {
       const labels = PAYPAL_LABELS[name];
       if (labels) {
+        const transactions = done ? (part.output as { transaction_details?: unknown } | undefined)?.transaction_details : undefined;
+        if (Array.isArray(transactions)) return { tone: "done", text: `Found ${plural(transactions.length, "PayPal transaction")}` };
         const invoice = invoiceId(part);
         return { tone: done ? "done" : "pending", text: done ? `${labels[1]}${invoice ? ` ${invoice}` : ""}` : labels[0] };
       }
