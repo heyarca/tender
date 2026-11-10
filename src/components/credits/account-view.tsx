@@ -65,9 +65,9 @@ export function AccountView() {
         </div>
       </Section>
 
-      <AgentAutopayCard key={generation} />
+      <AgentAutopayCard key={`autopay-${generation}`} />
       <Transactions revision={revision} />
-      <ApiKeys key={generation} />
+      <ApiKeys key={`keys-${generation}`} />
       <AddFundsDialog />
     </>
   );
