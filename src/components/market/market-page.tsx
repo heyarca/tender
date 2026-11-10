@@ -59,7 +59,7 @@ function MarketPageContent({ marketId, onSwitchMarket }: MarketPageProps) {
 
   return (
     <>
-      <MarketTopNav marketId={marketId} onSearch={openPalette} onOpenApi={openApi} onRun={run} />
+      <MarketTopNav onSearch={openPalette} onOpenApi={openApi} onRun={run} />
       <MarketStickyBar view={view} onRun={run} onOpenApi={openApi} />
       <PageContainer>
         <MarketHeader

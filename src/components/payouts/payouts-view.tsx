@@ -42,6 +42,12 @@ async function readError(response: Response): Promise<string> {
   }
 }
 
+async function fetchPayouts(): Promise<PayoutsData> {
+  const response = await fetch("/api/payouts", { cache: "no-store" });
+  if (!response.ok) throw new Error(await readError(response));
+  return (await response.json()) as PayoutsData;
+}
+
 /** Provider earnings, the Settle now action, and PayPal payout batches. */
 export function PayoutsView() {
   const [data, setData] = useState<PayoutsData | null>(null);
@@ -54,9 +60,7 @@ export function PayoutsView() {
 
   const load = useCallback(async () => {
     try {
-      const response = await fetch("/api/payouts", { cache: "no-store" });
-      if (!response.ok) throw new Error(await readError(response));
-      setData((await response.json()) as PayoutsData);
+      setData(await fetchPayouts());
       setLoadError(null);
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : "Could not load payouts.");
@@ -64,8 +68,21 @@ export function PayoutsView() {
   }, []);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    let active = true;
+    fetchPayouts().then(
+      (next) => {
+        if (!active) return;
+        setData(next);
+        setLoadError(null);
+      },
+      (error: unknown) => {
+        if (active) setLoadError(error instanceof Error ? error.message : "Could not load payouts.");
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const hasOpenBatch = data?.batches.some((batch) => OPEN_STATUSES.has(batch.status)) ?? false;
   useEffect(() => {

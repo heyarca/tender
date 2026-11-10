@@ -263,7 +263,7 @@ function serverTools(accountId: string) {
       // The panel records `served` in the console; the model gets the summary without it.
       toModelOutput: ({ output }) => {
         if (!("served" in output)) return { type: "json", value: output };
-        const { served: _served, ...summary } = output;
+        const summary = Object.fromEntries(Object.entries(output).filter(([key]) => key !== "served"));
         return { type: "json", value: summary as JSONValue };
       },
     }),

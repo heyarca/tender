@@ -1,5 +1,6 @@
 import { tool, type FlexibleSchema, type Tool } from "ai";
 import { paypalApiBase, paypalCredentials } from "@/lib/paypal/client";
+import { listLedger } from "@/lib/ledger";
 import { getStoredOrder } from "@/lib/paypal/orders";
 
 const LIVE_API_BASE = "https://api-m.paypal.com";
@@ -24,7 +25,7 @@ export function hasPayPalCredentials(): boolean {
 }
 
 type ToolkitTool = { description?: string; parameters: unknown; execute?: (input: unknown, options: unknown) => Promise<unknown> };
-type Transaction = { transaction_info?: { custom_field?: string } };
+type Transaction = { transaction_info?: { custom_field?: string; transaction_id?: string } };
 
 const FAILED = "PayPal could not finish this step";
 
@@ -63,8 +64,14 @@ function prepareInvoice(input: Record<string, unknown>): string | null {
  * PayPal Agent Toolkit tools as AI SDK tools, named `paypal_<action>` (for example `paypal_get_order`).
  * The toolkit builds tools for an older AI SDK, so each one is re-wrapped with its own schema and executor.
  * They act on Tender's PayPal account, so orders and transactions are limited to the visitor's own
- * account (its id is the `custom_id` of every top-up). Empty without PayPal credentials.
+ * account: its id is the `custom_id` of every top-up, and its capture ids are in the ledger. Empty without PayPal credentials.
  */
+/** PayPal capture ids of the account's top-ups (PayPal reports a capture's id as the transaction id). */
+async function accountCaptureIds(accountId: string): Promise<Set<string>> {
+  const entries = await listLedger(accountId, 200);
+  return new Set(entries.flatMap((entry) => (entry.paypalCaptureId ? [entry.paypalCaptureId] : [])));
+}
+
 export async function paypalToolkitTools(accountId: string): Promise<Record<string, Tool>> {
   if (!hasPayPalCredentials()) return {};
   const { clientId, secret } = paypalCredentials();
@@ -93,7 +100,12 @@ export async function paypalToolkitTools(accountId: string): Promise<Record<stri
         const result = readResult(await execute(input, {}));
         if (name === "list_transactions" && result && typeof result === "object" && "transaction_details" in result) {
           const details = (result as { transaction_details?: Transaction[] }).transaction_details ?? [];
-          Object.assign(result, { transaction_details: details.filter((item) => item.transaction_info?.custom_field === accountId) });
+          const captures = await accountCaptureIds(accountId);
+          Object.assign(result, {
+            transaction_details: details.filter(
+              (item) => item.transaction_info?.custom_field === accountId || captures.has(item.transaction_info?.transaction_id ?? ""),
+            ),
+          });
         }
         const text = JSON.stringify(result);
         return text.length > MAX_RESULT_CHARS ? `${text.slice(0, MAX_RESULT_CHARS)}…` : result;
