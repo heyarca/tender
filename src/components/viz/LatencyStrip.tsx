@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type PointerEvent } from "react";
+import { timeZoneLabel as zoneAt } from "@/lib/tender/time-zone";
 import { cn } from "@/lib/utils";
 import { ChartTooltip } from "./ChartTooltip";
 import { providerColor } from "./colors";
@@ -204,7 +205,7 @@ export function LatencyStrip({
           provider={hovered.providerId ? providers?.[hovered.providerId] : undefined}
           color={hovered.providerId ? colorOf(hovered.providerId) : undefined}
           timeZone={timeZone}
-          zoneLabel={timeZoneLabel ?? timeZone}
+          zoneLabel={timeZoneLabel ?? zoneAt(timeZone, hovered.t)}
           showMilliseconds={showMilliseconds}
         />
       )}

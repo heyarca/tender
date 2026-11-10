@@ -1,19 +1,22 @@
 import { toBitcoinQuote, toPricePoints, toResultRequest, toWeatherReading, vizProvidersOf } from "@/components/market/page/result-mapping";
 import { BitcoinResult, WeatherResult } from "@/components/result";
-import { getInitialMarketView } from "@/lib/tender";
+import { selectMarketView } from "@/lib/tender";
+import { createSceneState } from "./demo-model";
+
+const scene = createSceneState();
 import { landingStyles as styles } from "./styles";
 
 /**
- * Market card figures. Each one renders the product's own result component from the
- * engine's initial market view (seeded series, newest served request), so the cards
- * show exactly what a market page shows before the first run.
+ * Product previews show response-time age and elapsed chart time. They do not
+ * present the instructional scene as a current upstream observation.
  */
 export function BitcoinMarketVisual() {
-  const view = getInitialMarketView("btc-usd");
+  const view = selectMarketView(scene.markets["btc-usd"]);
   return (
     <div className={`${styles.marketStage} ${styles.marketStageGrid}`}>
       <div className={`${styles.marketWindow} ${styles.productUi}`}>
         <BitcoinResult
+          preview
           quote={toBitcoinQuote(view.lastServed)}
           request={toResultRequest(view.lastResult, view.providersById)}
           points={toPricePoints(view.series, view.recentResults)}
@@ -28,7 +31,7 @@ export function BitcoinMarketVisual() {
 }
 
 export function WeatherMarketVisual() {
-  const view = getInitialMarketView("sf-weather");
+  const view = selectMarketView(scene.markets["sf-weather"]);
   return (
     <div className={`${styles.marketStage} ${styles.marketStagePhoto}`}>
       <picture className={styles.marketPhoto}>
@@ -37,6 +40,7 @@ export function WeatherMarketVisual() {
       </picture>
       <div className={`${styles.marketWindow} ${styles.marketWindowFloat} ${styles.productUi}`}>
         <WeatherResult
+          preview
           reading={toWeatherReading(view.lastServed)}
           request={toResultRequest(view.lastResult, view.providersById)}
           timeZone={view.definition.timeZone}
