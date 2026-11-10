@@ -51,10 +51,11 @@ function MarketPageContent({ marketId, onSwitchMarket }: MarketPageProps) {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [apiOpen, setApiOpen] = useState(false);
 
+  const upstream = getMarketSpec(marketId)?.source === "upstream";
   const run = useCallback(() => {
-    if (getMarketSpec(marketId)?.source === "upstream") focusSection("credits");
+    if (upstream) focusSection("credits");
     else actions.runRequest(marketId);
-  }, [actions, marketId]);
+  }, [actions, marketId, upstream]);
   const openApi = useCallback(() => setApiOpen(true), []);
   const openPalette = useCallback(() => setPaletteOpen(true), []);
 
@@ -64,7 +65,7 @@ function MarketPageContent({ marketId, onSwitchMarket }: MarketPageProps) {
 
   return (
     <>
-      <MarketTopNav onSearch={openPalette} onOpenApi={openApi} onRun={run} />
+      <MarketTopNav onSearch={openPalette} onOpenApi={openApi} onRun={run} runLabel={upstream ? "Request options" : "Run request"} />
       <MarketStickyBar view={view} onRun={run} onOpenApi={openApi} />
       <PageContainer>
         <MarketHeader
