@@ -56,3 +56,9 @@ describe("manual and automatic top-ups", () => {
     expect(mocks.createOrder).not.toHaveBeenCalled();
   });
 });
+
+it("records the actual server-validated inputs rather than the draft passed by the agent", async () => {
+  mocks.account.mockResolvedValue({ balanceMicros: 5_000_000, mandate: { hasVault: false, weeklyCapMicros: 5_000_000, spentThisWeekMicros: 0 } });
+  mocks.serve.mockResolvedValue({ status: 200, body: { request_id: "request", provider: "fernline", params: { text: "Actual trimmed input" }, data: { text: "Result" }, payment: { charged_micros: 18, balance_micros: 4_999_982 } } });
+  expect(await execute("run_request", { marketId: "sf-weather", params: { text: "  Draft input  " } })).toMatchObject({ served: [{ params: { text: "Actual trimmed input" } }] });
+});

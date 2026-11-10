@@ -116,6 +116,7 @@ type ContractBody = {
   latency_ms?: number;
   data_age_ms?: number;
   price_usd?: number;
+  params?: Record<string, string>;
   data?: unknown;
   error?: { code?: string; message?: string };
   payment?: { charged_micros: number; balance_micros: number };
@@ -243,6 +244,7 @@ function serverTools(accountId: string) {
             price_usd: result.price_usd ?? 0,
             charged_micros: result.payment.charged_micros,
             served_at: new Date().toISOString(),
+            ...(result.params ? { params: result.params } : {}),
             data: (result.data ?? {}) as Record<string, unknown>,
           });
         }
