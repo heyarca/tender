@@ -18,6 +18,7 @@ import type {
   ProviderId,
   QualificationStatus,
   RequestResult,
+  RequestSource,
   RouteTrigger,
   RoutingMode,
   RoutingPolicy,
@@ -535,6 +536,22 @@ export function requestEntry(result: RequestResult): EntryFields {
       : result.payload.kind === "btc"
         ? `${result.payload.pair} ${format.usd(result.payload.priceUsd)}`
         : fieldsSummary(result.payload);
+  if (result.source) {
+    return {
+      kind: "request-served",
+      requestId: result.requestId,
+      providerId: result.providerId,
+      latencyMs: result.latencyMs,
+      cost: result.cost,
+      source: result.source,
+      title:
+        result.source === "ask-tender"
+          ? `Ask Tender bought ${shortRequestId(result.requestId)} from ${result.providerName} · ${format.cost(result.cost)} paid with credits`
+          : `Bought ${shortRequestId(result.requestId)} from ${result.providerName} with credits · ${format.cost(result.cost)}`,
+      details: [`${format.latency(result.latencyMs)} · data age ${format.dataAge(result.dataAgeMs)}`, value],
+      tone: "neutral",
+    };
+  }
   return {
     kind: "request-served",
     requestId: result.requestId,
@@ -548,4 +565,15 @@ export function requestEntry(result: RequestResult): EntryFields {
     ],
     tone: "neutral",
   };
+}
+
+/** Who bought a server-side request, as a short label. */
+export const SOURCE_LABELS: Readonly<Record<RequestSource, string>> = {
+  "ask-tender": "Ask Tender",
+  credits: "Credits",
+};
+
+/** Server request ids are `req_<uuid>`; activity titles show the first 8 characters of the uuid. */
+function shortRequestId(requestId: string): string {
+  return requestId.length > 16 ? `${requestId.slice(0, 12)}…` : requestId;
 }

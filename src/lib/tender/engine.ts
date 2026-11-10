@@ -26,6 +26,7 @@ import { createRng, seedFromString } from "./random";
 import { btcProviderPrice, fieldsPayload, payloadKindOf, runRequest, seriesValueOf, shiftFieldsPayload, weatherPayload } from "./requests";
 import { evaluateMarketState, isPendingDue, reconcileRoute, type ReconcileCause } from "./router";
 import { sanitizeConditionsPatch, sanitizePolicy, sanitizePolicyPatch } from "./sanitize";
+import { ingestServed } from "./served";
 import type {
   AgentBidUpdate,
   ConditionChange,
@@ -37,9 +38,11 @@ import type {
   ProviderConditions,
   ProviderId,
   RequestResult,
+  RequestSource,
   RoutingMode,
   RoutingPolicy,
   SeriesPoint,
+  ServedEnvelope,
   TenderState,
 } from "./types";
 
@@ -75,6 +78,11 @@ export type TenderAction =
   | { type: "apply-agent-bids"; marketId: MarketId; bids: readonly AgentBidUpdate[]; model: string; now: number }
   /** Pinned: pin the rank-1 provider. Automatic: switch to rank 1 now (skips the cooldown). */
   | { type: "switch-to-recommended"; marketId: MarketId; now: number }
+  /**
+   * Record requests the server served and charged to credits (Ask Tender, Run with credits) in their
+   * markets: latest result, request log, counters, chart, and activity. Routing is not changed.
+   */
+  | { type: "ingest-served"; source: RequestSource; envelopes: readonly ServedEnvelope[]; now: number }
   /** Apply persisted policies (once, after mount). Unknown/invalid entries are ignored. */
   | { type: "hydrate-policies"; policies: Partial<Record<MarketId, unknown>>; now: number };
 
@@ -552,6 +560,15 @@ export function reduce(state: TenderState, action: TenderAction): TenderState {
       return updateMarket(state, action.marketId, action.now, (m, ctx) => resetConditions(m, ctx));
     case "switch-to-recommended":
       return updateMarket(state, action.marketId, action.now, (m, ctx) => switchToRecommended(m, ctx));
+    case "ingest-served": {
+      const ctx = contextOf(state, action.now);
+      const markets: Partial<Record<MarketId, MarketState>> = {};
+      for (const id of new Set(action.envelopes.map((envelope) => envelope.market))) {
+        const market = state.markets[id];
+        if (market) markets[id] = ingestServed(market, ctx, action.envelopes, action.source);
+      }
+      return commit(state, ctx, markets);
+    }
     case "hydrate-policies": {
       if (state.policiesHydrated) return state;
       const ctx = contextOf(state, action.now, false);

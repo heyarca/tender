@@ -552,7 +552,8 @@ export function runRequest(market: MarketState, ctx: StepContext): MarketState {
   return applyResult({ ...market, rng }, ctx, result);
 }
 
-function applyResult(market: MarketState, ctx: StepContext, result: RequestResult): MarketState {
+/** Record a request result on the market: log, counters, spend, provider latencies, chart, and activity. */
+export function applyResult(market: MarketState, ctx: StepContext, result: RequestResult): MarketState {
   const counters = {
     total: market.counters.total + 1,
     served: market.counters.served + (result.status === "ok" ? 1 : 0),
