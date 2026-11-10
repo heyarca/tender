@@ -47,7 +47,6 @@ const errors = {
   "405": { description: "Method not allowed; the operation accepts GET only", headers: { Allow: allowHeader }, content: content("Error") },
   "409": { description: "No eligible provider; no payment requested", content: content("Error") },
   "422": { description: "no_match: the input matches nothing (for example a geocoding query); no settlement", content: content("ProviderError") },
-  "500": { description: "Selected provider failed; no settlement", content: content("ProviderError") },
   "502": { description: "Selected provider failed; no settlement", content: content("ProviderError") },
   "503": { description: "provider_error (selected provider unavailable, no settlement) or payment_unavailable (payment service unavailable, no payload)", content: { "application/json": { schema: { oneOf: [ref("ProviderError"), ref("PaymentUnavailable")] } } } },
   "504": { description: "Selected provider timed out; no settlement", content: content("ProviderError") },
@@ -147,7 +146,7 @@ export const openapiDocument = {
   responses: responseComponents,
   schemas: {
     Error: { type: "object", required: ["error"], properties: { error: { type: "object", required: ["code", "message"], properties: { code: string, message: string } } } },
-    ProviderError: { type: "object", required: ["error", "provider", "request_id", "latency_ms", "policy_violation", "policy_violations"], properties: { error: { type: "object", required: ["code", "message"], properties: { code: { type: "string", enum: ["provider_error", "no_match", "unsupported_input"] }, message: string } }, provider: string, request_id: string, latency_ms: number, policy_violation: { type: "boolean" }, policy_violations: { type: "array", items: string } } },
+    ProviderError: { type: "object", required: ["error", "provider", "request_id", "latency_ms", "policy_violation", "policy_violations"], properties: { error: { type: "object", required: ["code", "message"], properties: { code: { type: "string", enum: ["provider_error", "no_match", "unsupported_input"] }, message: string } }, provider: string, request_id: string, latency_ms: number, retryable: { type: "boolean", description: "true when the same request may succeed on a retry (provider_error); a provider failure also sends Retry-After" }, policy_violation: { type: "boolean" }, policy_violations: { type: "array", items: string } } },
     PaymentUnavailable: { type: "object", required: ["error"], properties: { error: { type: "object", required: ["code", "message"], properties: { code: { const: "payment_unavailable" }, message: { const: "Payment service unavailable" } } } } },
     Policy: { type: "object", required: ["maxPrice", "maxP95LatencyMs", "maxDataAgeMs", "minSuccessRate", "preference", "mode"], properties: {
       maxPrice: number, maxP95LatencyMs: number, maxDataAgeMs: number, minSuccessRate: { type: "number", minimum: 0, maximum: 1 }, preference: { type: "string", enum: PREFERENCES },

@@ -219,8 +219,10 @@ async function executeContract(selection: RouteSelection, inputs: Readonly<Recor
   const violations = { policy_violation: selection.policyViolation, policy_violations: selection.violations.map((r) => r.message) };
   if (result.status === "rejected") return { ok: false, response: json({ error: { code: "no_eligible_provider", message: result.reason }, request_id: requestId }, 409) };
   if (result.status === "failed") {
+    console.error("Tender provider request failed", { provider: result.providerId, market: marketId, upstream_status: result.error.code, request_id: requestId, latency_ms: result.latencyMs });
+    // The provider's 500 is reported as Tender's 502 (a bad upstream answer), not as a Tender server error.
     return { ok: false, response: json({ error: { code: "provider_error", message: result.error.message }, provider: result.providerId, request_id: requestId,
-      latency_ms: result.latencyMs, ...violations }, result.error.code) };
+      latency_ms: result.latencyMs, retryable: true, ...violations }, result.error.code === 500 ? 502 : result.error.code, { "Retry-After": "1" }) };
   }
   let data = resultData(result);
   let source = input.source;
@@ -232,7 +234,7 @@ async function executeContract(selection: RouteSelection, inputs: Readonly<Recor
     if (!(error instanceof LiveError)) throw error;
     // The upstream failed: the request fails like a provider error, so it is neither charged nor settled.
     return { ok: false, response: json({ error: { code: error.code, message: error.message }, provider: result.providerId, request_id: requestId,
-      latency_ms: result.latencyMs, ...violations }, error.status) };
+      latency_ms: result.latencyMs, retryable: error.status === 502, ...violations }, error.status) };
   }
   // A result that misses required contract fields counts as a failed request (no settlement).
   if (missingFields(contractId, data).length > 0) {
