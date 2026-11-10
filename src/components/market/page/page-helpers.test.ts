@@ -238,10 +238,13 @@ describe("page helpers", () => {
   it("links the TopNav to the market, its sections, and the API dialog", () => {
     expect(topNavLinks().map((link) => link.href)).toEqual([
       "/markets",
+      "/leaderboard",
+      "/account",
       "#providers",
       "#routing",
       "#payments",
       "#activity",
+      "/payouts",
       "#api",
     ]);
     expect(isSectionId("conditions")).toBe(true);
