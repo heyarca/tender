@@ -117,7 +117,7 @@ function columnsFor(wide: boolean): DataGridColumn<DirectoryRow>[] {
       cellRenderer: MarketCell,
       ...sortable("market", "asc"),
       ...(wide
-        ? { pinned: null, flex: 1, minWidth: 200 }
+        ? { pinned: null, flex: 2, minWidth: 260 }
         : {
             pinned: "left" as const,
             width: PINNED_MARKET_WIDTH,
