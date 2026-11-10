@@ -80,16 +80,68 @@ export interface TenderPaymentRequirements {
   [key: string]: unknown;
 }
 
+export interface TenderCallResult {
+  status: number;
+  provider: string | null;
+  /** Contract-shaped result (`response.data`). */
+  data: unknown;
+  /** Credits charged for this request and the balance after it, in micro-USD (1 USD = 1,000,000). */
+  payment: { charged_micros: number | null; balance_micros: number | null };
+  /** Full JSON body: request id, market, contract, provider, latency, data age, payment, data. */
+  response: unknown;
+}
+
+export interface TenderLedgerEntry {
+  id: string;
+  kind: string;
+  /** Positive for credits, negative for debits, micro-USD. */
+  amount_micros: number;
+  balance_after_micros: number;
+  actor: string;
+  market_id: string | null;
+  provider_id: string | null;
+  request_id: string | null;
+  paypal_order_id: string | null;
+  paypal_capture_id: string | null;
+  created_at: string;
+}
+
+export interface TenderAccount {
+  has_account: boolean;
+  balance_micros: number;
+  mandate: { weekly_cap_micros: number; spent_this_week_micros: number; policy: unknown; has_vault: boolean; approved_at: string } | null;
+  ledger: TenderLedgerEntry[];
+}
+
 export interface TenderClient {
   baseUrl: string;
+  /** True when an API key is set (`apiKey` option or `TENDER_API_KEY`). */
+  hasApiKey: boolean;
   markets(): Promise<TenderMarketSummary[]>;
   categories(): Promise<TenderCategoryGroup[]>;
   contracts(): Promise<TenderContract[]>;
   market(id: string, policy?: TenderPolicy): Promise<unknown>;
   request(id: string, policy?: TenderPolicy): Promise<TenderRequestResult>;
+  /**
+   * Call a market's contract and pay the winning bid with Tender credits (needs an API key).
+   * Throws an `Error` with `status` 402 when the balance is too low and 409 when no provider meets the policy.
+   */
+  callMarket(id: string, options?: { params?: Record<string, string | number>; policy?: TenderPolicy }): Promise<TenderCallResult>;
+  /** Credits balance, spending limit, and the last 20 ledger entries (needs an API key). */
+  balance(): Promise<TenderAccount>;
 }
 
-export declare function createTender(options?: { baseUrl?: string; fetch?: typeof fetch }): TenderClient;
+export interface TenderOptions {
+  baseUrl?: string;
+  fetch?: typeof fetch;
+  /** Tender API key (`tk_...`). Defaults to the `TENDER_API_KEY` environment variable. */
+  apiKey?: string;
+}
+
+export declare function createTender(options?: TenderOptions): TenderClient;
+
+/** Format micro-USD as dollars: 18 -> "$0.000018", 5000000 -> "$5.00". */
+export declare function formatMicros(micros: number): string;
 
 /** Contract URL of a market from the API (`contract_url`). */
 export declare function contractPathFor(market: { id?: string; contract_url?: string; contract_path?: string }): string;

@@ -171,7 +171,13 @@ to connect to Open-Meteo, Coinbase, or Kraken.
 The npm package `@heyarca/tender` (`packages/tender`) runs a stdio MCP server over this API:
 `npx -y @heyarca/tender@latest mcp` (add `--base-url <origin>` for another deployment).
 `npx @heyarca/tender@latest` (init) writes it into `.mcp.json`, `.cursor/mcp.json`, and
-`.vscode/mcp.json`. The tools are read-only and never pay:
+`.vscode/mcp.json` with an `env` entry that references the user's `TENDER_API_KEY`
+(`${TENDER_API_KEY}` for Claude Code, `${env:TENDER_API_KEY}` for Cursor and VS Code), so the key is
+never written to disk. Running init again adds that entry to an existing `tender` server and changes
+nothing else.
+
+`call_market` pays from Tender credits with the API key (`Authorization: Bearer tk_...`); the other
+tools are read-only and never pay:
 
 | Tool | API calls | Returns |
 | --- | --- | --- |
@@ -180,9 +186,22 @@ The npm package `@heyarca/tender` (`packages/tender`) runs a stdio MCP server ov
 | `list_contracts` | `GET /api/v1/contracts` | Contract summaries, or one contract with `output_schema` when `id` is set. |
 | `get_market` | `GET /api/v1/markets/{id}?{policy}` | Provider bids, evaluation status and reasons, and the routing decision. |
 | `quote` | unpaid `GET {contract_url}&{policy}` | The decoded 402 challenge: provider, price, `payTo`, amount, network, asset. |
+| `call_market` | `GET {contract_url}&{params}&{policy}` with the API key | `data`, `provider`, `charged` (dollars) and `charged_micros`, `balance` and `balance_micros`, `request_id`, latency, data age. Annotated `readOnlyHint: false`, `idempotentHint: false`. |
+| `get_balance` | `GET /api/account` with the API key | `balance`, `balance_micros`, and the latest ledger entries. |
 
 Policy inputs use the query parameter names above (`max_price`, `max_p95_ms`, `max_data_age_ms`,
-`min_success_rate`, `preference`, `pin`). HTTP failures come back as tool results with `isError: true`.
+`min_success_rate`, `preference`, `pin`). HTTP failures come back as tool results with `isError: true`:
+
+| Case | Tool error |
+| --- | --- |
+| No `TENDER_API_KEY` | `Set TENDER_API_KEY: create a key at https://tender.heyarca.app/account` |
+| 401 `invalid_api_key` | `TENDER_API_KEY is unknown or revoked. Create a key at https://tender.heyarca.app/account` |
+| 402 `insufficient_credits` | `Your Tender balance is too low. Add funds at https://tender.heyarca.app/account` (with the balance) |
+| 409 `no_eligible_provider` | `No provider meets this policy. …` |
+| 404 market | `Unknown market "<id>". Call list_markets to see market ids.` |
+
+The CLI has the same paid commands: `tender call <market> [--param key=value ...] [policy flags]` and
+`tender balance`.
 
 ## Curl examples
 
