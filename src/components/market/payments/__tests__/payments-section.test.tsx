@@ -257,11 +257,17 @@ describe("PaymentsSection", () => {
     });
     window.localStorage.setItem(RECORDS_STORAGE_KEY, JSON.stringify({ version: 1, records: { "sf-weather": records } }));
     mount();
-    const table = await screen.findByRole("table", { name: "Recent paid requests" });
-    expect(table.querySelectorAll("tbody tr")).toHaveLength(5);
+    const grid = await waitFor(() => {
+      const element = document.querySelector<HTMLElement>('[data-slot="payment-receipts"]');
+      expect(element?.querySelector("[role=grid]")?.getAttribute("aria-label")).toBe("Recent paid requests");
+      return element!;
+    });
+    // Removed rows animate out before AG Grid drops them, so wait for the count to settle.
+    const rows = () => grid.querySelectorAll(".ag-center-cols-container .ag-row[row-id]").length;
+    await waitFor(() => expect(rows()).toBe(5));
     fireEvent.click(screen.getByRole("button", { name: "Show all 7" }));
-    expect(table.querySelectorAll("tbody tr")).toHaveLength(7);
+    await waitFor(() => expect(rows()).toBe(7));
     fireEvent.click(screen.getByRole("button", { name: "Show fewer" }));
-    expect(table.querySelectorAll("tbody tr")).toHaveLength(5);
+    await waitFor(() => expect(rows()).toBe(5));
   });
 });
