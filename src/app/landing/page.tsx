@@ -13,7 +13,7 @@ import { SwitchSection } from "@/components/landing/SwitchSection";
 
 const TITLE = "Tender — Always on the best API";
 const DESCRIPTION =
-  "If an API breaks, Tender switches. If a better one shows up, Tender switches. Your app never notices.";
+  "If an API breaks, Tender switches. If a better one shows up, Tender switches. Your app never notices. Pay with PayPal, or let Ask Tender spend for you.";
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },

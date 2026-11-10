@@ -22,7 +22,7 @@ export const landingStyles = {
   buttonSecondary: "tenderLanding_buttonSecondary",
   card: "tenderLanding_card",
   closing: "tenderLanding_closing",
-  closingAction: "tenderLanding_closingAction",
+  closingActions: "tenderLanding_closingActions",
   closingBody: "tenderLanding_closingBody",
   closingInner: "tenderLanding_closingInner",
   closingTitle: "tenderLanding_closingTitle",
