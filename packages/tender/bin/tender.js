@@ -3,6 +3,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createTender, DEFAULT_BASE_URL } from "../index.js";
+import { runStdioServer } from "../lib/mcp.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(readFileSync(join(here, "..", "package.json"), "utf8"));
@@ -14,14 +15,20 @@ const bold = (s) => (process.stdout.isTTY ? `\x1b[1m${s}\x1b[22m` : s);
 const dim = (s) => (process.stdout.isTTY ? `\x1b[2m${s}\x1b[22m` : s);
 const lime = (s) => (process.stdout.isTTY ? `\x1b[38;2;200;255;0m${s}\x1b[39m` : s);
 
+// Flags that never take a value.
+const BOOLEAN_FLAGS = new Set(["help", "version"]);
+
 function parseArgs(argv) {
   const args = [];
   const flags = {};
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a.startsWith("--")) {
-      const [k, v] = a.slice(2).split("=");
-      flags[k] = v ?? (argv[i + 1] && !argv[i + 1].startsWith("-") ? argv[++i] : true);
+      const eq = a.indexOf("=");
+      const k = eq === -1 ? a.slice(2) : a.slice(2, eq);
+      const v = eq === -1 ? undefined : a.slice(eq + 1);
+      if (BOOLEAN_FLAGS.has(k)) flags[k] = true;
+      else flags[k] = v ?? (argv[i + 1] && !argv[i + 1].startsWith("-") ? argv[++i] : true);
     } else if (a === "-h") flags.help = true;
     else if (a === "-v") flags.version = true;
     else args.push(a);
@@ -73,6 +80,7 @@ ${bold("Usage")}
 
 ${bold("Commands")}
   init                Add Tender instructions for coding agents to AGENTS.md / CLAUDE.md (default)
+  mcp                 Run the Tender MCP server on stdio (for Claude Code, Cursor, VS Code, ...)
   markets             List every market
   categories          List groups and categories with market counts
   contracts           List contracts (the API shapes markets implement)
@@ -94,7 +102,15 @@ async function main() {
   if (flags.version) return console.log(pkg.version);
   if (flags.help) return help();
   const command = args[0] ?? "init";
-  const tender = createTender({ baseUrl: typeof flags["base-url"] === "string" ? flags["base-url"] : undefined });
+  const baseUrl = typeof flags["base-url"] === "string" ? flags["base-url"] : undefined;
+
+  if (command === "mcp") {
+    // stdout carries only MCP messages from here on.
+    runStdioServer({ baseUrl, version: pkg.version });
+    return;
+  }
+
+  const tender = createTender({ baseUrl });
 
   if (command === "init") {
     console.log(`${lime("■")} ${bold("Tender")} ${dim("· the execution market for APIs")}\n`);
