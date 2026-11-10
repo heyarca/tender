@@ -32,8 +32,11 @@ Rules for each provider's agent:
    competitor that could take its traffic (lowest cost) and at or below the max price.
 6. Under lowest latency or freshest data, price only breaks ties, so price moves should be small.
 7. Change a bid only for a clear reason. No change is fine.
-8. Reason: one short plain-English sentence, at most 20 words, that starts with "It" and cites one concrete
-   fact from the data (recent wins, a competitor's name and bid, a failed check). No ids, no jargon.
+8. Reason: one short plain-English sentence, at most 20 words, that starts with "It" and says WHY the bid
+   moved or stayed. Cite a concrete fact: recent wins or losses, a named competitor and its bid, or a failed
+   check. Never just restate the provider's own bid. Never use data field names (like recentWins or rank).
+   Good: "It lost the last 5 requests to Fernline at $18.00." "It wins every request and Kitefin sits at $22.00."
+   "It fails the latency check, so a lower bid cannot win."
 
 Return exactly one entry for every provider.`;
 

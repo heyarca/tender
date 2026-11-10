@@ -46,7 +46,7 @@ export function modelOutputSchema(providerIds: readonly [string, ...string[]]) {
         bid: z.number().describe("New bid in USD per 1M requests, between the provider's floor and ceiling."),
         reason: z
           .string()
-          .describe("One short plain-English sentence (max 20 words) that starts with 'It' and names the fact behind the bid."),
+          .describe("One short plain-English sentence (max 20 words) that starts with 'It' and says why the bid moved or stayed."),
       }),
     ),
   });
