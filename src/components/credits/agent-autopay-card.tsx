@@ -64,7 +64,11 @@ export function AgentAutopayCard() {
       ) : (
         <div className="flex flex-col gap-4" data-slot="automatic-top-ups">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <StatCard label="Saved PayPal" value={status.saved ? (status.email ?? "PayPal account") : "Not saved"} tone={status.saved ? "default" : "muted"} />
+            <StatCard
+              label="Saved PayPal"
+              value={status.saved ? <span title={status.email ?? undefined}>{status.email ?? "PayPal account"}</span> : "Not saved"}
+              tone={status.saved ? "default" : "muted"}
+            />
             <StatCard label="Weekly limit" value={cap === null ? "Not set" : formatMicros(cap)} tone={cap === null ? "muted" : "default"} />
             <StatCard
               label="Added by Ask Tender this week"
