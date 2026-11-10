@@ -4,7 +4,9 @@ import { CircleCheck, ExternalLink, ShieldCheck, Wallet } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
-import { dollars, usdToMicros } from "@/lib/agent/money";
+import { applyBalance } from "@/components/credits/credits-store";
+import { formatMicros } from "@/components/credits/money";
+import { usdToMicros } from "@/lib/agent/money";
 import { describePolicy, toRoutingPolicy } from "@/lib/agent/policy";
 import type { AskUITools } from "@/lib/agent/types";
 import { getMarketSpec } from "@/lib/registry";
@@ -62,7 +64,7 @@ export function SpendingLimitCard({ input, onAnswer }: { input: LimitInput; onAn
   return (
     <CardFrame icon={<ShieldCheck aria-hidden="true" />} title="Approve a spending limit">
       <dl className="flex flex-col gap-1.5">
-        <Row label="Weekly limit" value={dollars(usdToMicros(input.weeklyCapUsd))} />
+        <Row label="Weekly limit" value={formatMicros(usdToMicros(input.weeklyCapUsd))} />
         <Row label="Market" value={getMarketSpec(input.marketId)?.name ?? input.marketId} />
         {known ? <Row label="Policy" value={describePolicy(input.marketId, toRoutingPolicy(input.marketId, input.policy))} /> : null}
       </dl>
@@ -97,8 +99,13 @@ export function TopUpCard({ output }: { output: TopUpOutput }) {
   const check = async () => {
     setState({ kind: "checking" });
     try {
-      const result = await postJson<{ status: string; balance: string }>("/api/ask/top-up", { orderId: output.order_id });
-      setState(result.status === "COMPLETED" ? { kind: "done", balance: result.balance } : { kind: "waiting", note: "PayPal is still processing the payment." });
+      const result = await postJson<{ status: string; balance: string; balance_micros: number }>("/api/ask/top-up", { orderId: output.order_id });
+      if (result.status === "COMPLETED") {
+        applyBalance(result.balance_micros);
+        setState({ kind: "done", balance: result.balance });
+      } else {
+        setState({ kind: "waiting", note: "PayPal is still processing the payment." });
+      }
     } catch (cause) {
       setState({ kind: "waiting", note: cause instanceof Error ? cause.message : undefined });
     }

@@ -6,6 +6,7 @@ import { DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls } fro
 import { ArrowUp, Sparkles, Square, SquarePen } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 
+import { refreshAccount } from "@/components/credits/credits-store";
 import { Button } from "@/components/ui/button";
 import { DialogCloseButton } from "@/components/ui/dialog";
 import { describePolicy, toRoutingPolicy, type AskPolicy } from "@/lib/agent/policy";
@@ -64,6 +65,8 @@ export function AskTender({ marketId, onSwitchMarket }: AskTenderProps) {
     id: "ask-tender",
     transport,
     sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
+    // Paid requests move the balance; the balance chip and credits card read it again.
+    onFinish: () => void refreshAccount(),
     onToolCall: ({ toolCall }) => {
       if (toolCall.dynamic || toolCall.toolName !== "apply_policy") return;
       const { marketId: target, policy } = toolCall.input;

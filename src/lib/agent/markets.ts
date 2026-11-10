@@ -3,7 +3,7 @@ import { CATEGORIES, getCategory, getGroup, GROUPS, listMarkets, type MarketSpec
 import { marketDetail, parseMarketId } from "@/lib/server/markets";
 import { POLICY_PARAMETERS } from "@/lib/server/policy";
 import { format, getMarketDefinition, providerName, type MarketId, type RoutingPolicy } from "@/lib/tender";
-import { dollars } from "./money";
+import { formatMicros } from "@/components/credits/money";
 import { describePolicy } from "./policy";
 
 const MAX_RESULTS = 10;
@@ -69,7 +69,7 @@ export function marketBids(marketId: string, policy: Partial<RoutingPolicy> = {}
     market: { id: detail.id, name: detail.name, contract_url: detail.contract_url },
     policy: describePolicy(id, detail.policy),
     serving: active
-      ? { id: active.id, name: active.name, bid: `${format.price(active.bid_per_million)} /M`, cost_per_request: dollars(Number(bidToAtomic(active.bid_per_million))) }
+      ? { id: active.id, name: active.name, bid: `${format.price(active.bid_per_million)} /M`, cost_per_request: formatMicros(Number(bidToAtomic(active.bid_per_million))) }
       : null,
     reason: detail.routing.reason,
     policy_violations: detail.routing.policy_violations,

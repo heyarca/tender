@@ -6,7 +6,8 @@ import { serveWithCredits } from "@/lib/server/credits";
 import { ApiError } from "@/lib/server/http";
 import { getMarketDefinition, isMarketId, providerName, type MarketId, type RoutingPolicy } from "@/lib/tender";
 import { findMarkets, marketBids } from "./markets";
-import { dollars, usdToMicros } from "./money";
+import { formatMicros } from "@/components/credits/money";
+import { usdToMicros } from "./money";
 import { askPolicySchema, describePolicy, readMandatePolicy, toRoutingPolicy, type AskPolicy } from "./policy";
 import { hasPayPalCredentials, paypalToolkitTools } from "./paypal-tools";
 
@@ -103,19 +104,19 @@ function serverTools(accountId: string) {
         const mandate = account?.mandate ?? null;
         const approved = readMandatePolicy(mandate?.policy);
         return {
-          balance: dollars(account?.balanceMicros ?? 0),
+          balance: formatMicros(account?.balanceMicros ?? 0),
           spending_limit: mandate
             ? {
-                weekly_cap: dollars(mandate.weeklyCapMicros),
-                spent_this_week: dollars(mandate.spentThisWeekMicros),
-                left_this_week: dollars(Math.max(0, mandate.weeklyCapMicros - mandate.spentThisWeekMicros)),
+                weekly_cap: formatMicros(mandate.weeklyCapMicros),
+                spent_this_week: formatMicros(mandate.spentThisWeekMicros),
+                left_this_week: formatMicros(Math.max(0, mandate.weeklyCapMicros - mandate.spentThisWeekMicros)),
                 market: approved && isMarketId(approved.marketId) ? getMarketDefinition(approved.marketId).name : null,
                 policy: approved && isMarketId(approved.marketId) ? describePolicy(approved.marketId, approved.policy) : null,
               }
             : null,
           recent: entries.map((entry) => ({
             kind: entry.kind,
-            amount: dollars(entry.amountMicros),
+            amount: formatMicros(entry.amountMicros),
             by: entry.actor,
             market: entry.marketId,
             provider: entry.marketId && entry.providerId ? providerName(entry.marketId, entry.providerId) : null,
@@ -155,7 +156,7 @@ function serverTools(accountId: string) {
           requests.push({
             provider: result.provider ? providerName(marketId, result.provider) : "Unknown",
             latency_ms: result.latency_ms,
-            charged: dollars(result.payment.charged_micros),
+            charged: formatMicros(result.payment.charged_micros),
           });
         }
         const after = await getAccount(accountId);
@@ -165,10 +166,10 @@ function serverTools(accountId: string) {
           policy: describePolicy(marketId, routing),
           ran: requests.length,
           requests,
-          charged_total: dollars(chargedMicros),
-          balance: dollars(after?.balanceMicros ?? 0),
-          spent_this_week: mandate ? dollars(mandate.spentThisWeekMicros) : null,
-          weekly_cap: mandate ? dollars(mandate.weeklyCapMicros) : null,
+          charged_total: formatMicros(chargedMicros),
+          balance: formatMicros(after?.balanceMicros ?? 0),
+          spent_this_week: mandate ? formatMicros(mandate.spentThisWeekMicros) : null,
+          weekly_cap: mandate ? formatMicros(mandate.weeklyCapMicros) : null,
           last_result: lastData,
           // The run stops at the first refusal; later requests were not tried.
           ...(refused ? { refused, not_tried: count - requests.length - 1 } : {}),
@@ -193,7 +194,7 @@ function topUpTool(accountId: string, origin: string) {
           returnUrl: `${origin}/api/ask/top-up`,
           cancelUrl: `${origin}/api/ask/top-up?cancel=1`,
         });
-        return { order_id: order.orderId, approve_url: order.approveUrl, amount: dollars(amountMicros), status: "waiting_for_approval" };
+        return { order_id: order.orderId, approve_url: order.approveUrl, amount: formatMicros(amountMicros), status: "waiting_for_approval" };
       } catch (error) {
         return { error: errorMessage(error) };
       }

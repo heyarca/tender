@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { dollars, usdToMicros } from "@/lib/agent/money";
+import { formatMicros } from "@/components/credits/money";
+import { usdToMicros } from "@/lib/agent/money";
 import { askPolicySchema, describePolicy, toRoutingPolicy, type MandatePolicy } from "@/lib/agent/policy";
 import { MAX_WEEKLY_CAP_USD } from "@/lib/agent/tools";
 import { cookieAccountForWrite, setMandate } from "@/lib/ledger";
@@ -24,8 +25,8 @@ export async function POST(request: Request) {
   const mandate = await setMandate(accountId, { weeklyCapMicros: usdToMicros(weeklyCapUsd), policy: { marketId, policy: routing } satisfies MandatePolicy });
   return accountJson(
     {
-      weekly_cap: dollars(mandate.weeklyCapMicros),
-      spent_this_week: dollars(mandate.spentThisWeekMicros),
+      weekly_cap: formatMicros(mandate.weeklyCapMicros),
+      spent_this_week: formatMicros(mandate.spentThisWeekMicros),
       policy: describePolicy(marketId, routing),
     },
     200,

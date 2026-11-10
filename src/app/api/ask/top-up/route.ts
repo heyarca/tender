@@ -1,4 +1,4 @@
-import { dollars } from "@/lib/agent/money";
+import { formatMicros } from "@/components/credits/money";
 import { accountIdFromCookie } from "@/lib/ledger";
 import { accountError, accountJson, readJsonObject, requireJson } from "@/lib/ledger/http";
 import { PayPalError } from "@/lib/paypal/client";
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   if (!accountId || !orderId) return accountError(400, "invalid_order", "Send the order id");
   try {
     const { status, balanceMicros } = await captureTopUpOrder({ orderId, accountId });
-    return accountJson({ status, balance: dollars(balanceMicros) });
+    return accountJson({ status, balance: formatMicros(balanceMicros), balance_micros: balanceMicros });
   } catch (error) {
     if (!(error instanceof PayPalError)) throw error;
     const notApproved = JSON.stringify(error.details ?? "").includes("ORDER_NOT_APPROVED");
