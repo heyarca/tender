@@ -14,6 +14,8 @@ import {
   type ProviderId,
   type RouteSelection,
 } from "@/lib/tender";
+import { chargeForRequest, accountFromRequest, hasApiKey, wantsCredits, type Actor } from "@/lib/ledger";
+import { bidToAtomic } from "@/lib/payments/quote";
 import { quoteFromBid, withX402Payment, type SettlementAmounts } from "@/lib/payments/server";
 import { ApiError, errorResponse, json } from "./http";
 import { requestPolicy } from "./markets";
@@ -22,6 +24,13 @@ import { getPriceReference, getWeatherReference } from "./reference";
 /** Trusted in-process inputs only. Public contract routes never parse these from HTTP. */
 export interface ContractOptions {
   conditions?: Partial<Record<ProviderId, ConditionsPatch>>;
+  /** Pay with this account's credits (for example an agent acting within its mandate) instead of reading credentials. */
+  payer?: CreditsPayer;
+}
+
+export interface CreditsPayer {
+  accountId: string;
+  actor: Actor;
 }
 function conditionOverrides(marketId: MarketId, patches: ContractOptions["conditions"]): Partial<Record<ProviderId, ProviderConditions>> | undefined {
   if (!patches || typeof patches !== "object" || Array.isArray(patches)) return undefined;
@@ -159,36 +168,108 @@ export function missingFields(contractId: string, data: Readonly<Record<string, 
   return (contract?.output ?? []).filter((field) => !field.optional && readField(data, field.key) === undefined).map((field) => field.key);
 }
 
-async function serveSelection(selection: RouteSelection, settlement: SettlementAmounts): Promise<Response> {
+/** A served request before payment fields are added, or the failure response to return as is. */
+type Served =
+  | { ok: false; response: Response }
+  | { ok: true; requestId: string; providerId: string; head: Record<string, unknown>; tail: Record<string, unknown> };
+
+async function executeContract(selection: RouteSelection): Promise<Served> {
   const marketId = selection.marketId;
   const contractId = getMarketDefinition(marketId).contractId;
   const input = await referenceFor(marketId);
   const requestId = `req_${randomUUID()}`;
   const { result } = executeSelection(selection, { now: Date.now(), seed: seedFromString(requestId), requestId, reference: input.reference });
   const violations = { policy_violation: selection.policyViolation, policy_violations: selection.violations.map((r) => r.message) };
-  if (result.status === "rejected") return json({ error: { code: "no_eligible_provider", message: result.reason }, request_id: requestId }, 409);
+  if (result.status === "rejected") return { ok: false, response: json({ error: { code: "no_eligible_provider", message: result.reason }, request_id: requestId }, 409) };
   if (result.status === "failed") {
-    return json({ error: { code: "provider_error", message: result.error.message }, provider: result.providerId, request_id: requestId,
-      latency_ms: result.latencyMs, ...violations }, result.error.code);
+    return { ok: false, response: json({ error: { code: "provider_error", message: result.error.message }, provider: result.providerId, request_id: requestId,
+      latency_ms: result.latencyMs, ...violations }, result.error.code) };
   }
   const data = resultData(result);
   // A result that misses required contract fields counts as a failed request (no settlement).
   if (missingFields(contractId, data).length > 0) {
-    return json({ error: { code: "provider_error", message: "Provider returned an incomplete result" }, provider: result.providerId,
-      request_id: requestId, latency_ms: result.latencyMs, ...violations }, 502);
+    return { ok: false, response: json({ error: { code: "provider_error", message: "Provider returned an incomplete result" }, provider: result.providerId,
+      request_id: requestId, latency_ms: result.latencyMs, ...violations }, 502) };
   }
+  return {
+    ok: true,
+    requestId: result.requestId,
+    providerId: result.providerId,
+    head: { request_id: result.requestId, market: marketId, contract: contractId, provider: result.providerId,
+      latency_ms: result.latencyMs, data_age_ms: result.dataAgeMs },
+    tail: { ...violations, reference_source: input.source, reference_timestamp: input.timestamp, data },
+  };
+}
+
+async function serveSelection(selection: RouteSelection, settlement: SettlementAmounts): Promise<Response> {
+  const served = await executeContract(selection);
+  if (!served.ok) return served.response;
   return json({
-    request_id: result.requestId, market: marketId, contract: contractId, provider: result.providerId,
-    latency_ms: result.latencyMs, data_age_ms: result.dataAgeMs,
+    ...served.head,
     price_usd: settlement.price_usd, settled_usd: settlement.settled_usd, settled_atomic: settlement.settled_atomic,
     ...(settlement.settlement_note ? { settlement_note: settlement.settlement_note } : {}),
-    ...violations,
-    reference_source: input.source, reference_timestamp: input.timestamp,
-    data,
+    ...served.tail,
   });
 }
 
-/** One frozen selection binds x402 quote, recipient, and response; safe for direct buyer dispatch. */
+/**
+ * Credits payer of a request: the in-process payer, an API key, or the cookie account with
+ * `Tender-Payment: credits`. `null` means x402. An unknown key answers 401; asking for
+ * credits without an account answers 402.
+ */
+async function creditsPayer(request: Request, options: ContractOptions): Promise<CreditsPayer | null | Response> {
+  if (options.payer) return options.payer;
+  if (!hasApiKey(request) && !wantsCredits(request)) return null;
+  const account = await accountFromRequest(request);
+  if (account) return account;
+  if (hasApiKey(request)) return json({ error: { code: "invalid_api_key", message: "The API key is unknown or revoked" } }, 401);
+  return insufficientCredits(0);
+}
+
+function insufficientCredits(balanceMicros: number): Response {
+  return json({ error: { code: "insufficient_credits", message: "Add funds to pay with credits" }, balance_micros: balanceMicros, top_up_url: "/account" }, 402);
+}
+
+/**
+ * Serves the request, then charges the winning bid ($X per million requests = X micro-USD,
+ * rounded up). Failed requests are not charged. A short balance or mandate answers 402 with no data.
+ */
+async function chargeAndServe(selection: RouteSelection, payer: CreditsPayer): Promise<Response> {
+  const bid = selection.bidPrice!;
+  const amountMicros = Number(bidToAtomic(bid));
+  const served = await executeContract(selection);
+  if (!served.ok) return served.response;
+  const charge = await chargeForRequest({
+    accountId: payer.accountId, requestId: served.requestId, marketId: selection.marketId,
+    providerId: served.providerId, amountMicros, actor: payer.actor,
+  });
+  if (!charge.ok) {
+    if (charge.reason === "insufficient_credits") return insufficientCredits(charge.balanceMicros);
+    return json({ error: { code: "mandate_exceeded", message: "This charge is over the weekly agent spending limit" }, balance_micros: charge.balanceMicros, top_up_url: "/account" }, 402);
+  }
+  return json({
+    ...served.head,
+    price_usd: bid / 1_000_000, settled_usd: amountMicros / 1_000_000, settled_atomic: String(amountMicros),
+    ...served.tail,
+    payment: { method: "credits", charged_micros: amountMicros, balance_micros: charge.balanceMicros },
+  });
+}
+
+/** Routing, caching, and CORS headers every contract response carries. */
+function contractHeaders(response: Response, selection: RouteSelection): Response {
+  for (const [name, value] of Object.entries(routingHeaders(selection))) response.headers.set(name, value);
+  response.headers.set("Cache-Control", "private, no-store");
+  // Cross-origin browser clients (x402 wallets, dashboards) read these paid responses.
+  response.headers.set("Access-Control-Allow-Origin", "*");
+  const expose = response.headers.get("Access-Control-Expose-Headers");
+  response.headers.set("Access-Control-Expose-Headers", [expose, "Tender-Route-Reason", "Tender-Policy-Violation"].filter(Boolean).join(", "));
+  return response;
+}
+
+/**
+ * One frozen selection binds the payment and the response: credits when the request names an account,
+ * else the x402 quote and recipient. Safe for direct buyer dispatch.
+ */
 export async function handleContract(request: Request, marketId: MarketId, options: ContractOptions = {}): Promise<Response> {
   let selection: RouteSelection;
   try {
@@ -199,6 +280,15 @@ export async function handleContract(request: Request, marketId: MarketId, optio
     if (selection.bidPrice <= 0) throw new ApiError(400, "unsupported_bid", "Paid requests require a provider bid greater than zero");
   } catch (error) { return errorResponse(error); }
   const selected = selection;
+  let payer: CreditsPayer | null | Response;
+  try {
+    payer = await creditsPayer(request, options);
+    if (payer && !(payer instanceof Response)) return contractHeaders(await chargeAndServe(selected, payer), selected);
+  } catch (error) {
+    console.error("Tender credits error", error instanceof Error ? { name: error.name, message: error.message } : { name: "UnknownError" });
+    return contractHeaders(json({ error: { code: "payment_unavailable", message: "Payment service unavailable" } }, 503), selected);
+  }
+  if (payer instanceof Response) return contractHeaders(payer, selected);
   const quote = quoteFromBid(selected.providerId!, selected.bidPrice!, getMarketDefinition(marketId).contract);
   let response: Response;
   let providerResponse: Response | undefined;
@@ -228,13 +318,7 @@ export async function handleContract(request: Request, marketId: MarketId, optio
     // Fail closed: a facilitator/settlement outage must never produce an unpaid payload.
     response = json({ error: { code: "payment_unavailable", message: "Payment service unavailable" } }, 503);
   }
-  for (const [name, value] of Object.entries(routingHeaders(selected))) response.headers.set(name, value);
-  response.headers.set("Cache-Control", "private, no-store");
-  // Cross-origin browser clients (x402 wallets, dashboards) read these paid responses.
-  response.headers.set("Access-Control-Allow-Origin", "*");
-  const expose = response.headers.get("Access-Control-Expose-Headers");
-  response.headers.set("Access-Control-Expose-Headers", [expose, "Tender-Route-Reason", "Tender-Policy-Violation"].filter(Boolean).join(", "));
-  return response;
+  return contractHeaders(response, selected);
 }
 
 /** `GET /api/v1/{namespace}/{action}`: resolve the market from the contract and query, then serve it. */
