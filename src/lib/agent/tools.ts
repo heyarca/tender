@@ -231,6 +231,6 @@ export async function createAskTools(input: { accountId: string; origin: string 
     ...serverTools(input.accountId),
     ...(hasPayPalCredentials() ? { top_up: topUpTool(input.accountId, input.origin) } : {}),
     ...clientTools,
-    ...(await paypalToolkitTools()),
+    ...(await paypalToolkitTools(input.accountId)),
   };
 }
