@@ -125,6 +125,7 @@ export function PriceFieldsResult({
           provider={request?.provider}
           latencyMs={status === "ok" ? undefined : request?.latencyMs}
           requestId={request?.id}
+          source={request?.source}
         />
       )}
     </div>

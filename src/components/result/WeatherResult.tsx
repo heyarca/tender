@@ -139,6 +139,7 @@ export function WeatherResult({
           provider={request?.provider}
           latencyMs={request?.latencyMs}
           requestId={request?.id}
+          source={request?.source}
         />
       )}
     </div>

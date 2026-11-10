@@ -20,9 +20,11 @@ import {
   RotateCcw,
   Route,
   Shuffle,
+  Sparkles,
   Tag,
   Timer,
   TimerOff,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
 
@@ -36,10 +38,12 @@ import { Tooltip } from "@/components/ui/tooltip";
 import {
   format,
   getProviderFixture,
+  SOURCE_LABELS,
   type ActivityEntry,
   type MarketId,
   type MarketTimeZone,
   type ProviderId,
+  type RequestSource,
   type RouteEstablishedEntry,
   type RouteSwitchEntry,
   type Tone,
@@ -80,6 +84,8 @@ const KIND_ICONS: Record<ActivityEntry["kind"], LucideIcon> = {
   "mode-changed": Shuffle,
   "auto-run": Play,
 };
+
+const SOURCE_ICONS: Record<RequestSource, LucideIcon> = { "ask-tender": Sparkles, credits: Wallet };
 
 const TILE_TONE: Record<Tone, string> = {
   neutral: "border-border bg-background text-muted-foreground",
@@ -215,7 +221,8 @@ function ActivityRow({
   timeZone: MarketTimeZone;
 }) {
   const isSwitch = entry.kind === "route-switch";
-  const Icon = entry.kind === "auto-run" && !entry.enabled ? Pause : KIND_ICONS[entry.kind];
+  const source = entry.kind === "request-served" ? entry.source : undefined;
+  const Icon = source ? SOURCE_ICONS[source] : entry.kind === "auto-run" && !entry.enabled ? Pause : KIND_ICONS[entry.kind];
   const providerId = entryProviderId(entry);
   const provider = providerId ? getProviderFixture(marketId, providerId) : undefined;
 
@@ -237,7 +244,7 @@ function ActivityRow({
         aria-hidden="true"
         className={cn(
           "mt-px flex size-6 shrink-0 items-center justify-center rounded-md border [&_svg]:size-3.5",
-          isSwitch ? "border-transparent bg-accent text-accent-foreground" : TILE_TONE[entry.tone],
+          isSwitch || source ? "border-transparent bg-accent text-accent-foreground" : TILE_TONE[entry.tone],
         )}
       >
         <Icon strokeWidth={2} />
@@ -253,6 +260,11 @@ function ActivityRow({
                   <ProviderLogo src={provider.logo} name={provider.name} size={16} className="mt-0.5" />
                 ) : null}
                 <span className="min-w-0">{entry.title}</span>
+                {source ? (
+                  <Badge tone="active" className="mt-px" data-slot="activity-source">
+                    {SOURCE_LABELS[source]}
+                  </Badge>
+                ) : null}
               </p>
             )}
           </div>
