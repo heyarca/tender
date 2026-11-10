@@ -70,6 +70,7 @@ export function ProviderLogo({
           alt=""
           width={size}
           height={size}
+          loading="lazy"
           decoding="async"
           draggable={false}
           className="absolute inset-px size-[calc(100%-2px)] rounded-sm object-contain"
