@@ -1,6 +1,6 @@
 {
   "name": "@heyarca/tender",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Let your agent buy API access on Tender, the execution market where providers compete on price, latency, freshness, and reliability.",
   "type": "module",
   "bin": {
@@ -16,6 +16,7 @@
   },
   "files": [
     "bin",
+    "lib",
     "index.js",
     "index.d.ts",
     "AGENT.md",
@@ -32,7 +33,9 @@
     "x402",
     "usdc",
     "agents",
-    "routing"
+    "routing",
+    "mcp",
+    "model-context-protocol"
   ],
   "homepage": "https://tender.heyarca.app",
   "repository": {

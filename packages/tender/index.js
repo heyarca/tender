@@ -68,12 +68,28 @@ export function createTender(options = {}) {
       const url = `${baseUrl}${path}${query ? `${path.includes("?") ? "&" : "?"}${query}` : ""}`;
       const response = await doFetch(url);
       if (response.status === 402) {
-        return { status: 402, paymentRequired: await response.json().catch(() => null), provider: response.headers.get("Tender-Provider") };
+        return {
+          status: 402,
+          paymentRequired: await response.json().catch(() => null),
+          paymentRequirements: decodePaymentHeader(response.headers.get("PAYMENT-REQUIRED")),
+          provider: response.headers.get("Tender-Provider"),
+        };
       }
       const body = await json(response);
       return { status: response.status, provider: response.headers.get("Tender-Provider"), data: body?.data ?? body, response: body };
     },
   };
+}
+
+/** Decode the base64 JSON `PAYMENT-REQUIRED` header (x402 v2). Returns null when missing or malformed. */
+function decodePaymentHeader(value) {
+  if (!value) return null;
+  try {
+    const bytes = Uint8Array.from(atob(value), (c) => c.charCodeAt(0));
+    return JSON.parse(new TextDecoder().decode(bytes));
+  } catch {
+    return null;
+  }
 }
 
 /** Contract URL of a market from the API (`contract_url`, e.g. "/api/v1/translation/text?source=en&target=ko"). */

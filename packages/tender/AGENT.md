@@ -19,6 +19,10 @@ stops qualifying.
   x402 payment signature (for example with `@x402/fetch`). Response headers name the provider
   (`Tender-Provider`) and the settled amount.
 - OpenAPI: `GET /api/v1/openapi.json`.
+- MCP: if the `tender` MCP server is connected (`npx -y @heyarca/tender@latest mcp`), use its tools
+  instead of raw HTTP: `list_markets` (filter by group, category, or text), `list_categories`,
+  `list_contracts` (one id returns the output schema), `get_market` (bids and the routing decision for a
+  policy), and `quote` (the x402 price, provider, and payee for the next call). The tools never pay.
 
 From code:
 
