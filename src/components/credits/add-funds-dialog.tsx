@@ -6,7 +6,6 @@ import { Notice } from "@/components/market/payments/payment-ui";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogBody, DialogContent } from "@/components/ui/dialog";
 import { SegmentedControl } from "@/components/ui/segmented-control";
-import { toast } from "@/components/ui/toast";
 import { applyBalance, setAddFundsOpen, useCreditsStore } from "./credits-store";
 import { formatMicros, TOP_UP_OPTIONS } from "./money";
 import { PayPalButton } from "./paypal-button";
@@ -89,7 +88,6 @@ function AddFundsBody() {
             onPaid={(result) => {
               applyBalance(result.balanceMicros);
               setPhase({ kind: "paid", ...result });
-              toast({ tone: "positive", title: `Added ${formatMicros(result.amountMicros)}`, description: `Balance ${formatMicros(result.balanceMicros)}` });
             }}
             onCancel={() => setPhase({ kind: "canceled" })}
             onError={(message) => setPhase({ kind: "error", message })}

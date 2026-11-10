@@ -65,7 +65,7 @@ function providerOf(entry: LedgerEntryView) {
 }
 
 function detailsText(entry: LedgerEntryView): string {
-  if (entry.kind === "topup") return `${entry.auto_top_up ? "Auto top-up by Ask Tender" : "PayPal"}${entry.paypal_capture_id ? ` ${entry.paypal_capture_id}` : ""}`;
+  if (entry.kind === "topup") return `${entry.auto_top_up ? "Top-up from saved PayPal by Ask Tender" : "PayPal"}${entry.paypal_capture_id ? ` ${entry.paypal_capture_id}` : ""}`;
   const market = entry.market_id ? getMarketSpec(entry.market_id) : undefined;
   return [providerOf(entry).name, market?.name].filter(Boolean).join(", ");
 }
@@ -112,7 +112,7 @@ function DetailsCell({ data }: CellProps) {
   if (entry.kind === "topup") {
     return (
       <span className="flex min-w-0 items-center gap-2">
-        <span className="text-foreground">{entry.auto_top_up ? "Auto top-up by Ask Tender" : "PayPal"}</span>
+        <span className="text-foreground">{entry.auto_top_up ? "Top-up from saved PayPal by Ask Tender" : "PayPal"}</span>
         {entry.paypal_capture_id ? <span className="truncate font-mono text-caption text-muted-foreground">{entry.paypal_capture_id}</span> : null}
       </span>
     );
