@@ -48,6 +48,13 @@ import {
 } from "./directory-model";
 import { MarketThumbnail } from "./market-thumbnail";
 
+const DIRECTORY_LINKS = [
+  { label: "Markets", href: "/markets" },
+  { label: "Leaderboard", href: "/leaderboard" },
+  { label: "Payouts", href: "/payouts" },
+  { label: "Account", href: "/account" },
+] as const;
+
 const rowCache = new WeakMap<MarketState, DirectoryRow>();
 
 /**
@@ -181,7 +188,7 @@ export function MarketDirectory() {
       <Suspense fallback={null}>
         <QueryFromUrl onChange={applyUrlQuery} />
       </Suspense>
-      <TopNav links={[]} onSearch={() => searchRef.current?.focus()} />
+      <TopNav links={DIRECTORY_LINKS} activeHref="/markets" homeHref="/landing" onSearch={() => searchRef.current?.focus()} />
       <PageContainer>
         <AgentInstallBanner />
         <div className="flex flex-wrap items-end justify-between gap-3">
