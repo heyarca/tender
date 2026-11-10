@@ -66,10 +66,23 @@ function prepareInvoice(input: Record<string, unknown>): string | null {
  * They act on Tender's PayPal account, so orders and transactions are limited to the visitor's own
  * account: its id is the `custom_id` of every top-up, and its capture ids are in the ledger. Empty without PayPal credentials.
  */
-/** PayPal capture ids of the account's top-ups (PayPal reports a capture's id as the transaction id). */
-async function accountCaptureIds(accountId: string): Promise<Set<string>> {
+/**
+ * The account's PayPal top-ups as Tender recorded them. PayPal reports a capture's id as the
+ * transaction id, and its transaction search lists new payments only hours later.
+ */
+async function recordedPayments(accountId: string) {
   const entries = await listLedger(accountId, 200);
-  return new Set(entries.flatMap((entry) => (entry.paypalCaptureId ? [entry.paypalCaptureId] : [])));
+  return entries.flatMap((entry) =>
+    entry.kind === "topup" && entry.paypalCaptureId
+      ? [{
+          date: entry.createdAt,
+          amount_usd: (entry.amountMicros / 1_000_000).toFixed(2),
+          paypal_capture_id: entry.paypalCaptureId,
+          paypal_order_id: entry.paypalOrderId,
+          added_by: entry.actor === "agent" ? "Ask Tender" : "you",
+        }]
+      : [],
+  );
 }
 
 export async function paypalToolkitTools(accountId: string): Promise<Record<string, Tool>> {
@@ -100,11 +113,13 @@ export async function paypalToolkitTools(accountId: string): Promise<Record<stri
         const result = readResult(await execute(input, {}));
         if (name === "list_transactions" && result && typeof result === "object" && "transaction_details" in result) {
           const details = (result as { transaction_details?: Transaction[] }).transaction_details ?? [];
-          const captures = await accountCaptureIds(accountId);
+          const payments = await recordedPayments(accountId);
+          const captures = new Set(payments.map((payment) => payment.paypal_capture_id));
           Object.assign(result, {
             transaction_details: details.filter(
               (item) => item.transaction_info?.custom_field === accountId || captures.has(item.transaction_info?.transaction_id ?? ""),
             ),
+            tender_recorded_payments: payments,
           });
         }
         const text = JSON.stringify(result);

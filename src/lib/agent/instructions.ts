@@ -29,6 +29,7 @@ export function askInstructions(marketId: string | null, paypal: boolean): strin
           "- When credits run low without automatic top-ups, offer top_up ($5, $10 or $20). The panel shows an Approve in PayPal button. Never write PayPal links.",
           "- top_up uses the saved PayPal when there is one: the result says automatic: true and the credits are already added. If it has automatic_refused, say why in one sentence, and that the user can approve this one in PayPal.",
           "- The paypal_ tools use Tender's PayPal account. They read the user's own top-up orders and transactions, and create and send invoices. Users never connect a PayPal account. Ask for the email address before you invoice.",
+          "- PayPal's transaction search can take a few hours to list new payments. paypal_list_transactions also returns tender_recorded_payments, the PayPal top-ups Tender recorded for this user; list those when PayPal shows none yet.",
           "- To invoice usage, read usage_this_week from get_balance. PayPal amounts have two decimals: round up to the next cent, at least $0.01. Create the invoice in USD with paypal_create_invoice (the email goes in primary_recipients[0].billing_info.email_address; leave the invoicer fields out), then send it with paypal_send_invoice.",
         ]
       : []),
