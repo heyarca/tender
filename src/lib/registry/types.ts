@@ -48,6 +48,13 @@ export interface ParamSpec {
   values?: readonly string[];
   example: string;
   description?: string;
+  /**
+   * market (default): each market binds a value, and a request selects the market by it.
+   * input: free text sent with each request (e.g. the text to translate); never selects a market.
+   */
+  kind?: "market" | "input";
+  /** Inputs: longest accepted value, in characters. */
+  maxLength?: number;
 }
 
 /** Which result renderer a market uses. */
@@ -131,8 +138,10 @@ export interface MarketSpec {
   id: string;
   categoryId: string;
   contractId: string;
-  /** Values bound to the contract params, e.g. { location: "seoul" }. */
+  /** Values bound to the contract's market params, e.g. { location: "seoul" }. Inputs are not bound. */
   params: Readonly<Record<string, string>>;
+  /** Values of the contract's inputs when a request omits them, e.g. { text: "Hello" }. */
+  inputs?: Readonly<Record<string, string>>;
   name: string;
   shortName: string;
   description: string;
@@ -141,7 +150,7 @@ export interface MarketSpec {
   image?: MarketImage;
   /** IANA time zone for timestamps. */
   timeZone: string;
-  /** upstream: anchored to a live upstream reference; signal: deterministic Tender signal. Internal, not shown as a badge. */
+  /** upstream: served from a live upstream source; signal: deterministic Tender signal. Internal, not shown as a badge. */
   source: "upstream" | "signal";
   /** Shown first in the directory's Recommended order. */
   featured?: boolean;

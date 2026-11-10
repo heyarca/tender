@@ -1,4 +1,4 @@
-import { CONTRACTS, MARKET_SPECS, contractPath, type ContractSpec } from "@/lib/registry";
+import { CONTRACTS, MARKET_SPECS, contractPath, isInputParam, type ContractSpec } from "@/lib/registry";
 import { MARKET_IDS } from "@/lib/tender";
 import { outputSchema } from "./openapi-schema";
 import { POLICY_PARAMETERS, PREFERENCES } from "./policy";
@@ -46,7 +46,7 @@ const errors = {
   "400": { description: "Invalid contract input or policy", content: content("Error") },
   "405": { description: "Method not allowed; the operation accepts GET only", headers: { Allow: allowHeader }, content: content("Error") },
   "409": { description: "No eligible provider; no payment requested", content: content("Error") },
-  "500": { description: "Selected provider failed; no settlement", content: content("ProviderError") },
+  "422": { description: "no_match: the input matches nothing (for example a geocoding query); no settlement", content: content("ProviderError") },
   "502": { description: "Selected provider failed; no settlement", content: content("ProviderError") },
   "503": { description: "provider_error (selected provider unavailable, no settlement) or payment_unavailable (payment service unavailable, no payload)", content: { "application/json": { schema: { oneOf: [ref("ProviderError"), ref("PaymentUnavailable")] } } } },
   "504": { description: "Selected provider timed out; no settlement", content: content("ProviderError") },
@@ -60,6 +60,14 @@ const camel = (contractId: string) => pascal(contractId).charAt(0).toLowerCase()
 function paidOperation(contract: ContractSpec) {
   const markets = MARKET_SPECS.filter((market) => market.contractId === contract.id);
   const params = contract.params.map((param) => {
+    if (isInputParam(param)) {
+      return {
+        name: param.key,
+        in: "query",
+        description: `${param.label}${param.description ? `. ${param.description}` : ""}. A request input: it never selects a market.`,
+        schema: { type: "string", maxLength: param.maxLength, example: param.example },
+      };
+    }
     const values = [...new Set(markets.map((market) => market.params[param.key]).filter((value): value is string => typeof value === "string"))];
     return {
       name: param.key,
@@ -138,18 +146,19 @@ export const openapiDocument = {
   responses: responseComponents,
   schemas: {
     Error: { type: "object", required: ["error"], properties: { error: { type: "object", required: ["code", "message"], properties: { code: string, message: string } } } },
-    ProviderError: { type: "object", required: ["error", "provider", "request_id", "latency_ms", "policy_violation", "policy_violations"], properties: { error: { type: "object", required: ["code", "message"], properties: { code: { const: "provider_error" }, message: string } }, provider: string, request_id: string, latency_ms: number, policy_violation: { type: "boolean" }, policy_violations: { type: "array", items: string } } },
+    ProviderError: { type: "object", required: ["error", "provider", "request_id", "latency_ms", "policy_violation", "policy_violations"], properties: { error: { type: "object", required: ["code", "message"], properties: { code: { type: "string", enum: ["provider_error", "no_match", "unsupported_input"] }, message: string } }, provider: string, request_id: string, latency_ms: number, retryable: { type: "boolean", description: "true when the same request may succeed on a retry (provider_error); a provider failure also sends Retry-After" }, policy_violation: { type: "boolean" }, policy_violations: { type: "array", items: string } } },
     PaymentUnavailable: { type: "object", required: ["error"], properties: { error: { type: "object", required: ["code", "message"], properties: { code: { const: "payment_unavailable" }, message: { const: "Payment service unavailable" } } } } },
     Policy: { type: "object", required: ["maxPrice", "maxP95LatencyMs", "maxDataAgeMs", "minSuccessRate", "preference", "mode"], properties: {
       maxPrice: number, maxP95LatencyMs: number, maxDataAgeMs: number, minSuccessRate: { type: "number", minimum: 0, maximum: 1 }, preference: { type: "string", enum: PREFERENCES },
       mode: { oneOf: [{ type: "object", required: ["kind"], properties: { kind: { const: "auto" } } }, { type: "object", required: ["kind", "providerId"], properties: { kind: { const: "pinned" }, providerId: string } }] },
     } },
-    Market: { type: "object", required: ["id", "name", "identifier", "description", "group", "category", "contract", "contract_id", "contract_path", "contract_url", "params", "units", "policy_defaults", "provider_count"], properties: {
+    Market: { type: "object", required: ["id", "name", "identifier", "description", "group", "category", "contract", "contract_id", "contract_path", "contract_url", "params", "inputs", "units", "policy_defaults", "provider_count"], properties: {
       id: string, name: string, short_name: string, identifier: string, description: string,
       group: { type: "object", properties: { id: string, label: string } }, category: { type: "object", properties: { id: string, label: string } },
       contract: { ...string, description: "Contract call with the market's params bound, e.g. weather.current({ location: \"san-francisco\" })" },
       contract_id: string, contract_path: { ...string, description: "/api/v1/{namespace}/{action}" }, contract_url: { ...string, description: "Contract path with the market's params as query parameters" },
       params: { type: "object", additionalProperties: string },
+      inputs: { type: "object", additionalProperties: string, description: "Values of the contract's inputs when a request omits them" },
       image: { type: ["object", "null"], properties: { src: string, avif: string, alt: string } }, icon: string, time_zone: string, featured: { type: "boolean" },
       units: { type: "object", additionalProperties: string }, policy_defaults: ref("Policy"), provider_count: { type: "integer" },
     } },
@@ -161,7 +170,7 @@ export const openapiDocument = {
     ...contractSchemas,
     UnsupportedInput: { type: "object", required: ["error"], properties: { error: { type: "object", required: ["code", "message"], properties: { code: { const: "unsupported_input" }, message: string } }, contract: string, supported: { type: "array", items: { type: "object", properties: { market: string, params: { type: "object", additionalProperties: string } } } } } },
     CategoryList: { type: "object", required: ["groups"], properties: { groups: { type: "array", items: { type: "object", properties: { id: string, label: string, description: string, market_count: { type: "integer" }, categories: { type: "array", items: { type: "object", properties: { id: string, label: string, description: string, icon: string, focus: { type: "array", items: string }, market_count: { type: "integer" } } } } } } } } },
-    ContractList: { type: "object", required: ["contracts"], properties: { contracts: { type: "array", items: { type: "object", properties: { id: string, version: { type: "integer" }, label: string, description: string, path: string, params: { type: "array", items: { type: "object" } }, output: { type: "array", items: { type: "object" } }, output_schema: { type: "object" }, freshness: { type: "object" }, result_view: string, pricing_unit: string, markets: { type: "array", items: { type: "object", properties: { id: string, params: { type: "object", additionalProperties: string } } } } } } } } },
+    ContractList: { type: "object", required: ["contracts"], properties: { contracts: { type: "array", items: { type: "object", properties: { id: string, version: { type: "integer" }, label: string, description: string, path: string, params: { type: "array", items: { type: "object" } }, output: { type: "array", items: { type: "object" } }, output_schema: { type: "object" }, freshness: { type: "object" }, result_view: string, pricing_unit: string, markets: { type: "array", items: { type: "object", properties: { id: string, params: { type: "object", additionalProperties: string }, inputs: { type: "object", additionalProperties: string } } } } } } } } },
     PaymentRequired: { type: "object", description: "Tender payment challenge body. Standard x402 v2 requirements are encoded in PAYMENT-REQUIRED, including accepts[].extra settlement metadata.", required: ["error", "providerId", "payTo", "price_usd", "settled_usd", "settled_atomic"], properties: { error: { type: "string" }, providerId: string, payTo: string, ...settlement } },
   } },
 };

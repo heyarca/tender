@@ -36,9 +36,15 @@ A contract request resolves its market from the contract and the query:
 - `market={id}` selects a market explicitly (it must implement the contract).
 - Otherwise the market whose params match every given contract param (case-insensitive) serves it,
   e.g. `/translation/text?source=en&target=ko` → `translate-en-ko`.
-- With no contract param, the contract's default market serves it (`/weather/current` →
-  `sf-weather`, `/prices/spot` → `btc-usd`, else the first market in registry order).
+- With no contract param, the contract's default market serves it: the market bound to the
+  contract's example values (`/weather/current` → `sf-weather`, `/prices/spot` → `btc-usd`),
+  else the first market in registry order.
 - No match returns HTTP 400 `unsupported_input` with `supported`: every market of the contract and its params.
+
+Some contracts also take **inputs** (`"kind": "input"` in `/contracts`): free text sent with each request,
+such as the text to translate. Inputs never select a market. Each one has a `maxLength` in characters;
+a longer value or a repeated key returns HTTP 400 `unsupported_input`. An omitted or empty input uses the
+market's default (`inputs` in `/markets` and `/contracts`), so URLs without inputs keep working.
 
 `/components/spot` is kept as an alias of `/components/price`. Unknown contracts return HTTP 404
 `contract_not_found`; unknown markets return HTTP 404 `market_not_found`. Discovery and OpenAPI do not
@@ -109,8 +115,10 @@ x402 amount/payee and the normalized result. `Tender-Provider` identifies it.
 402 challenge) also carries `Tender-Price-USD`, the exact winning bid per request as a decimal
 string matching the JSON `price_usd`, and `Tender-Settled-Atomic`, the settled USDC amount in
 atomic units as an integer string matching the JSON `settled_atomic`. Errors and paid responses are not cached.
-Provider failures return `provider_error` with the provider, request id, latency, and policy
-violation fields (HTTP 500, 502, 503, or 504). Payment-service exceptions return HTTP 503 with
+Provider failures return `provider_error` with the provider, request id, latency, policy
+violation fields, and `retryable: true` (HTTP 502, 503, or 504; a provider's 500 is reported as 502).
+Provider failures also send `Retry-After: 1`, and the server logs each one with its provider, market,
+status, and request id. Payment-service exceptions return HTTP 503 with
 `payment_unavailable`. Failed provider requests are not settled: the x402 SDK cancels the
 settlement path for responses with status 400 or greater.
 
@@ -139,32 +147,64 @@ than one atomic unit. For the configured THE ZONE BIO bid of $0.70/M, `price_usd
 Exact and settled amounts are exposed in the quote, 402 description, response JSON, and receipt.
 A policy price limit evaluates the exact bid; consult settlement fields for the actual transfer.
 
+## Live markets
+
+These markets serve live data. Every other market serves the shared engine's market signal
+(`reference_source: "signal"`), anchored to the registry sample.
+
+| Market | Contract and inputs | Source (`reference_source`) | When the source fails |
+| --- | --- | --- | --- |
+| `translate-en-ko`, `translate-ko-en` | `translation.text`, input `text` (≤ 500 characters) | `openai/gpt-5-mini` through the Vercel AI Gateway, `google/gemini-2.5-flash` as fallback (the answering model id) | HTTP 502 `provider_error`; not charged, not settled |
+| `chat-general`, `chat-reasoning`, `chat-json` | `chat.complete`, input `prompt` (≤ 500 characters); answers are at most three short sentences, `chat-json` answers with one JSON object | Same models | HTTP 502 `provider_error`; not charged, not settled |
+| `address-geocode` (`type=address`), `place-geocode` (`type=place`) | `geocoding.search`, input `query` (≤ 200 characters) | `photon` (OpenStreetMap: addresses, landmarks, districts), `open-meteo` (GeoNames: cities and towns) | HTTP 502 `provider_error`; no match is HTTP 422 `no_match`; neither is charged or settled |
+| `sf-weather`, `seoul-weather`, `ny-weather`, `london-weather`, `tokyo-weather`, `singapore-weather` | `weather.current` | `open-meteo` current conditions | Engine signal (`reference_source: "signal"`) |
+| `seoul-air`, `london-air`, `la-air` | `airQuality.current` | `open-meteo` air quality: US AQI, PM2.5, PM10, ozone (converted to ppm), main pollutant by sub-index | Engine signal |
+| `web-metadata` | `web.metadata`, input `url` (≤ 2048 characters) | The page itself (`reference_source` is its host): `og:title` or `<title>`, `og:description` or `description`, `og:image` | HTTP 400 `unsupported_input` for a URL that is not https on a public host; HTTP 422 `no_match` for a page that is not HTML; HTTP 502 `provider_error` when the page does not load; none is charged or settled |
+| `btc-usd`, `eth-usd`, `sol-usd`, `xrp-usd` | `prices.spot` | `coinbase` bid/ask midpoint, `kraken` latest trade as fallback | Engine signal |
+| `eur-usd`, `gbp-usd` | `prices.spot` | `frankfurter`: the ECB reference rate, published once per working day | Engine signal |
+
+```sh
+curl -sS -H "Authorization: Bearer $TENDER_API_KEY" \
+  "$BASE/api/v1/translation/text?source=en&target=ko&text=Where%20is%20the%20nearest%20train%20station%3F"
+curl -sS -H "Authorization: Bearer $TENDER_API_KEY" "$BASE/api/v1/chat/complete?model=general&prompt=Why%20route%20API%20calls%3F"
+curl -sS -H "Authorization: Bearer $TENDER_API_KEY" "$BASE/api/v1/geocoding/search?query=Gangnam"
+curl -sS -H "Authorization: Bearer $TENDER_API_KEY" "$BASE/api/v1/weather/current?location=seoul"
+```
+
+Page fetches accept https on the default port only. Every address the host resolves to (checked when the
+socket connects, so a later DNS answer cannot switch to a private address) must be public: private,
+loopback, link-local, shared, multicast, and reserved ranges are refused. Redirects are followed at most
+three times and each hop is checked the same way. The fetch has one 3-second deadline and reads at most 1 MB.
+
+Each instance caches identical model, geocoding, and page inputs for 10 minutes, so a repeated request does not
+call the upstream again (the AI Gateway allows a few model calls per minute). Keyless reference
+inputs are cached for 3 seconds (crypto), 1 minute (weather, air quality), or 10 minutes (ECB rates),
+and concurrent reads share one lookup. Each keyless lookup has a 1.8-second upstream deadline; both
+crypto attempts share it. A model call has a 20-second deadline.
+
+A failed upstream never costs money: the request returns an error status before the credits charge,
+and the x402 SDK cancels settlement for responses with status 400 or greater.
+
 ## Reference data and result semantics
 
-Tender provider identities are separate from keyless reference inputs. No provider is claimed
-to connect to Open-Meteo, Coinbase, or Kraken.
+Tender provider identities are separate from live sources. No provider is claimed to connect to
+Open-Meteo, Photon, Frankfurter, Coinbase, Kraken, or the AI Gateway.
 
-- Weather reference: Open-Meteo current observations in Fahrenheit and mph. Dew point is
-  derived with the Magnus approximation. Visibility uses the deterministic baseline because
-  the selected current-observation endpoint does not provide it.
-- Price reference: Coinbase Exchange BTC-USD bid/ask midpoint. Kraken's latest trade is the
-  fallback input. These are reference anchors, not a claim of a measured multi-venue VWAP.
-- Each instance caches an input for three seconds and coalesces concurrent reads.
-- Each reference lookup has a maximum 1.8-second upstream deadline. Both price attempts share
-  that deadline. Network, HTTP, parse, and validation errors use deterministic fixture values.
-- Provider payloads use the shared engine's age-dependent values and small per-provider biases,
-  anchored to the reference input. Provider latency and data age are sampled by the same engine.
-  `latency_ms` is the provider model's latency, not measured end-to-end HTTP response time.
+- Weather and spot markets: provider payloads use the shared engine's age-dependent values and small
+  per-provider biases, anchored to the live reference. Weather visibility and dew point come from
+  Open-Meteo. A spot reference is anchored at the request time, so an ECB rate is not moved by the signal.
+- Other live markets (translation, chat, geocoding, air quality, page metadata): the engine selects the provider and
+  models its latency, data age, and failures; the live source supplies the result fields.
+- `latency_ms` is the provider model's latency, not measured end-to-end HTTP response time.
 - `data.observedAt` (weather) / `data.sourceTimestamp` (spot prices) / `data.asOf` and `data.updatedAt`
-  (other contracts) and `data_age_ms` describe the provider model. `reference_timestamp` preserves the actual input timestamp, including the fixed
-  fixture timestamp on fallback. `reference_source` records provenance. Provider-model
-  freshness must not be interpreted as the freshness of an upstream observation.
+  (other contracts) and `data_age_ms` describe the provider model. `reference_timestamp` is the actual
+  input timestamp: the observation hour, the ticker time, the ECB rate date, or the time of the model
+  answer. `reference_source` records provenance. Provider-model freshness must not be interpreted as the
+  freshness of an upstream observation.
 - `request_id` is unique per request; there is no cross-instance monotonic counter.
-- `data.priceUsd` is the BTC quote in USD; `price_usd` is the per-request API fee. Change from a previous
+- `data.priceUsd` is the spot price in USD; `price_usd` is the per-request API fee. Change from a previous
   request (`data.changeUsd`) is omitted because this stateless API has no per-caller history. The console
   computes changes and recent charts client-side.
-- Live reference inputs exist for `sf-weather` and `btc-usd`. Every other market serves the market
-  signal of the shared engine (`reference_source: "signal"`), anchored to the registry sample.
 
 ## MCP server
 
@@ -261,7 +301,10 @@ vercel -Q ~/.config/tender-vercel curl /api/v1/markets \
 - `marketDetail(request: Request, marketId: MarketId)` builds discovery data with shared evaluation.
 - `listCategories()` / `listContracts()` build the hierarchy and contract discovery from the registry;
   `outputSchema(contract)` turns a contract's `output` into JSON Schema (also used by OpenAPI).
-- `getWeatherReference()` / `getPriceReference()` return `{value, timestamp, source}`.
+- `loadWeather(place)` / `loadAirQuality(place)` / `loadPrice(pair, kind)` return `{value, timestamp, source}`,
+  or `null` when the source fails. `liveResult(market, inputs, data)` (`src/lib/server/live`) builds the
+  live result of translation, chat, geocoding, air quality, and page metadata markets.
 
-No API secrets are required for reference lookups or discovery. Payment-related secrets are
+No API secrets are required for keyless lookups or discovery. The translation and chat markets read
+`AI_GATEWAY_API_KEY`. Payment-related secrets are
 documented and managed by the payments layer. No database or extra service is required for API routing.

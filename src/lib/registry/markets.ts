@@ -118,7 +118,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     "shortName": "Seoul Weather",
     "description": "Current conditions for Seoul through one normalized contract. Providers bid to serve each request; Tender routes to the best one that meets your policy.",
     "timeZone": "Asia/Seoul",
-    "source": "signal",
+    "source": "upstream",
     "featured": true,
     "sample": {
       "location": {
@@ -222,7 +222,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     "shortName": "NY Weather",
     "description": "Current conditions for New York through one normalized contract. Providers bid to serve each request; Tender routes to the best one that meets your policy.",
     "timeZone": "America/New_York",
-    "source": "signal",
+    "source": "upstream",
     "featured": false,
     "sample": {
       "location": {
@@ -326,7 +326,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     "shortName": "London Weather",
     "description": "Current conditions for London through one normalized contract. Providers bid to serve each request; Tender routes to the best one that meets your policy.",
     "timeZone": "Europe/London",
-    "source": "signal",
+    "source": "upstream",
     "featured": false,
     "sample": {
       "location": {
@@ -430,7 +430,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     "shortName": "Tokyo Weather",
     "description": "Current conditions for Tokyo through one normalized contract. Providers bid to serve each request; Tender routes to the best one that meets your policy.",
     "timeZone": "Asia/Tokyo",
-    "source": "signal",
+    "source": "upstream",
     "featured": false,
     "sample": {
       "location": {
@@ -534,7 +534,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     "shortName": "Singapore Weather",
     "description": "Current conditions for Singapore through one normalized contract. Providers bid to serve each request; Tender routes to the best one that meets your policy.",
     "timeZone": "Asia/Singapore",
-    "source": "signal",
+    "source": "upstream",
     "featured": false,
     "sample": {
       "location": {
@@ -638,7 +638,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     "shortName": "Seoul AQI",
     "description": "Seoul Air Quality through one normalized airQuality.current contract. Providers bid to serve each request; Tender routes to the best one that meets your policy.",
     "timeZone": "Asia/Seoul",
-    "source": "signal",
+    "source": "upstream",
     "featured": true,
     "sample": {
       "location": "Seoul",
@@ -686,7 +686,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     "shortName": "London AQI",
     "description": "London Air Quality through one normalized airQuality.current contract. Providers bid to serve each request; Tender routes to the best one that meets your policy.",
     "timeZone": "Europe/London",
-    "source": "signal",
+    "source": "upstream",
     "featured": false,
     "sample": {
       "location": "London",
@@ -734,7 +734,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     "shortName": "LA AQI",
     "description": "Los Angeles Air Quality through one normalized airQuality.current contract. Providers bid to serve each request; Tender routes to the best one that meets your policy.",
     "timeZone": "America/Los_Angeles",
-    "source": "signal",
+    "source": "upstream",
     "featured": false,
     "sample": {
       "location": "Los Angeles",
@@ -1210,7 +1210,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     "icon": "euro",
     "description": "EUR/USD spot price through one normalized contract. Every provider returns the same price definition, so bids compare like for like.",
     "timeZone": "UTC",
-    "source": "signal",
+    "source": "upstream",
     "sample": {
       "pair": "EUR-USD",
       "priceUsd": 1.0812
@@ -1306,7 +1306,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     "icon": "pound",
     "description": "GBP/USD spot price through one normalized contract. Every provider returns the same price definition, so bids compare like for like.",
     "timeZone": "UTC",
-    "source": "signal",
+    "source": "upstream",
     "sample": {
       "pair": "GBP-USD",
       "priceUsd": 1.2734
@@ -1900,13 +1900,16 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     "categoryId": "geocoding",
     "contractId": "geocoding.search",
     "params": {
+      "type": "address"
+    },
+    "inputs": {
       "query": "1600 Amphitheatre Parkway"
     },
     "name": "Address Geocoding",
     "shortName": "Address",
     "description": "Address Geocoding through one normalized geocoding.search contract. Providers bid to serve each request; Tender routes to the best one that meets your policy.",
     "timeZone": "UTC",
-    "source": "signal",
+    "source": "upstream",
     "featured": false,
     "sample": {},
     "listings": [
@@ -1940,20 +1943,22 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     "categoryId": "geocoding",
     "contractId": "geocoding.search",
     "params": {
-      "query": "Seoul City Hall"
+      "type": "place"
+    },
+    "inputs": {
+      "query": "Seoul"
     },
     "name": "Place Geocoding",
     "shortName": "Place",
     "description": "Place Geocoding through one normalized geocoding.search contract. Providers bid to serve each request; Tender routes to the best one that meets your policy.",
     "timeZone": "UTC",
-    "source": "signal",
+    "source": "upstream",
     "featured": false,
     "sample": {
-      "label": "Seoul City Hall, Jung-gu, Seoul",
-      "latitude": 37.5663,
-      "longitude": 126.9779,
-      "countryCode": "KR",
-      "confidence": 96
+      "label": "Seoul, South Korea",
+      "latitude": 37.566,
+      "longitude": 126.9784,
+      "countryCode": "KR"
     },
     "listings": [
       {
@@ -2029,13 +2034,20 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     "params": {
       "model": "general"
     },
+    "inputs": {
+      "prompt": "In one sentence, what is an API marketplace?"
+    },
     "name": "General Chat Model",
     "shortName": "Chat",
     "description": "General Chat Model through one normalized chat.complete contract. Providers bid to serve each request; Tender routes to the best one that meets your policy.",
     "timeZone": "UTC",
-    "source": "signal",
+    "source": "upstream",
     "featured": true,
-    "sample": {},
+    "sample": {
+      "output": "An API marketplace is an online platform where developers and businesses can discover, compare, purchase, and manage third‑party APIs and related services, often with documentation, usage plans, billing, and developer tools included.",
+      "inputTokens": 32,
+      "outputTokens": 60
+    },
     "listings": [
       {
         "providerId": "the-zone-bio",
@@ -2069,17 +2081,20 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     "params": {
       "model": "reasoning"
     },
+    "inputs": {
+      "prompt": "One provider charges $18 per million requests and another charges $0.70. What does each charge per request, and which is cheaper?"
+    },
     "name": "Reasoning Chat Model",
     "shortName": "Reasoning",
     "description": "Reasoning Chat Model through one normalized chat.complete contract. Providers bid to serve each request; Tender routes to the best one that meets your policy.",
     "timeZone": "UTC",
-    "source": "signal",
+    "source": "upstream",
     "featured": false,
     "sample": {
       "model": "reasoning",
-      "output": "The cheapest qualifying provider is Kitefin: it meets the 400 ms P95 limit and bids below your max price.",
-      "inputTokens": 180,
-      "outputTokens": 64
+      "output": "$18 per million = $18/1,000,000 = $0.000018 per request. $0.70 per million = $0.70/1,000,000 = $0.0000007 per request. The $0.70 plan is cheaper (about 25.7× cheaper per request).",
+      "inputTokens": 52,
+      "outputTokens": 289
     },
     "listings": [
       {
@@ -2114,17 +2129,20 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     "params": {
       "model": "json"
     },
+    "inputs": {
+      "prompt": "Give the capital and currency of South Korea as JSON."
+    },
     "name": "Structured Output Model",
     "shortName": "JSON",
     "description": "Structured Output Model through one normalized chat.complete contract. Providers bid to serve each request; Tender routes to the best one that meets your policy.",
     "timeZone": "UTC",
-    "source": "signal",
+    "source": "upstream",
     "featured": false,
     "sample": {
       "model": "json",
-      "output": "{\"provider\":\"kitefin\",\"reason\":\"lowest qualifying bid\"}",
-      "inputTokens": 96,
-      "outputTokens": 22
+      "output": "{\"country\":\"South Korea\",\"capital\":\"Seoul\",\"currency\":\"South Korean won (KRW)\"}",
+      "inputTokens": 35,
+      "outputTokens": 39
     },
     "listings": [
       {
@@ -2676,13 +2694,19 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
       "source": "en",
       "target": "ko"
     },
+    "inputs": {
+      "text": "Where is the nearest train station?"
+    },
     "name": "English to Korean Translation",
     "shortName": "EN → KO",
     "description": "English to Korean Translation through one normalized translation.text contract. Providers bid to serve each request; Tender routes to the best one that meets your policy.",
     "timeZone": "Asia/Seoul",
-    "source": "signal",
+    "source": "upstream",
     "featured": true,
-    "sample": {},
+    "sample": {
+      "translation": "가장 가까운 기차역이 어디에 있나요?",
+      "characters": 35
+    },
     "listings": [
       {
         "providerId": "the-zone-bio",
@@ -2717,17 +2741,20 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
       "source": "ko",
       "target": "en"
     },
+    "inputs": {
+      "text": "가장 가까운 기차역이 어디인가요?"
+    },
     "name": "Korean to English Translation",
     "shortName": "KO → EN",
     "description": "Korean to English Translation through one normalized translation.text contract. Providers bid to serve each request; Tender routes to the best one that meets your policy.",
     "timeZone": "Asia/Seoul",
-    "source": "signal",
+    "source": "upstream",
     "featured": false,
     "sample": {
-      "translation": "Automatically switches to the best API.",
+      "translation": "Where is the nearest train station?",
       "sourceLanguage": "ko",
       "targetLanguage": "en",
-      "characters": 17
+      "characters": 18
     },
     "listings": [
       {
@@ -3496,16 +3523,22 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     "id": "web-metadata",
     "categoryId": "web-search",
     "contractId": "web.metadata",
-    "params": {
+    "params": {},
+    "inputs": {
       "url": "https://tender.heyarca.app"
     },
     "name": "Page Metadata",
     "shortName": "Metadata",
     "description": "Page Metadata through one normalized web.metadata contract. Providers bid to serve each request; Tender routes to the best one that meets your policy.",
     "timeZone": "UTC",
-    "source": "signal",
+    "source": "upstream",
     "featured": false,
-    "sample": {},
+    "sample": {
+      "url": "https://tender.heyarca.app/landing",
+      "title": "Tender — Always on the best API",
+      "description": "If an API breaks, Tender switches. If a better one shows up, Tender switches. Your app never notices. Pay with PayPal, or let Ask Tender spend for you.",
+      "image": "https://tender.heyarca.app/landing/opengraph-image.png"
+    },
     "listings": [
       {
         "providerId": "the-zone-bio",
@@ -3799,7 +3832,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     "icon": "coins",
     "description": "ETH/USD spot price through one normalized contract. Every provider returns the same price definition, so bids compare like for like.",
     "timeZone": "UTC",
-    "source": "signal",
+    "source": "upstream",
     "sample": {
       "pair": "ETH-USD",
       "priceUsd": 3180.4
@@ -3895,7 +3928,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     "icon": "coins",
     "description": "SOL/USD spot price through one normalized contract. Every provider returns the same price definition, so bids compare like for like.",
     "timeZone": "UTC",
-    "source": "signal",
+    "source": "upstream",
     "sample": {
       "pair": "SOL-USD",
       "priceUsd": 148.25
@@ -3991,7 +4024,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     "icon": "coins",
     "description": "XRP/USD spot price through one normalized contract. Every provider returns the same price definition, so bids compare like for like.",
     "timeZone": "UTC",
-    "source": "signal",
+    "source": "upstream",
     "sample": {
       "pair": "XRP-USD",
       "priceUsd": 2.14

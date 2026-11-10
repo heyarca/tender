@@ -335,7 +335,7 @@ export const CONTRACTS: readonly ContractSpec[] = [
         "key": "symbol",
         "label": "Symbol",
         "type": "string",
-        "example": "XAU-USD"
+        "example": "LI2CO3-CN"
       }
     ],
     "output": [
@@ -804,10 +804,24 @@ export const CONTRACTS: readonly ContractSpec[] = [
     "description": "An address or place name to coordinates.",
     "params": [
       {
+        "key": "type",
+        "label": "Match type",
+        "type": "enum",
+        "example": "address",
+        "values": [
+          "address",
+          "place"
+        ],
+        "description": "address: street addresses, landmarks, and districts; place: cities and towns"
+      },
+      {
         "key": "query",
         "label": "Query",
         "type": "string",
-        "example": "1600 Amphitheatre Parkway"
+        "kind": "input",
+        "maxLength": 200,
+        "example": "1600 Amphitheatre Parkway",
+        "description": "Address or place name to look up, up to 200 characters. Without it, the market's default query is used"
       }
     ],
     "output": [
@@ -836,7 +850,8 @@ export const CONTRACTS: readonly ContractSpec[] = [
         "key": "confidence",
         "label": "Confidence",
         "type": "percent",
-        "unit": "%"
+        "unit": "%",
+        "optional": true
       }
     ],
     "freshness": {
@@ -846,11 +861,10 @@ export const CONTRACTS: readonly ContractSpec[] = [
     },
     "resultView": "fields",
     "sample": {
-      "label": "1600 Amphitheatre Parkway, Mountain View, CA",
-      "latitude": 37.422,
-      "longitude": -122.0841,
-      "countryCode": "US",
-      "confidence": 98
+      "label": "Google Building 41, 1600 Amphitheatre Parkway, Mountain View, California, United States",
+      "latitude": 37.4224858,
+      "longitude": -122.0855846,
+      "countryCode": "US"
     },
     "version": 1,
     "pricingUnit": "request"
@@ -932,6 +946,15 @@ export const CONTRACTS: readonly ContractSpec[] = [
           "reasoning",
           "json"
         ]
+      },
+      {
+        "key": "prompt",
+        "label": "Prompt",
+        "type": "string",
+        "kind": "input",
+        "maxLength": 500,
+        "example": "In one sentence, what is an API marketplace?",
+        "description": "Prompt to answer, up to 500 characters. Answers are short. Without it, the market's default prompt is answered"
       }
     ],
     "output": [
@@ -1278,6 +1301,15 @@ export const CONTRACTS: readonly ContractSpec[] = [
         "label": "Target language",
         "type": "string",
         "example": "ko"
+      },
+      {
+        "key": "text",
+        "label": "Text",
+        "type": "string",
+        "kind": "input",
+        "maxLength": 500,
+        "example": "Where is the nearest train station?",
+        "description": "Text to translate, up to 500 characters. Without it, the market's default sentence is translated"
       }
     ],
     "output": [
@@ -2154,7 +2186,10 @@ export const CONTRACTS: readonly ContractSpec[] = [
         "key": "url",
         "label": "URL",
         "type": "string",
-        "example": "https://tender.heyarca.app"
+        "kind": "input",
+        "maxLength": 2048,
+        "example": "https://tender.heyarca.app",
+        "description": "Public https page to read, up to 2048 characters. Without it, the market's default page is read"
       }
     ],
     "output": [

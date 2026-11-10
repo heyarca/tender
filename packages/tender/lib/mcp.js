@@ -116,7 +116,7 @@ export const TOOLS = [
         params: {
           type: "object",
           additionalProperties: { type: "string" },
-          description: "Extra query parameters for the contract URL. The market already binds its own params.",
+          description: "Request inputs and extra query parameters for the contract URL, for example { \"text\": \"Hello\" } on a translation market. The market already binds its own params.",
         },
         ...POLICY_PROPERTIES,
       },
@@ -307,7 +307,7 @@ export function createToolHandlers(tender) {
           label: c.label,
           description: c.description,
           path: c.path,
-          params: (c.params ?? []).map((p) => ({ key: p.key, type: p.type, example: p.example })),
+          params: (c.params ?? []).map((p) => ({ key: p.key, type: p.type, example: p.example, ...(p.kind === "input" ? { input: true, max_length: p.maxLength } : {}) })),
           output: (c.output ?? []).map((o) => o.key),
           markets: (c.markets ?? []).map((m) => m.id),
         })),

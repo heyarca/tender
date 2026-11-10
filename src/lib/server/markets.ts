@@ -33,6 +33,7 @@ export function marketSummary(market: MarketDefinition) {
     contract_path: contractPath(market.contractId),
     contract_url: spec ? contractUrl(spec) : contractPath(market.contractId),
     params: spec?.params ?? {},
+    inputs: spec?.inputs ?? {},
     image: spec?.image ? { src: spec.image.src, ...(spec.image.avif ? { avif: spec.image.avif } : {}), alt: spec.image.alt } : null,
     icon: market.icon,
     time_zone: market.timeZone,
@@ -114,7 +115,7 @@ export function contractSummary(contract: ContractSpec) {
     freshness: contract.freshness,
     result_view: contract.resultView,
     pricing_unit: contract.pricingUnit,
-    markets: MARKET_SPECS.filter((market) => market.contractId === contract.id).map((market) => ({ id: market.id, params: market.params })),
+    markets: MARKET_SPECS.filter((market) => market.contractId === contract.id).map((market) => ({ id: market.id, params: market.params, inputs: market.inputs ?? {} })),
   };
 }
 export function listContracts() { return { contracts: CONTRACTS.map(contractSummary) }; }
