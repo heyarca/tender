@@ -35,7 +35,7 @@ const COLUMNS: DataGridColumn<ProviderEarnings>[] = [
     align: "right",
     cellRenderer: ({ data }: CellProps) => {
       if (!data) return null;
-      if (!data.connected) return <span className="text-faint">—</span>;
+      if (!data.connected || data.unpaidMicros === 0) return <span className="text-faint">—</span>;
       if (data.payableMicros === 0) return <span className="text-muted-foreground">Under $0.01</span>;
       return <span className="text-foreground tabular-nums">{formatCents(data.payableMicros)}</span>;
     },
