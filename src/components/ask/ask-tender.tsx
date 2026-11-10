@@ -76,6 +76,18 @@ export function AskTender({ marketId, onSwitchMarket }: AskTenderProps) {
     },
   });
 
+  // Requests run_request bought on the server show up in their market's console as soon as the tool returns.
+  const ingested = useRef(new Set<string>());
+  useEffect(() => {
+    for (const message of messages) {
+      for (const part of message.parts) {
+        if (part.type !== "tool-run_request" || part.state !== "output-available" || ingested.current.has(part.toolCallId)) continue;
+        ingested.current.add(part.toolCallId);
+        if ("served" in part.output && part.output.served.length > 0) store.actions.ingestServed("ask-tender", part.output.served);
+      }
+    }
+  }, [messages, store]);
+
   useEffect(() => {
     const element = scroller.current;
     if (element) element.scrollTop = element.scrollHeight;

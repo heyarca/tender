@@ -10,7 +10,7 @@ import { ProviderLogo } from "@/components/ui/provider-logo";
 import { Section } from "@/components/ui/section";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, getProviderFixture, PREFERENCE_LABELS, type MarketId } from "@/lib/tender";
-import { useMarketView } from "@/lib/tender/client";
+import { useMarketView, useTenderStore } from "@/lib/tender/client";
 import { AddFundsDialog } from "./add-funds-dialog";
 import { applyBalance, refreshAccount, setAddFundsOpen, useCreditsStore } from "./credits-store";
 import { creditsRequestUrl, type CreditsErrorResponse, type CreditsResponse } from "./credits-request";
@@ -38,6 +38,7 @@ function Stat({ label, children }: { label: string; children: ReactNode }) {
  */
 export function CreditsSection({ marketId }: { marketId: MarketId }) {
   const view = useMarketView(marketId);
+  const store = useTenderStore();
   const status = useCreditsStore((state) => state.status);
   const balanceMicros = useCreditsStore((state) => state.balanceMicros);
   const [run, setRun] = useState<RunState>({ kind: "idle" });
@@ -69,13 +70,26 @@ export function CreditsSection({ marketId }: { marketId: MarketId }) {
       } else {
         applyBalance(body.payment.balance_micros);
         setRun({ kind: "done", response: body });
+        store.actions.ingestServed("credits", [
+          {
+            request_id: body.request_id,
+            market: marketId,
+            provider: body.provider,
+            latency_ms: body.latency_ms,
+            data_age_ms: body.data_age_ms,
+            price_usd: body.price_usd,
+            charged_micros: body.payment.charged_micros,
+            served_at: new Date().toISOString(),
+            data: body.data,
+          },
+        ]);
       }
     } catch {
       setRun({ kind: "error", message: "Could not reach Tender. Check your connection and try again." });
     } finally {
       running.current = false;
     }
-  }, [marketId, policy]);
+  }, [marketId, policy, store]);
 
   const done = run.kind === "done" ? run.response : null;
   const provider = done ? getProviderFixture(marketId, done.provider) : undefined;

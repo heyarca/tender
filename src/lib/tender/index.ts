@@ -50,7 +50,7 @@ export {
   successRateOf,
 } from "./evaluate";
 export type { RankableProvider } from "./evaluate";
-export { fieldsSummary, NO_ELIGIBLE_TEXT, pinViolationText, providerName, recommendedSummaryText } from "./activity";
+export { fieldsSummary, NO_ELIGIBLE_TEXT, pinViolationText, providerName, recommendedSummaryText, SOURCE_LABELS } from "./activity";
 export { createInitialState, marketSeed, rebaseState, reduce, seriesStepMs } from "./engine";
 export type { InitialStateOptions, TenderAction } from "./engine";
 export { evaluateMarketState } from "./router";

@@ -425,6 +425,9 @@ interface RequestBase {
   routingMode: RoutingMode["kind"];
 }
 
+/** Who bought a request on the server instead of the console engine: Ask Tender or Run with credits. */
+export type RequestSource = "ask-tender" | "credits";
+
 interface ServedBase extends RequestBase {
   status: "ok";
   providerId: ProviderId;
@@ -434,6 +437,8 @@ interface ServedBase extends RequestBase {
   dataAgeMs: number;
   /** USD charged for this request (bid / 1e6). */
   cost: number;
+  /** Set when the server served and charged the request (see `ServedEnvelope`). */
+  source?: RequestSource;
 }
 
 export interface ServedWeatherResult extends ServedBase {
@@ -470,6 +475,25 @@ export interface RejectedRequestResult extends RequestBase {
 }
 
 export type ServedRequestResult = ServedWeatherResult | ServedBtcResult | ServedFieldsResult;
+
+/**
+ * A request the server served and charged to credits (Ask Tender's `run_request`, Run with credits).
+ * Fields follow the contract's 200 body; `data` is the contract result (`resultData`).
+ */
+export interface ServedEnvelope {
+  request_id: string;
+  market: MarketId;
+  provider: ProviderId;
+  provider_name?: string;
+  latency_ms: number;
+  data_age_ms: number;
+  price_usd: number;
+  /** Micro-USD charged to credits. */
+  charged_micros?: number;
+  /** ISO time the server returned the result. */
+  served_at?: string;
+  data: Record<string, unknown>;
+}
 
 /** Result of `runRequest`. Discriminate on `status`, then on `payload.kind`. */
 export type RequestResult = ServedRequestResult | FailedRequestResult | RejectedRequestResult;
@@ -568,6 +592,7 @@ export interface RequestServedEntry extends ActivityBase {
   providerId: ProviderId;
   latencyMs: number;
   cost: number;
+  source?: RequestSource;
 }
 export interface RequestFailedEntry extends ActivityBase {
   kind: "request-failed";
