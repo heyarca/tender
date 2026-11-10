@@ -1,0 +1,121 @@
+import type { AskUITools } from "@/lib/agent/types";
+import { getMarketSpec } from "@/lib/registry";
+
+export type ActivityTone = "pending" | "done" | "error";
+export interface Activity {
+  tone: ActivityTone;
+  text: string;
+}
+
+/** The fields of a tool part that the activity row reads. */
+export interface ToolPartState {
+  state: string;
+  input?: unknown;
+  output?: unknown;
+  errorText?: string;
+}
+
+type Input<NAME extends keyof AskUITools> = Partial<AskUITools[NAME]["input"]> | undefined;
+type Output<NAME extends keyof AskUITools> = AskUITools[NAME]["output"] | undefined;
+
+const marketName = (id: string | undefined) => (id ? (getMarketSpec(id)?.name ?? id) : "the market");
+const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? "" : "s"}`;
+
+const PAYPAL_LABELS: Record<string, [pending: string, done: string]> = {
+  paypal_get_order: ["Looking up a PayPal order…", "Looked up a PayPal order"],
+  paypal_list_transactions: ["Listing PayPal transactions…", "Listed PayPal transactions"],
+  paypal_create_invoice: ["Creating a PayPal invoice…", "Created a PayPal invoice"],
+  paypal_send_invoice: ["Sending the PayPal invoice…", "Sent the PayPal invoice"],
+};
+
+/** The `error` of a tool result: `{ error }` from Tender tools, or the JSON text the PayPal Agent Toolkit returns. */
+function outputError(output: unknown): string | null {
+  let value = output;
+  if (typeof value === "string" && value.startsWith("{")) {
+    try {
+      value = JSON.parse(value);
+    } catch {
+      return null;
+    }
+  }
+  if (!value || typeof value !== "object" || !("error" in value)) return null;
+  const error = (value as { error: unknown }).error;
+  if (typeof error === "string") return error;
+  const message = error && typeof error === "object" && "message" in error ? (error as { message: unknown }).message : null;
+  return typeof message === "string" ? message : "PayPal could not finish this step";
+}
+
+/** Plain-English row for one tool call, or `null` when a card shows it instead. */
+export function toolActivity(name: string, part: ToolPartState): Activity | null {
+  const done = part.state === "output-available";
+  if (part.state === "output-error" || part.state === "output-denied") {
+    return { tone: "error", text: part.errorText ? `Could not finish: ${part.errorText}` : "Could not finish this step" };
+  }
+  const error = done ? outputError(part.output) : null;
+  if (error) return { tone: "error", text: error };
+
+  switch (name) {
+    case "list_markets": {
+      const input = part.input as Input<"list_markets">;
+      const output = part.output as Output<"list_markets">;
+      if (!done || !output) return { tone: "pending", text: "Searching markets…" };
+      const count = output.markets.length;
+      return { tone: "done", text: input?.query ? `Found ${plural(count, "market")} for “${input.query}”` : `Found ${plural(count, "market")}` };
+    }
+    case "get_market": {
+      const input = part.input as Input<"get_market">;
+      const output = part.output as Output<"get_market">;
+      if (!done || !output || "error" in output) return { tone: "pending", text: `Checking bids for ${marketName(input?.marketId)}…` };
+      return {
+        tone: "done",
+        text: output.serving
+          ? `Checked bids for ${output.market.name}: ${output.serving.name} wins at ${output.serving.bid}`
+          : `Checked bids for ${output.market.name}: no provider meets the policy`,
+      };
+    }
+    case "get_balance": {
+      const output = part.output as Output<"get_balance">;
+      if (!done || !output) return { tone: "pending", text: "Checking your balance…" };
+      const limit = output.spending_limit;
+      return {
+        tone: "done",
+        text: limit
+          ? `Balance ${output.balance}. ${limit.spent_this_week} of ${limit.weekly_cap} spent this week`
+          : `Balance ${output.balance}. No spending limit yet`,
+      };
+    }
+    case "run_request": {
+      const input = part.input as Input<"run_request">;
+      const output = part.output as Output<"run_request">;
+      if (!done || !output || "error" in output) {
+        return { tone: "pending", text: `Running ${plural(input?.count ?? 1, "request")} on ${marketName(input?.marketId)}…` };
+      }
+      const refused = "refused" in output ? output.refused : undefined;
+      if (output.ran === 0 && refused) return { tone: "error", text: `Request refused: ${refused.message}` };
+      if (!("market" in output)) return { tone: "error", text: "Request refused" };
+      const ran = `Ran ${plural(output.ran, "request")} on ${output.market}: ${output.charged_total} charged to credits`;
+      return refused ? { tone: "error", text: `${ran}. Then refused: ${refused.message}` } : { tone: "done", text: ran };
+    }
+    case "apply_policy": {
+      const input = part.input as Input<"apply_policy">;
+      const output = part.output as Output<"apply_policy">;
+      if (!done || !output) return { tone: "pending", text: `Setting routing policy for ${marketName(input?.marketId)}…` };
+      if (!output.applied) return { tone: "error", text: output.error ?? "Routing policy was not applied" };
+      return { tone: "done", text: `Set routing policy for ${output.market}: ${output.policy}` };
+    }
+    case "request_spending_limit": {
+      const output = part.output as Output<"request_spending_limit">;
+      if (!done || !output) return null;
+      return output.approved
+        ? { tone: "done", text: `Spending limit approved: ${output.weekly_cap} per week` }
+        : { tone: "error", text: "Spending limit declined" };
+    }
+    case "top_up":
+      return null;
+    default: {
+      const labels = PAYPAL_LABELS[name];
+      if (labels) return { tone: done ? "done" : "pending", text: done ? labels[1] : labels[0] };
+      return { tone: done ? "done" : "pending", text: done ? `Used ${name}` : `Using ${name}…` };
+    }
+  }
+}

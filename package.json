@@ -18,8 +18,10 @@
     "db:migrate": "bun scripts/db/migrate.ts"
   },
   "dependencies": {
+    "@ai-sdk/react": "^4.0.170",
     "@base-ui/react": "^1.9.0",
     "@neondatabase/serverless": "^1.2.0",
+    "@paypal/agent-toolkit": "^1.11.0",
     "@x402/core": "^2.30.0",
     "@x402/evm": "^2.30.0",
     "@x402/fetch": "^2.30.0",

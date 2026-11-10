@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import { BiddingAgentsSection } from "@/components/market/bidding/bidding-agents-section";
 import { ActivitySection } from "@/components/market/activity/activity-section";
+import { AskTender } from "@/components/ask/ask-tender";
 import { ProviderConditionsSection } from "@/components/market/conditions/provider-conditions-section";
 import { MarketUiProvider } from "@/components/market/market-ui";
 import { CreditsSection } from "@/components/credits/credits-section";
@@ -93,6 +94,7 @@ function MarketPageContent({ marketId, onSwitchMarket }: MarketPageProps) {
         onOpenApi={openApi}
       />
       <ApiDialog open={apiOpen} onOpenChange={setApiOpen} view={view} />
+      <AskTender marketId={marketId} onSwitchMarket={onSwitchMarket} />
     </>
   );
 }
