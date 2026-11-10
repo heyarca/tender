@@ -11,6 +11,8 @@ import { TenderLogo } from "./tender-logo";
 export interface TopNavLink {
   label: string;
   href: string;
+  /** Extra click handler, run by the anchor in the desktop list and in the mobile menu. */
+  onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void;
 }
 
 export interface TopNavProps {
@@ -86,6 +88,7 @@ export function TopNav({
                 key={link.href}
                 href={link.href}
                 aria-current={active ? "page" : undefined}
+                onClick={link.onClick}
                 className={cn(NAV_BUTTON, active ? "text-accent-foreground" : "text-muted-foreground")}
               >
                 {link.label}
@@ -129,7 +132,7 @@ function MobileMenu({ links, activeHref }: { links: readonly TopNavLink[]; activ
                   key={link.href}
                   closeOnClick
                   aria-current={active ? "page" : undefined}
-                  render={<Link href={link.href} />}
+                  render={<Link href={link.href} onClick={link.onClick} />}
                   className={cn(
                     "flex h-9 cursor-pointer items-center rounded-md px-2.5 text-button font-medium no-underline outline-none select-none data-highlighted:bg-accent-subtle data-highlighted:text-accent-foreground",
                     active ? "text-accent-foreground" : "text-muted-foreground",
