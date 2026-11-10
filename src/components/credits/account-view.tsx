@@ -111,14 +111,18 @@ function ApiKeys() {
   const [created, setCreated] = useState<{ key: CreatedApiKeyView; origin: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [revoking, setRevoking] = useState<string | null>(null);
+  // The key stays set while the dialog closes, so its text does not change mid-animation.
   const [revokeTarget, setRevokeTarget] = useState<ApiKeyView | null>(null);
+  const [revokeOpen, setRevokeOpen] = useState(false);
   const [revokeError, setRevokeError] = useState<string | null>(null);
   const revokeInFlight = useRef(false);
   const cancelRevokeRef = useRef<HTMLButtonElement>(null);
+  const keyNameRef = useRef<HTMLInputElement>(null);
 
   const requestRevoke = useCallback((key: ApiKeyView) => {
     setRevokeError(null);
     setRevokeTarget(key);
+    setRevokeOpen(true);
   }, []);
 
   const [version, setVersion] = useState(0);
@@ -172,7 +176,7 @@ function ApiKeys() {
         if (!response.ok) throw new Error(await errorMessage(response, "Could not revoke the key."));
         setCreated((current) => (current?.key.id === key.id ? null : current));
         setKeys((current) => current?.filter((item) => item.id !== key.id) ?? null);
-        setRevokeTarget(null);
+        setRevokeOpen(false);
         toast({ title: "Key revoked", description: `${key.label ?? "Untitled key"} (tk_${key.prefix}…) no longer works.` });
         reload();
       } catch (cause) {
@@ -204,9 +208,9 @@ function ApiKeys() {
       description="Requests with a key pay with this balance. Use a key with the SDK, the MCP server, or any HTTP client."
     >
       <Dialog
-        open={revokeTarget !== null}
+        open={revokeOpen}
         onOpenChange={(open) => {
-          if (!open && !revokeInFlight.current) setRevokeTarget(null);
+          if (!open && !revokeInFlight.current) setRevokeOpen(false);
         }}
       >
         <DialogContent
@@ -214,10 +218,12 @@ function ApiKeys() {
           title="Revoke API key?"
           description={`${revokeTarget?.label ?? "Untitled key"} (tk_${revokeTarget?.prefix ?? ""}…) will stop working immediately. Apps using this key will lose access. This cannot be undone.`}
           initialFocus={cancelRevokeRef}
+          // The revoked key's row is gone, so focus returns to the key form.
+          finalFocus={keyNameRef}
           showCloseButton={!revoking}
           footer={
             <>
-              <Button ref={cancelRevokeRef} variant="outline" onClick={() => setRevokeTarget(null)} disabled={revoking !== null}>
+              <Button ref={cancelRevokeRef} variant="outline" onClick={() => setRevokeOpen(false)} disabled={revoking !== null}>
                 Cancel
               </Button>
               <Button variant="destructive-outline" onClick={() => void revoke()} disabled={revoking !== null}>
@@ -242,6 +248,7 @@ function ApiKeys() {
           }}
         >
           <Input
+            ref={keyNameRef}
             aria-label="Key name"
             placeholder="Key name (optional)"
             value={label}

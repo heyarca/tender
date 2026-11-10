@@ -82,6 +82,7 @@ describe("API key revocation", () => {
     await act(async () => finish(new Response(null, { status: 204 })));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(deletes(fetcher)).toHaveLength(1);
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("textbox", { name: "Key name" })));
   });
 
   it("keeps the confirmation and error visible after a failed revoke", async () => {
