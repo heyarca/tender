@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createTender, DEFAULT_BASE_URL } from "../index.js";
-import { runStdioServer } from "../lib/mcp.js";
+import { runStdioServer, TOOLS } from "../lib/mcp.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(readFileSync(join(here, "..", "package.json"), "utf8"));
@@ -15,8 +15,8 @@ const bold = (s) => (process.stdout.isTTY ? `\x1b[1m${s}\x1b[22m` : s);
 const dim = (s) => (process.stdout.isTTY ? `\x1b[2m${s}\x1b[22m` : s);
 const lime = (s) => (process.stdout.isTTY ? `\x1b[38;2;200;255;0m${s}\x1b[39m` : s);
 
-// Flags that never take a value.
-const BOOLEAN_FLAGS = new Set(["help", "version"]);
+// Flags that never take a value, so `--paypal init` keeps `init` as the command.
+const BOOLEAN_FLAGS = new Set(["help", "version", "no-mcp", "paypal"]);
 
 function parseArgs(argv) {
   const args = [];
@@ -67,8 +67,70 @@ function installAgentInstructions(cwd) {
     } else {
       next = (current.trimEnd() ? `${current.trimEnd()}\n\n` : "") + `${AGENT_BLOCK}\n`;
     }
+    const name = file.replace(`${cwd}/`, "");
+    if (next === current) {
+      console.log(`${dim("·")} ${name} is up to date`);
+      continue;
+    }
     writeFileSync(file, next);
-    console.log(`${lime("✓")} ${existing.includes(file) ? "Updated" : "Created"} ${file.replace(`${cwd}/`, "")}`);
+    console.log(`${lime("✓")} ${existing.includes(file) ? "Updated" : "Created"} ${name}`);
+  }
+}
+
+// MCP configs for editor agents. Each entry: file, the key that holds servers, and how one server is written.
+const MCP_TARGETS = [
+  { file: ".mcp.json", client: "Claude Code", key: "mcpServers", entry: (server) => server },
+  { file: ".cursor/mcp.json", client: "Cursor", key: "mcpServers", entry: (server) => server },
+  { file: ".vscode/mcp.json", client: "VS Code", key: "servers", entry: (server) => ({ type: "stdio", ...server }) },
+];
+
+function mcpServers({ baseUrl, paypal }) {
+  const tenderArgs = ["-y", "@heyarca/tender@latest", "mcp"];
+  if (baseUrl) tenderArgs.push("--base-url", baseUrl);
+  const servers = { tender: { command: "npx", args: tenderArgs } };
+  // PayPal's official MCP server (npm @paypal/mcp). It reads PAYPAL_ACCESS_TOKEN from the environment,
+  // so no secret is written to the project.
+  if (paypal) servers.paypal = { command: "npx", args: ["-y", "@paypal/mcp", "--tools=all"], env: { PAYPAL_ENVIRONMENT: "SANDBOX" } };
+  return servers;
+}
+
+/** Merge Tender (and optionally PayPal) into each editor's MCP config. Existing servers are never removed or changed. */
+function installMcpConfigs(cwd, options) {
+  const servers = mcpServers(options);
+  for (const target of MCP_TARGETS) {
+    const file = join(cwd, target.file);
+    const label = `${target.file} ${dim(`(${target.client})`)}`;
+    let config = {};
+    if (existsSync(file)) {
+      const text = readFileSync(file, "utf8");
+      try {
+        config = text.trim() ? JSON.parse(text) : {};
+      } catch {
+        config = null;
+      }
+      if (config === null || typeof config !== "object" || Array.isArray(config) ||
+          (config[target.key] !== undefined && (typeof config[target.key] !== "object" || config[target.key] === null || Array.isArray(config[target.key])))) {
+        console.log(`${dim("!")} Skipped ${label}: the file is not plain JSON with a "${target.key}" object. Add this by hand:`);
+        const snippet = Object.fromEntries(Object.entries(servers).map(([name, server]) => [name, target.entry(server)]));
+        console.log(JSON.stringify({ [target.key]: snippet }, null, 2));
+        continue;
+      }
+    }
+    const existed = existsSync(file);
+    const current = { ...(config[target.key] ?? {}) };
+    const added = [];
+    for (const [name, server] of Object.entries(servers)) {
+      if (current[name] !== undefined) continue;
+      current[name] = target.entry(server);
+      added.push(name);
+    }
+    if (!added.length) {
+      console.log(`${dim("·")} ${label} already has ${Object.keys(servers).join(" and ")}`);
+      continue;
+    }
+    mkdirSync(dirname(file), { recursive: true });
+    writeFileSync(file, `${JSON.stringify({ ...config, [target.key]: current }, null, 2)}\n`);
+    console.log(`${lime("✓")} ${existed ? "Updated" : "Created"} ${label}: added ${added.join(", ")}`);
   }
 }
 
@@ -79,7 +141,8 @@ ${bold("Usage")}
   npx @heyarca/tender [command] [options]
 
 ${bold("Commands")}
-  init                Add Tender instructions for coding agents to AGENTS.md / CLAUDE.md (default)
+  init                Add Tender instructions to AGENTS.md / CLAUDE.md and the Tender MCP server to
+                      .mcp.json, .cursor/mcp.json, and .vscode/mcp.json (default)
   mcp                 Run the Tender MCP server on stdio (for Claude Code, Cursor, VS Code, ...)
   markets             List every market
   categories          List groups and categories with market counts
@@ -90,6 +153,10 @@ ${bold("Commands")}
 ${bold("Policy options")} ${dim("(market, quote)")}
   --max-price <usd/1M req>   --max-p95-ms <ms>   --max-data-age-ms <ms>
   --min-success-rate <0..1>  --preference lowest-cost|lowest-latency|freshest-data   --pin <provider>
+
+${bold("Init options")}
+  --no-mcp           Do not write MCP configs
+  --paypal           Also add PayPal's MCP server (@paypal/mcp; set PAYPAL_ACCESS_TOKEN in your environment)
 
 ${bold("Other")}
   --base-url <url>   API origin (default ${DEFAULT_BASE_URL})
@@ -115,6 +182,11 @@ async function main() {
   if (command === "init") {
     console.log(`${lime("■")} ${bold("Tender")} ${dim("· the execution market for APIs")}\n`);
     installAgentInstructions(process.cwd());
+    if (!flags["no-mcp"]) {
+      installMcpConfigs(process.cwd(), { baseUrl, paypal: Boolean(flags.paypal) });
+      console.log(`\nMCP tools: ${TOOLS.map((t) => t.name).join(", ")}. Restart your editor's agent to load them.`);
+      if (flags.paypal) console.log(`PayPal MCP needs ${bold("PAYPAL_ACCESS_TOKEN")} in your environment (sandbox by default).`);
+    }
     const markets = await tender.markets().catch(() => []);
     if (markets.length) console.log(`\n${markets.length} markets are open. Run ${bold("npx @heyarca/tender markets")} to list them.`);
     console.log(`Your agent can now move API integrations to Tender. Browse markets at ${tender.baseUrl}/markets`);
