@@ -184,7 +184,7 @@ export function BidHistoryGrid({ marketId }: { marketId: MarketId }) {
         autoHeight: true,
         valueGetter: ({ data }) => data?.reason ?? null,
         tooltip: true,
-        cellRenderer: ({ data }: CellProps) => (data ? <span className="whitespace-normal break-words text-muted-foreground">{data.reason}</span> : null),
+        cellRenderer: ({ data }: CellProps) => (data ? <span className="block py-2.5 leading-snug whitespace-normal break-words text-muted-foreground">{data.reason}</span> : null),
       },
     ],
     [definition],
