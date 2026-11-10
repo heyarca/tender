@@ -27,12 +27,14 @@ export async function POST(request: Request) {
   }
   // The account row is created on its first write (a spending limit or a top-up); the cookie names it now.
   const { accountId, setCookie } = cookieAccountForWrite(request);
+  const tools = await createAskTools({ accountId, origin: new URL(request.url).origin });
   const result = streamText({
     model: ASK_MODEL,
     providerOptions: { gateway: { models: ASK_FALLBACK_MODELS } },
     instructions: askInstructions(marketId, hasPayPalCredentials()),
-    messages: await convertToModelMessages(messages.slice(-MAX_MESSAGES)),
-    tools: await createAskTools({ accountId, origin: new URL(request.url).origin }),
+    // With the tools, earlier tool results reach the model through each tool's `toModelOutput`.
+    messages: await convertToModelMessages(messages.slice(-MAX_MESSAGES), { tools }),
+    tools,
     stopWhen: isStepCount(MAX_STEPS),
   });
   const response = createUIMessageStreamResponse({

@@ -23,7 +23,7 @@ export function askInstructions(marketId: string | null, paypal: boolean): strin
     "- Requests you run are real and paid with credits. Call them requests, not test requests.",
     ...(paypal
       ? [
-          "- When credits run low, offer top_up ($5, $10 or $20). The user approves it in PayPal.",
+          "- When credits run low, offer top_up ($5, $10 or $20). The panel shows an Approve in PayPal button. Never write PayPal links.",
           "- The paypal_ tools read PayPal orders and transactions and create and send invoices. Ask for the email address before you invoice.",
         ]
       : []),

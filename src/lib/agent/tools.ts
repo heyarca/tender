@@ -199,6 +199,14 @@ function topUpTool(accountId: string, origin: string) {
         return { error: errorMessage(error) };
       }
     },
+    // The panel shows the approve link as a button; the model never repeats it.
+    toModelOutput: ({ output }) => {
+      if ("error" in output) return { type: "json", value: output };
+      return {
+        type: "json",
+        value: { order_id: output.order_id, amount: output.amount, status: output.status, approval: "The panel shows an Approve in PayPal button." },
+      };
+    },
   });
 }
 
