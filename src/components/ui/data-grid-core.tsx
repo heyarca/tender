@@ -35,6 +35,7 @@ import {
   type ColDef,
   type FirstDataRenderedEvent,
   type GetRowIdParams,
+  type GridApi,
   type GridReadyEvent,
   type HeaderStyle,
   type HeaderStyleFunc,
@@ -289,6 +290,7 @@ export function DataGridCore<TData>({
   cellFocus = false,
   minBodyHeight,
   features = NO_FEATURES,
+  height,
   ...props
 }: DataGridProps<TData>) {
   const boxRef = useRef<HTMLDivElement>(null);
@@ -317,32 +319,43 @@ export function DataGridCore<TData>({
     [defaultColDef],
   );
 
+  /**
+   * React cells and header labels mount a moment after the rows, and the web font may still be loading.
+   * Size the columns once both have settled, then show the grid.
+   */
+  const settle = useCallback(
+    (api: GridApi<TData>) => {
+      const run = () => {
+        if (api.isDestroyed()) return;
+        if (autoSizeStrategy?.type === "fitCellContents") {
+          const { colIds, skipHeader, scaleUpToFitGridWidth, defaultMinWidth, defaultMaxWidth } = autoSizeStrategy;
+          api.autoSizeColumns({ colIds, skipHeader, scaleUpToFitGridWidth, defaultMinWidth, defaultMaxWidth });
+        }
+        setReady(true);
+      };
+      const fonts = typeof document !== "undefined" && document.fonts ? document.fonts.ready : Promise.resolve();
+      void fonts.then(() => requestAnimationFrame(() => requestAnimationFrame(run)));
+    },
+    [autoSizeStrategy],
+  );
+
   const handleGridReady = useCallback(
     (event: GridReadyEvent<TData>) => {
       const root = boxRef.current?.querySelector('[role="grid"], [role="treegrid"]');
       if (root && ariaLabel) root.setAttribute("aria-label", ariaLabel);
       onGridReady?.(event);
+      // An empty grid never renders "first data"; show it (with its overlay) right away.
+      if (rowData.length === 0) settle(event.api);
     },
-    [ariaLabel, onGridReady],
+    [ariaLabel, onGridReady, rowData.length, settle],
   );
 
   const handleFirstDataRendered = useCallback(
     (event: FirstDataRenderedEvent<TData>) => {
       onFirstDataRendered?.(event);
-      // React cells and header labels mount a moment after the rows, and the web font may still be
-      // loading. Size the columns once both have settled, then show the grid.
-      const settle = () => {
-        if (event.api.isDestroyed()) return;
-        if (autoSizeStrategy?.type === "fitCellContents") {
-          const { colIds, skipHeader, scaleUpToFitGridWidth, defaultMinWidth, defaultMaxWidth } = autoSizeStrategy;
-          event.api.autoSizeColumns({ colIds, skipHeader, scaleUpToFitGridWidth, defaultMinWidth, defaultMaxWidth });
-        }
-        setReady(true);
-      };
-      const fonts = typeof document !== "undefined" && document.fonts ? document.fonts.ready : Promise.resolve();
-      void fonts.then(() => requestAnimationFrame(() => requestAnimationFrame(settle)));
+      settle(event.api);
     },
-    [autoSizeStrategy, onFirstDataRendered],
+    [onFirstDataRendered, settle],
   );
 
   const handleRowClicked = useMemo(() => {
@@ -354,7 +367,7 @@ export function DataGridCore<TData>({
     };
   }, [onRowClicked]);
 
-  const style: CSSProperties | undefined = !ready && reserveHeight ? { minHeight: reserveHeight } : undefined;
+  const style: CSSProperties = { height, minHeight: ready ? undefined : reserveHeight };
   const theme = useMemo(() => {
     const base = density === "tight" ? dataGridThemeTight : dataGridTheme;
     return minBodyHeight ? base.withParams({ autoHeightMinBodyHeight: minBodyHeight }) : base;

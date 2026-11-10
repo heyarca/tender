@@ -15,6 +15,8 @@ import {
 import { format, getMarketDefinition, type MarketId } from "@/lib/tender";
 import { useTenderActions, useTenderSelector, useTenderStore } from "@/lib/tender/client";
 
+import { BidHistoryGrid } from "./bid-history-grid";
+
 interface RoundState {
   pending: boolean;
   last: BiddingRoundResult | null;
@@ -80,59 +82,53 @@ export function BiddingAgentsSection({ marketId }: { marketId: MarketId }) {
       id="bidding"
       icon={<Bot aria-hidden="true" />}
       title="Bidding agents"
-      description="Each provider has an agent that reprices its bid from recent wins and rival bids. Bids stay between 70% and 150% of the listed bid."
+      description="Each provider has an agent that reprices its bid from recent wins and rival bids. Bids stay between 70% and 150% of the listed bid. Every change lands in the bid history below."
       actions={
         <Button variant="outline" size="sm" onClick={() => void run()} disabled={pending}>
           {pending ? <LoaderCircle aria-hidden="true" className="motion-safe:animate-spin" /> : <Sparkles aria-hidden="true" />}
           Rebid now
         </Button>
       }
+      framed={false}
       data-market={marketId}
     >
-      <div className="flex flex-col gap-3 text-xs" aria-live="polite">
-        <dl className="flex flex-wrap gap-x-6 gap-y-1 text-muted-foreground">
-          <div className="flex gap-1.5">
-            <dt>Last round</dt>
-            <dd className="text-foreground tabular-nums">
-              {last ? format.time(last.at, timeZone, { seconds: true }) : "None yet"}
-            </dd>
-          </div>
-          <div className="flex gap-1.5">
-            <dt>Model</dt>
-            <dd className="font-mono text-foreground">{last?.model ?? BIDDING_MODEL}</dd>
-          </div>
-          {last ? (
+      <div className="flex flex-col gap-3 text-xs">
+        <div aria-live="polite" className="flex flex-col gap-3">
+          <dl className="flex flex-wrap gap-x-6 gap-y-1 text-muted-foreground">
             <div className="flex gap-1.5">
-              <dt>Took</dt>
-              <dd className="text-foreground tabular-nums">{(last.latencyMs / 1000).toFixed(1)} s</dd>
+              <dt>Last round</dt>
+              <dd className="text-foreground tabular-nums">
+                {last ? format.time(last.at, timeZone, { seconds: true }) : "None yet"}
+              </dd>
             </div>
+            <div className="flex gap-1.5">
+              <dt>Model</dt>
+              <dd className="font-mono text-foreground">{last?.model ?? BIDDING_MODEL}</dd>
+            </div>
+            {last ? (
+              <div className="flex gap-1.5">
+                <dt>Took</dt>
+                <dd className="text-foreground tabular-nums">{(last.latencyMs / 1000).toFixed(1)} s</dd>
+              </div>
+            ) : null}
+            <div className="flex gap-1.5">
+              <dt>Auto rounds</dt>
+              <dd className="text-foreground">{autoRun ? "Every 45 s while auto-run is on" : "Off (turn on auto-run)"}</dd>
+            </div>
+          </dl>
+          {pending ? (
+            <p className="text-muted-foreground">Agents are bidding…</p>
+          ) : error ? (
+            <p className="text-negative-text">{error}</p>
+          ) : last ? (
+            <p className="text-muted-foreground">
+              {changed.length
+                ? `${changed.length} of ${last.bids.length} agents changed their bids in the last round.`
+                : "No agent changed its bid in the last round."}
+            </p>
           ) : null}
-          <div className="flex gap-1.5">
-            <dt>Auto rounds</dt>
-            <dd className="text-foreground">{autoRun ? "Every 45 s while auto-run is on" : "Off (turn on auto-run)"}</dd>
-          </div>
-        </dl>
-        {pending ? (
-          <p className="text-muted-foreground">Agents are bidding…</p>
-        ) : error ? (
-          <p className="text-negative-text">{error}</p>
-        ) : last ? (
-          changed.length ? (
-            <ul className="flex flex-col gap-1">
-              {changed.map((bid) => (
-                <li key={bid.providerId} className="flex flex-wrap gap-x-2">
-                  <span className="font-medium text-foreground">{bid.name}</span>
-                  <span className="tabular-nums text-foreground">
-                    {format.price(bid.previousBid)} → {format.price(bid.bid)}
-                  </span>
-                  <span className="text-muted-foreground">{bid.reason}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-muted-foreground">No agent changed its bid in the last round.</p>
-          )
-        ) : null}
+        </div>
+        <BidHistoryGrid marketId={marketId} />
       </div>
     </Section>
   );

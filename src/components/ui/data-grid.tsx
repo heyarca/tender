@@ -81,6 +81,8 @@ export interface DataGridProps<TData>
   autoSizeStrategy?: AutoSizeStrategy | null;
   /** AG Grid features this grid uses. Read once, when the grid is created. */
   features?: readonly DataGridFeature[];
+  /** Fixed height in px, with `domLayout="normal"`: rows scroll inside the grid (row virtualisation). */
+  height?: number;
 }
 
 type GridComponent = <TData>(props: DataGridProps<TData>) => ReactNode;
@@ -141,7 +143,7 @@ export function DataGrid<TData>(props: DataGridProps<TData>) {
       ref={boxRef}
       data-slot={props["data-slot"]}
       className={cn("relative w-full min-w-0", props.className)}
-      style={props.reserveHeight ? { minHeight: props.reserveHeight } : undefined}
+      style={{ height: props.height, minHeight: props.reserveHeight }}
     >
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-lg border border-border bg-card" />
     </div>
