@@ -51,6 +51,15 @@ export const clientTools = {
   }),
 };
 
+/** Ledger entries read for this week's usage, and the newest of them shown to the model. */
+const MAX_LEDGER_ENTRIES = 500;
+const RECENT_ENTRIES = 5;
+
+/** Start of the ISO week (Monday 00:00 UTC), like the ledger's weekly spending limit. */
+function weekStart(now = new Date()): number {
+  return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - ((now.getUTCDay() + 6) % 7));
+}
+
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Something went wrong";
 }
@@ -96,11 +105,13 @@ function serverTools(accountId: string) {
       },
     }),
     get_balance: tool({
-      description: "The user's Tender credits, the approved weekly spending limit with this week's agent spend, and the latest ledger entries.",
+      description:
+        "The user's Tender credits, the approved weekly spending limit with this week's agent spend, this week's usage (all paid requests), and the latest ledger entries.",
       inputSchema: z.object({}),
       execute: async () => {
         const account = await getAccount(accountId);
-        const entries = account ? await listLedger(accountId, 5) : [];
+        const entries = account ? await listLedger(accountId, MAX_LEDGER_ENTRIES) : [];
+        const charges = entries.filter((entry) => entry.kind === "charge" && Date.parse(entry.createdAt) >= weekStart());
         const mandate = account?.mandate ?? null;
         const approved = readMandatePolicy(mandate?.policy);
         return {
@@ -114,7 +125,8 @@ function serverTools(accountId: string) {
                 policy: approved && isMarketId(approved.marketId) ? describePolicy(approved.marketId, approved.policy) : null,
               }
             : null,
-          recent: entries.map((entry) => ({
+          usage_this_week: { requests: charges.length, charged: formatMicros(-charges.reduce((sum, entry) => sum + entry.amountMicros, 0)) },
+          recent: entries.slice(0, RECENT_ENTRIES).map((entry) => ({
             kind: entry.kind,
             amount: formatMicros(entry.amountMicros),
             by: entry.actor,
