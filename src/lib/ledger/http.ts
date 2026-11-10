@@ -77,6 +77,7 @@ export function entryView(entry: LedgerEntry): LedgerEntryView {
     request_id: entry.requestId,
     paypal_order_id: entry.paypalOrderId,
     paypal_capture_id: entry.paypalCaptureId,
+    auto_top_up: entry.metadata.auto_top_up === true,
     created_at: entry.createdAt,
   };
 }

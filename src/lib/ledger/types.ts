@@ -75,6 +75,8 @@ export interface LedgerEntryView {
   request_id: string | null;
   paypal_order_id: string | null;
   paypal_capture_id: string | null;
+  /** A top-up Ask Tender made by itself from the saved PayPal. */
+  auto_top_up: boolean;
   created_at: string;
 }
 

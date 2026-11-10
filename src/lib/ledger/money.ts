@@ -13,6 +13,7 @@ async function balanceOf(accountId: string): Promise<number> {
  * Credits a captured PayPal payment. Exactly once per `captureId`: the balance update, the
  * ledger entry, and the order status change are one statement, and the unique index on
  * `ledger_entries.paypal_capture_id` rejects a second credit (a concurrent duplicate rolls back).
+ * The capture of an automatic top-up also completes it and labels its entry `auto_top_up`.
  */
 export async function creditTopUp(input: {
   accountId: string;
@@ -34,9 +35,16 @@ export async function creditTopUp(input: {
          where id = $1 and not exists (select 1 from prior)
          returning id, balance_micros
        ),
+       auto_top_up as (
+         update auto_top_ups set status = 'COMPLETED', paypal_capture_id = $4, updated_at = now()
+         where paypal_order_id = $3 and account_id = $1 and exists (select 1 from credit)
+         returning id
+       ),
        entry as (
-         insert into ledger_entries (account_id, kind, amount_micros, balance_after_micros, actor, paypal_order_id, paypal_capture_id)
-         select id, 'topup', $2::bigint, balance_micros, $5::text, $3, $4 from credit
+         insert into ledger_entries (account_id, kind, amount_micros, balance_after_micros, actor, paypal_order_id, paypal_capture_id, metadata)
+         select id, 'topup', $2::bigint, balance_micros, $5::text, $3, $4,
+           case when exists (select 1 from auto_top_up) then '{"auto_top_up": true}'::jsonb else '{}'::jsonb end
+         from credit
          returning id
        ),
        order_status as (
