@@ -9,6 +9,9 @@ import type { MarketId, ProviderId, RoutingPreference } from "@/lib/tender";
 /** Model for every bidding round (Vercel AI Gateway id). Change it here only. */
 export const BIDDING_MODEL = "openai/gpt-5-mini";
 
+/** Models the gateway tries when `BIDDING_MODEL` fails, for example on a rate limit. */
+export const BIDDING_FALLBACK_MODELS = ["google/gemini-2.5-flash"];
+
 /** Minimum time between rounds for one market, per server instance. */
 export const ROUND_MIN_INTERVAL_MS = 15_000;
 

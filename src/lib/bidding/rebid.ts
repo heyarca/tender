@@ -15,7 +15,7 @@ import {
 import { bidLimits, clampBid } from "./limits";
 import { BIDDING_SYSTEM_PROMPT, buildBiddingPrompt, type PromptProvider } from "./prompt";
 import { modelOutputSchema } from "./schema";
-import { BIDDING_MODEL, type BiddingRoundInput, type BiddingRoundResult, type ProviderBid } from "./types";
+import { BIDDING_FALLBACK_MODELS, BIDDING_MODEL, type BiddingRoundInput, type BiddingRoundResult, type ProviderBid } from "./types";
 
 export type BiddingErrorCode = "invalid_request" | "model_error" | "not_configured";
 
@@ -112,6 +112,7 @@ export async function rebid(input: BiddingRoundInput, options: RebidOptions = {}
       reasoning: "low",
       maxRetries: 1,
       timeout: 45_000,
+      providerOptions: { gateway: { models: BIDDING_FALLBACK_MODELS } },
     });
     output = result.output;
   } catch (error) {
