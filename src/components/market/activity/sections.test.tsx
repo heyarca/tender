@@ -95,33 +95,16 @@ describe("ProviderConditionsSection", () => {
   it("edits the serving provider, keeps it selected after failover, and explains the switch", () => {
     const store = setup(<ProviderConditionsSection marketId="sf-weather" />);
     const section = document.getElementById("conditions")!;
-    expect(within(section).getByRole("combobox", { name: "Provider" }).textContent).toContain("Fernline");
 
     fireEvent.click(within(section).getByRole("button", { name: "Add 300 ms latency" }));
     const fernline = sf(store).providers.find((p) => p.id === "fernline")!;
     expect(fernline.conditions.p95LatencyMs).toBe(510);
     expect(sf(store).route.activeProviderId).toBe("kitefin");
-    expect(within(section).getByRole("combobox", { name: "Provider" }).textContent).toContain("Fernline");
+    expect(within(section).getByText("Quick changes for Fernline")).toBeTruthy();
     expect(within(section).getByText("Fernline no longer qualifies: P95 510 ms exceeds 400 ms.")).toBeTruthy();
     expect(
       within(section).getByText("Route switched from Fernline to Kitefin, which ranks first for lowest cost."),
     ).toBeTruthy();
-
-    fireEvent.click(within(section).getByRole("button", { name: "Restore provider Fernline to default conditions" }));
-    expect(sf(store).providers.find((p) => p.id === "fernline")!.conditions.p95LatencyMs).toBe(210);
-  });
-
-  it("submits a bid only with Update bid", () => {
-    const store = setup(<ProviderConditionsSection marketId="sf-weather" />);
-    const section = document.getElementById("conditions")!;
-    const update = within(section).getByRole("button", { name: "Update bid" }) as HTMLButtonElement;
-    expect(update.disabled).toBe(true);
-    fireEvent.change(within(section).getByRole("textbox", { name: "Bid" }), { target: { value: "45" } });
-    expect(update.disabled).toBe(false);
-    expect(sf(store).providers.find((p) => p.id === "fernline")!.conditions.bidPrice).toBe(18);
-    fireEvent.click(update);
-    expect(sf(store).providers.find((p) => p.id === "fernline")!.conditions.bidPrice).toBe(45);
-    expect(within(section).getByText("Fernline no longer qualifies: Bid $45.00 exceeds $40.00 /M.")).toBeTruthy();
   });
 
   it("takes a provider offline and resets every provider", () => {
@@ -129,7 +112,6 @@ describe("ProviderConditionsSection", () => {
     const section = document.getElementById("conditions")!;
     fireEvent.click(within(section).getByRole("button", { name: "Take offline" }));
     expect(sf(store).providers.find((p) => p.id === "fernline")!.conditions.available).toBe(false);
-    expect(within(section).getByRole("switch").getAttribute("aria-checked")).toBe("false");
     fireEvent.click(within(section).getByRole("button", { name: /Reset conditions for all providers/ }));
     expect(sf(store).providers.find((p) => p.id === "fernline")!.conditions.available).toBe(true);
   });

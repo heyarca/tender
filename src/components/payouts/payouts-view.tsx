@@ -1,16 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import type { GridApi } from "ag-grid-community";
 import { Banknote, Loader2, Send } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { ExportCsvButton } from "@/components/ui/data-grid-features";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Section } from "@/components/ui/section";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatCard } from "@/components/ui/stat-card";
 import type { PayoutBatch, ProviderEarnings } from "@/lib/paypal/payouts";
 
-import { BatchesGrid } from "./batches-grid";
+import { BatchesGrid, type BatchRow } from "./batches-grid";
 import { EarningsGrid } from "./earnings-grid";
 import { formatCents, formatMicros } from "./format";
 
@@ -47,6 +49,8 @@ export function PayoutsView() {
   const [settling, setSettling] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
+  const [earningsApi, setEarningsApi] = useState<GridApi<ProviderEarnings> | null>(null);
+  const [batchesApi, setBatchesApi] = useState<GridApi<BatchRow> | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -136,23 +140,35 @@ export function PayoutsView() {
         <StatCard label="Paid with PayPal" value={data ? formatCents(paid) : "—"} sub="Successful batches" />
       </div>
 
-      <Section id="earnings" title="Provider earnings" description="Unpaid earnings per provider. Earnings under $0.01 wait for the next payout." framed={false}>
+      <Section
+        id="earnings"
+        title="Provider earnings"
+        description="Unpaid earnings per provider. Earnings under $0.01 wait for the next payout."
+        framed={false}
+        actions={earnings.length ? <ExportCsvButton api={earningsApi} fileName="tender-provider-earnings.csv" /> : null}
+      >
         {data === null ? (
           <Skeleton className="h-40 w-full rounded-lg" />
         ) : earnings.length === 0 ? (
           <EmptyState className="rounded-lg border border-border" icon={<Banknote />} title="No unpaid earnings" description="Earnings appear here after paid requests." />
         ) : (
-          <EarningsGrid earnings={earnings} />
+          <EarningsGrid earnings={earnings} onApi={setEarningsApi} />
         )}
       </Section>
 
-      <Section id="batches" title="Payout batches" description="Each batch pays every connected provider at once. Click a batch to see each provider." framed={false}>
+      <Section
+        id="batches"
+        title="Payout batches"
+        description="Each batch pays every connected provider at once. Click a batch to see each provider."
+        framed={false}
+        actions={batches.length ? <ExportCsvButton api={batchesApi} fileName="tender-payout-batches.csv" /> : null}
+      >
         {data === null ? (
           <Skeleton className="h-40 w-full rounded-lg" />
         ) : batches.length === 0 ? (
           <EmptyState className="rounded-lg border border-border" icon={<Send />} title="No payouts yet" description="Select Settle now to pay provider earnings." />
         ) : (
-          <BatchesGrid batches={batches} expanded={expanded} onToggle={toggle} />
+          <BatchesGrid batches={batches} expanded={expanded} onToggle={toggle} onApi={setBatchesApi} />
         )}
       </Section>
     </div>

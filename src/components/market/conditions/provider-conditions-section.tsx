@@ -1,29 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
-  Check,
   Clock,
   Gauge,
   Power,
+  Redo2,
   RotateCcw,
   SlidersHorizontal,
   TrendingDown,
   TrendingUp,
-  X,
+  Undo2,
   type LucideIcon,
 } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Section } from "@/components/ui/section";
-import { Select } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
+import { Tooltip } from "@/components/ui/tooltip";
 import {
-  format,
   selectMarketView,
-  type CheckId,
   type ConditionsPatch,
+  type MarketId,
   type MarketView,
   type ProviderConditions,
   type ProviderId,
@@ -35,17 +32,8 @@ import { cn } from "@/lib/utils";
 import { useSelectedProvider, type MarketSectionProps } from "../market-ui";
 import { decisionFingerprint, describeMarketChange, type ChangeNote } from "../policy/market-change";
 import { NOTE_TEXT } from "../policy/routing-policy-section";
-import { SpecField, type FieldDraft } from "../policy/spec-field";
-import { displayOf, engineOf, formatSpecValue } from "../policy/spec-values";
-import { roleBadge, roleSummary, scenarioActions, statusTone, type ScenarioId } from "./conditions-helpers";
-
-type NumericCondition = "p95LatencyMs" | "dataAgeMs" | "errorRate";
-
-const NUMERIC_FIELDS: readonly { key: NumericCondition; label: string }[] = [
-  { key: "p95LatencyMs", label: "P95 latency" },
-  { key: "dataAgeMs", label: "Data age" },
-  { key: "errorRate", label: "Error rate" },
-];
+import { scenarioActions, type ScenarioId } from "./conditions-helpers";
+import { ConditionsGrid } from "./conditions-grid";
 
 const SCENARIO_ICONS: Record<ScenarioId, LucideIcon> = {
   "raise-bid": TrendingUp,
@@ -55,11 +43,20 @@ const SCENARIO_ICONS: Record<ScenarioId, LucideIcon> = {
   availability: Power,
 };
 
-const CHECK_DISPLAY_ORDER: readonly CheckId[] = ["price", "latency", "freshness", "reliability", "availability"];
+const UNDO_LIMIT = 20;
 
 interface ProviderNote extends ChangeNote {
   providerId: ProviderId | null;
 }
+
+/** One undoable change: the conditions of each affected provider before and after it. */
+interface Change {
+  before: Record<ProviderId, ConditionsPatch>;
+  after: Record<ProviderId, ConditionsPatch>;
+}
+
+const pick = (conditions: ProviderConditions, patch: ConditionsPatch): ConditionsPatch =>
+  Object.fromEntries(Object.keys(patch).map((key) => [key, conditions[key as keyof ProviderConditions]])) as ConditionsPatch;
 
 /** Resolve the provider the panel edits: the selection, else the serving provider, else rank 1, else the first. */
 export function resolveEditedProvider(view: MarketView, selectedId: ProviderId | null): ProviderRow {
@@ -71,150 +68,140 @@ export function resolveEditedProvider(view: MarketView, selectedId: ProviderId |
   );
 }
 
-/** Provider conditions: edit one provider's bid and performance and watch qualification and routing react. */
+/**
+ * Provider conditions: every provider's bid and performance in an editable grid. Edits run the store's
+ * provider actions, so qualification and routing react at once, and each change can be undone.
+ */
 export function ProviderConditionsSection({ marketId }: MarketSectionProps) {
   const view = useMarketView(marketId);
-  const { resetConditions } = useTenderActions();
-  const store = useTenderStore();
-  const [note, setNote] = useState<ProviderNote | null>(null);
+  return <ConditionsEditor key={marketId} marketId={marketId} view={view} />;
+}
 
-  const apply = (providerId: ProviderId | null, action: () => void) => {
-    const before = selectMarketView(store.api.getState().markets[marketId]);
-    action();
-    const after = selectMarketView(store.api.getState().markets[marketId]);
-    setNote(before === after ? null : { ...describeMarketChange(before, after, providerId), providerId });
+function ConditionsEditor({ marketId, view }: { marketId: MarketId; view: MarketView }) {
+  const { updateProvider } = useTenderActions();
+  const store = useTenderStore();
+  const [selectedId, select] = useSelectedProvider(marketId);
+  const [note, setNote] = useState<ProviderNote | null>(null);
+  const [history, setHistory] = useState<{ undo: Change[]; redo: Change[] }>({ undo: [], redo: [] });
+
+  const current = useCallback(() => selectMarketView(store.api.getState().markets[marketId]), [store, marketId]);
+
+  /** Apply patches through the store and explain what the route did. */
+  const applyPatches = useCallback(
+    (patches: Record<ProviderId, ConditionsPatch>, focusId: ProviderId | null, extra?: string) => {
+      const before = current();
+      for (const [providerId, patch] of Object.entries(patches)) updateProvider(marketId, providerId, patch);
+      const after = current();
+      const described = describeMarketChange(before, after, focusId);
+      const lines = extra ? [extra, ...described.lines] : described.lines;
+      setNote(lines.length ? { ...described, lines, providerId: focusId } : null);
+    },
+    [current, marketId, updateProvider],
+  );
+
+  /** A new change: apply it and put it on the undo stack. */
+  const commit = useCallback(
+    (after: Record<ProviderId, ConditionsPatch>, focusId: ProviderId | null, extra?: string) => {
+      const view = current();
+      const before = Object.fromEntries(
+        Object.entries(after).map(([id, patch]) => [id, pick(view.providersById[id].conditions, patch)]),
+      );
+      applyPatches(after, focusId, extra);
+      setHistory((h) => ({ undo: [...h.undo, { before, after }].slice(-UNDO_LIMIT), redo: [] }));
+    },
+    [applyPatches, current],
+  );
+
+  const onEdit = useCallback(
+    (providerId: ProviderId, patch: ConditionsPatch, clampNote?: string) => {
+      if (selectedId !== providerId) select(providerId);
+      commit({ [providerId]: patch }, providerId, clampNote);
+    },
+    [commit, select, selectedId],
+  );
+
+  const onRestore = useCallback(
+    (providerId: ProviderId) => {
+      const row = current().providersById[providerId];
+      commit({ [providerId]: { ...row.defaults } }, providerId);
+    },
+    [commit, current],
+  );
+
+  const resetAll = () => {
+    const modified = current().providers.filter((row) => row.modified);
+    commit(Object.fromEntries(modified.map((row) => [row.id, { ...row.defaults }])), null);
   };
 
+  const onUndo = useCallback(() => {
+    const change = history.undo[history.undo.length - 1];
+    if (!change) return;
+    applyPatches(change.before, Object.keys(change.before).length === 1 ? Object.keys(change.before)[0] : null);
+    setHistory((h) => ({ undo: h.undo.slice(0, -1), redo: [...h.redo, change] }));
+  }, [applyPatches, history.undo]);
+
+  const onRedo = useCallback(() => {
+    const change = history.redo[history.redo.length - 1];
+    if (!change) return;
+    applyPatches(change.after, Object.keys(change.after).length === 1 ? Object.keys(change.after)[0] : null);
+    setHistory((h) => ({ undo: [...h.undo, change], redo: h.redo.slice(0, -1) }));
+  }, [applyPatches, history.redo]);
+
   const modifiedCount = view.providers.filter((row) => row.modified).length;
+  const row = resolveEditedProvider(view, selectedId);
+  const visibleNote = note && note.fingerprint === decisionFingerprint(view) ? note : null;
 
   return (
     <Section
       id="conditions"
       icon={<SlidersHorizontal aria-hidden="true" />}
       title="Provider conditions"
-      description="Change a provider's bid or performance. Its status and the route update immediately."
+      description="Edit any provider's bid or performance like a spreadsheet: select a value, type, and press Enter. Status and the route update immediately."
+      framed={false}
       actions={
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => apply(null, () => resetConditions(marketId))}
-          disabled={!view.conditionsModified}
-          aria-label={
-            modifiedCount
-              ? `Reset conditions for all providers (${modifiedCount} modified)`
-              : "Reset conditions for all providers"
-          }
-        >
-          <RotateCcw aria-hidden="true" />
-          Reset conditions
-        </Button>
-      }
-      className="flex flex-col last:mb-10"
-      bodyClassName="flex flex-1 flex-col"
-      data-market={marketId}
-    >
-      <ConditionsEditor key={marketId} view={view} note={note} apply={apply} />
-    </Section>
-  );
-}
-
-function ConditionsEditor({
-  view,
-  note,
-  apply,
-}: {
-  view: MarketView;
-  note: ProviderNote | null;
-  apply: (providerId: ProviderId | null, action: () => void) => void;
-}) {
-  const marketId = view.id;
-  const [selectedId, select] = useSelectedProvider(marketId);
-  const { restoreProvider } = useTenderActions();
-  const row = resolveEditedProvider(view, selectedId);
-  /**
-   * Edits pin the panel to the edited provider, so a failover away from the
-   * serving provider does not swap the panel to the new one mid-task.
-   */
-  const applyToRow = (providerId: ProviderId | null, action: () => void) => {
-    if (providerId && selectedId !== providerId) select(providerId);
-    apply(providerId, action);
-  };
-  const status = roleBadge(row);
-  const visibleNote =
-    note && (note.providerId === null || note.providerId === row.id) && note.fingerprint === decisionFingerprint(view)
-      ? note
-      : null;
-
-  const pickerItems = view.definition.providers.map((provider) => {
-    const providerRow = view.providersById[provider.id];
-    const role = roleBadge(providerRow);
-    return {
-      value: provider.id,
-      textValue: provider.name,
-      label: (
-        <span className="inline-flex items-center gap-1.5">
-          {provider.name}
-          {providerRow.modified ? (
-            <span aria-label="modified" className="size-1.5 shrink-0 rounded-full bg-primary-strong" />
-          ) : null}
-        </span>
-      ),
-      image: provider.logo,
-      description:
-        providerRow.role === "excluded" || providerRow.role === "standby"
-          ? `${providerRow.statusLabel}${providerRow.modified ? " · modified" : ""}`
-          : `${role.label} · ${providerRow.statusLabel}${providerRow.modified ? " · modified" : ""}`,
-    };
-  });
-
-  return (
-    <div className="flex flex-1 flex-col gap-5">
-      <div className="flex flex-col gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <Select
-            items={pickerItems}
-            value={row.id}
-            onValueChange={(providerId) => select(providerId)}
-            aria-label="Provider"
-            className="w-52 max-w-full"
-          />
-          <Badge tone={statusTone(row.status)}>{row.statusLabel}</Badge>
-          <Badge tone={status.tone}>{status.label}</Badge>
-          {row.modified ? (
-            <Badge variant="outline" tone="active" title="Conditions differ from defaults">
-              Modified
-            </Badge>
-          ) : null}
-        </div>
-        <div className="flex items-start gap-3">
-          <p className="min-w-0 flex-1 pt-1 text-caption leading-snug text-muted-foreground">
-            {roleSummary(row, view.policy.preference)}
-          </p>
+        <>
+          <Tooltip content="Undo (⌘Z in the grid)">
+            <Button variant="ghost" size="icon-sm" onClick={onUndo} disabled={!history.undo.length} aria-label="Undo the last change">
+              <Undo2 aria-hidden="true" />
+            </Button>
+          </Tooltip>
+          <Tooltip content="Redo (⌘⇧Z in the grid)">
+            <Button variant="ghost" size="icon-sm" onClick={onRedo} disabled={!history.redo.length} aria-label="Redo">
+              <Redo2 aria-hidden="true" />
+            </Button>
+          </Tooltip>
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
-            className="-mr-2.5 shrink-0"
-            onClick={() => applyToRow(row.id, () => restoreProvider(marketId, row.id))}
-            disabled={!row.modified}
-            aria-label={`Restore provider ${row.name} to default conditions`}
+            onClick={resetAll}
+            disabled={!view.conditionsModified}
+            aria-label={
+              modifiedCount
+                ? `Reset conditions for all providers (${modifiedCount} modified)`
+                : "Reset conditions for all providers"
+            }
           >
             <RotateCcw aria-hidden="true" />
-            Restore provider
+            Reset conditions
           </Button>
-        </div>
-      </div>
-
-      <ProviderFields key={row.id} view={view} row={row} apply={applyToRow} />
-
-      <ScenarioBar view={view} row={row} apply={applyToRow} />
-
-      <div className="mt-auto flex flex-col gap-3">
+        </>
+      }
+      data-market={marketId}
+    >
+      <div className="flex flex-col gap-4">
+        <ConditionsGrid
+          view={view}
+          selectedId={selectedId}
+          onSelect={select}
+          onEdit={onEdit}
+          onRestore={onRestore}
+          onUndo={onUndo}
+          onRedo={onRedo}
+        />
         <div
           role="status"
           className={cn(
-            visibleNote
-              ? "rounded-lg border border-border bg-muted px-3.5 py-2.5 text-caption leading-snug"
-              : "sr-only",
+            visibleNote ? "rounded-lg border border-border bg-muted px-3.5 py-2.5 text-caption leading-snug" : "sr-only",
             visibleNote && NOTE_TEXT[visibleNote.tone],
           )}
         >
@@ -222,136 +209,24 @@ function ConditionsEditor({
             <p key={line}>{line}</p>
           ))}
         </div>
-        <PolicyChecks row={row} />
+        <ScenarioBar view={view} row={row} onEdit={onEdit} />
       </div>
-    </div>
-  );
-}
-
-function ProviderFields({
-  view,
-  row,
-  apply,
-}: {
-  view: MarketView;
-  row: ProviderRow;
-  apply: (providerId: ProviderId | null, action: () => void) => void;
-}) {
-  const marketId = view.id;
-  const { updateProvider } = useTenderActions();
-  const specs = view.definition.conditionInputs;
-  const [drafts, setDrafts] = useState<Partial<Record<keyof ProviderConditions, FieldDraft>>>({});
-
-  const setDraft = (field: keyof ProviderConditions, draft: FieldDraft | null) =>
-    setDrafts((current) => {
-      const next = { ...current };
-      if (draft) next[field] = draft;
-      else delete next[field];
-      return next;
-    });
-
-  const update = (patch: ConditionsPatch) => apply(row.id, () => updateProvider(marketId, row.id, patch));
-
-  const bidSpec = specs.bidPrice;
-  const bidDisplay = displayOf(bidSpec, row.conditions.bidPrice);
-  const bidDraft = drafts.bidPrice ?? null;
-  const bidChanged = bidDraft !== null && bidDraft.value !== null && bidDraft.value !== bidDisplay;
-  const submitBid = () => {
-    if (!bidDraft || bidDraft.value === null) return;
-    const next = engineOf(bidSpec, bidDraft.value);
-    setDraft("bidPrice", null);
-    if (next !== row.conditions.bidPrice) update({ bidPrice: next });
-  };
-
-  return (
-    <div className="grid grid-cols-2 gap-x-4 gap-y-4">
-      <SpecField
-        id={`conditions-${marketId}-bidPrice`}
-        label="Bid"
-        spec={bidSpec}
-        value={bidDisplay}
-        draft={bidDraft}
-        onDraftChange={(draft) => setDraft("bidPrice", draft)}
-        onSubmit={submitBid}
-        modified={row.modifiedFields.includes("bidPrice")}
-        defaultLabel={formatSpecValue(bidSpec, row.defaults.bidPrice)}
-        onReset={() => update({ bidPrice: row.defaults.bidPrice })}
-        action={
-          <Button variant={bidChanged ? "primary" : "outline"} onClick={submitBid} disabled={!bidChanged}>
-            Update bid
-          </Button>
-        }
-        hint={
-          bidChanged ? (
-            <span className="text-warning-text">
-              Not submitted. Current bid {format.price(row.conditions.bidPrice)} /M req.
-            </span>
-          ) : undefined
-        }
-        className="col-span-2"
-        fieldClassName="sm:max-w-64"
-      />
-      {NUMERIC_FIELDS.map(({ key, label }) => {
-        const spec = specs[key];
-        return (
-          <SpecField
-            key={key}
-            id={`conditions-${marketId}-${key}`}
-            label={label}
-            spec={spec}
-            value={displayOf(spec, row.conditions[key])}
-            draft={drafts[key] ?? null}
-            onDraftChange={(draft) => setDraft(key, draft)}
-            onCommit={(display) => update({ [key]: engineOf(spec, display) })}
-            modified={row.modifiedFields.includes(key)}
-            defaultLabel={formatSpecValue(spec, row.defaults[key])}
-            onReset={() => update({ [key]: row.defaults[key] })}
-          />
-        );
-      })}
-      <div className="flex min-w-0 flex-col">
-        <div className="mb-1.5 flex min-h-5 items-center gap-1">
-          <span
-            id={`conditions-${marketId}-available-label`}
-            className="text-caption font-medium text-muted-foreground"
-          >
-            Availability
-          </span>
-          {row.modifiedFields.includes("available") ? (
-            <span aria-hidden="true" className="ml-0.5 size-1.5 rounded-full bg-primary-strong" />
-          ) : null}
-        </div>
-        <label className="flex h-8 cursor-pointer items-center gap-2.5 rounded-md border border-input bg-input-bg px-2.5 text-body text-foreground">
-          <Switch
-            checked={row.conditions.available}
-            onCheckedChange={(available) => update({ available })}
-            aria-labelledby={`conditions-${marketId}-available-label conditions-${marketId}-available-text`}
-          />
-          <span id={`conditions-${marketId}-available-text`}>
-            {row.conditions.available ? "Available" : "Not responding"}
-          </span>
-        </label>
-        <div className="mt-1.5 flex min-h-4 items-center text-caption text-faint">
-          Default {row.defaults.available ? "available" : "not responding"}
-        </div>
-      </div>
-    </div>
+    </Section>
   );
 }
 
 function ScenarioBar({
   view,
   row,
-  apply,
+  onEdit,
 }: {
   view: MarketView;
   row: ProviderRow;
-  apply: (providerId: ProviderId | null, action: () => void) => void;
+  onEdit: (providerId: ProviderId, patch: ConditionsPatch) => void;
 }) {
-  const { updateProvider } = useTenderActions();
   const scenarios = scenarioActions(view.definition, row);
   return (
-    <div className="flex flex-col gap-1.5 border-t border-border pt-5">
+    <div className="flex flex-col gap-1.5">
       <span id={`conditions-${view.id}-quick`} className="text-caption font-medium text-muted-foreground">
         Quick changes for {row.name}
       </span>
@@ -366,7 +241,7 @@ function ScenarioBar({
               size="sm"
               className="gap-1 px-2 [&_svg]:size-3.5 [&_svg]:text-muted-foreground"
               disabled={!patch}
-              onClick={patch ? () => apply(row.id, () => updateProvider(view.id, row.id, patch)) : undefined}
+              onClick={patch ? () => onEdit(row.id, patch) : undefined}
             >
               <Icon aria-hidden="true" />
               {scenario.label}
@@ -374,35 +249,6 @@ function ScenarioBar({
           );
         })}
       </div>
-    </div>
-  );
-}
-
-function PolicyChecks({ row }: { row: ProviderRow }) {
-  const checks = CHECK_DISPLAY_ORDER.map((id) => row.evaluation.checks.find((check) => check.check === id)!);
-  return (
-    <div className="flex flex-col gap-1.5">
-      <span className="text-caption font-medium text-muted-foreground">
-        Policy checks · {row.evaluation.qualifies ? "qualifies" : `${row.evaluation.reasons.length} failing`}
-      </span>
-      <ul className="grid grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-2">
-        {checks.map((check) => (
-          <li
-            key={check.check}
-            className={cn(
-              "flex items-start gap-1.5 text-caption leading-snug",
-              check.passed ? "text-muted-foreground" : "text-negative-text",
-            )}
-          >
-            {check.passed ? (
-              <Check aria-label="Pass" className="mt-px size-3.5 shrink-0 text-positive" strokeWidth={2.25} />
-            ) : (
-              <X aria-label="Fail" className="mt-px size-3.5 shrink-0 text-negative" strokeWidth={2.25} />
-            )}
-            <span>{check.message}</span>
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }
