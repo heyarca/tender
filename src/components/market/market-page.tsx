@@ -75,10 +75,8 @@ function MarketPageContent({ marketId, onSwitchMarket }: MarketPageProps) {
           <div className="min-w-0">
             <ProvidersSection key={`providers-${marketId}`} marketId={marketId} />
             <BiddingAgentsSection key={`bidding-${marketId}`} marketId={marketId} />
-            <div className="grid grid-cols-1 gap-x-6 xl:grid-cols-2">
-              <RoutingPolicySection key={`routing-${marketId}`} marketId={marketId} />
-              <ProviderConditionsSection key={`conditions-${marketId}`} marketId={marketId} />
-            </div>
+            <RoutingPolicySection key={`routing-${marketId}`} marketId={marketId} />
+            <ProviderConditionsSection key={`conditions-${marketId}`} marketId={marketId} />
             <CreditsSection key={`credits-${marketId}`} marketId={marketId} />
             <PaymentsSection key={`payments-${marketId}`} marketId={marketId} />
             <ActivitySection key={`activity-${marketId}`} marketId={marketId} />
