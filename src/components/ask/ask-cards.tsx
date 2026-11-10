@@ -13,7 +13,8 @@ import { AUTO_TOP_UP_MICROS, LOW_BALANCE_MICROS } from "@/lib/ledger/auto-top-up
 import { describePolicy, toRoutingPolicy } from "@/lib/agent/policy";
 import type { AskUITools } from "@/lib/agent/types";
 import { getMarketSpec } from "@/lib/registry";
-import { isMarketId } from "@/lib/tender";
+import { format, isMarketId, selectMarketView } from "@/lib/tender";
+import { useTenderSelector } from "@/lib/tender/client";
 
 type LimitInput = AskUITools["request_spending_limit"]["input"];
 type LimitOutput = AskUITools["request_spending_limit"]["output"];
@@ -60,6 +61,8 @@ export function SpendingLimitCard({ input, output, onAnswer }: { input: LimitInp
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const known = isMarketId(input.marketId);
+  const view = useTenderSelector((state) => isMarketId(input.marketId) ? selectMarketView(state.markets[input.marketId]) : null);
+  const provider = view?.route.activeProvider;
   const answered = output !== undefined;
 
   useEffect(() => {
@@ -117,6 +120,7 @@ export function SpendingLimitCard({ input, output, onAnswer }: { input: LimitInp
         <Row label="Weekly limit" value={formatMicros(usdToMicros(input.weeklyCapUsd))} />
         <Row label="Market" value={getMarketSpec(input.marketId)?.name ?? input.marketId} />
         {policy ? <Row label="Policy" value={policy} /> : null}
+        <Row label="Current provider" value={provider ? `${provider.name} · ${format.price(provider.conditions.bidPrice)} /M` : "No provider meets the policy"} />
         {paypalSaved ? <Row label="Automatic top-ups" value="PayPal saved" /> : null}
       </dl>
       <p className="text-caption leading-snug text-muted-foreground">

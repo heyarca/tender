@@ -38,7 +38,7 @@ export const clientTools = {
   }),
   request_spending_limit: tool({
     description:
-      "Ask the user to approve a weekly spending limit for Ask Tender, with the market and routing policy to use. The user approves or declines in the panel. Required before any paid request.",
+      "Apply the requested routing policy and show a weekly spending approval card with the current provider and bid. Use directly when the market and budget are known; no separate get_market or apply_policy is needed. The user must approve in the panel before any paid request. Applying routing alone never spends credits.",
     inputSchema: z.object({
       weeklyCapUsd: z.number().positive().max(MAX_WEEKLY_CAP_USD).describe("Weekly limit in USD, for example 5"),
       marketId: marketIdSchema,

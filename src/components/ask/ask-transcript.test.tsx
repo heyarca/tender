@@ -23,3 +23,15 @@ describe("invoice transcript", () => {
     expect(screen.getByText(/Sent PayPal invoice/)).toBeTruthy();
   });
 });
+
+it("keeps useful progress visible between completed tools and the next model step", () => {
+  const message: AskUIMessage = { id: "routing", role: "assistant", parts: [{ type: "tool-apply_policy", toolCallId: "policy", state: "output-available", input: { marketId: "sf-weather", policy: {} }, output: { applied: true, market: "San Francisco Weather" } }] };
+  render(<AskTranscript {...props} status="streaming" messages={[message]} />);
+  expect(screen.getByRole("status").textContent).toContain("Preparing your routing");
+});
+
+it("does not show a second pending indicator while the approval card waits for the user", () => {
+  const message: AskUIMessage = { id: "approval", role: "assistant", parts: [{ type: "tool-request_spending_limit", toolCallId: "limit", state: "input-available", input: { marketId: "sf-weather", weeklyCapUsd: 5, policy: {} } }] };
+  render(<AskTranscript {...props} status="streaming" messages={[message]} />);
+  expect(screen.queryByRole("status")).toBeNull();
+});

@@ -21,8 +21,9 @@ function ActivityRow({ activity }: { activity: Activity }) {
         activity.tone === "error" ? "text-negative-text" : "text-muted-foreground",
       )}
       data-tone={activity.tone}
+      role={activity.tone === "pending" ? "status" : undefined}
     >
-      {activity.tone === "pending" ? <LoaderCircle aria-hidden="true" className="animate-spin" /> : null}
+      {activity.tone === "pending" ? <LoaderCircle aria-hidden="true" className="animate-spin motion-reduce:animate-none" /> : null}
       {activity.tone === "done" ? <CircleCheck aria-hidden="true" className="text-primary-strong" /> : null}
       {activity.tone === "error" ? <TriangleAlert aria-hidden="true" /> : null}
       <span className="min-w-0">{activity.text}</span>
@@ -94,7 +95,14 @@ export interface AskTranscriptProps {
 /** Chat transcript: user bubbles, assistant text, tool activity rows, and approval cards. */
 export function AskTranscript({ messages, status, error, onRetry, onLimitAnswer }: AskTranscriptProps) {
   const last = messages.at(-1);
-  const waiting = status === "submitted" || (status === "streaming" && last?.role === "assistant" && last.parts.every((part) => part.type === "step-start"));
+  const busy = status === "submitted" || status === "streaming";
+  const parts = last?.role === "assistant" ? last.parts : [];
+  const activeTool = parts.some((part) => isToolUIPart(part) && (part.state === "input-streaming" || part.state === "input-available"));
+  const lastTool = parts.filter(isToolUIPart).at(-1);
+  const pendingText = lastTool && ["list_markets", "get_market", "apply_policy"].includes(getToolName(lastTool))
+    ? "Preparing your routing and spending approval…"
+    : "Reviewing your request…";
+  const waiting = busy && !activeTool;
   return (
     <div className="flex flex-col gap-5">
       {messages.map((message) =>
@@ -109,7 +117,7 @@ export function AskTranscript({ messages, status, error, onRetry, onLimitAnswer 
           <AssistantMessage key={message.id} message={message} onLimitAnswer={onLimitAnswer} />
         ),
       )}
-      {waiting ? <ActivityRow activity={{ tone: "pending", text: "Thinking…" }} /> : null}
+      {waiting ? <ActivityRow activity={{ tone: "pending", text: pendingText }} /> : null}
       {error ? (
         <div className="flex items-center justify-between gap-3 rounded-lg border border-negative/30 bg-negative-bg px-3 py-2 text-caption text-negative-text">
           Ask Tender could not answer.
