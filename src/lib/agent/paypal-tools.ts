@@ -1,7 +1,8 @@
 import { tool, type FlexibleSchema, type Tool } from "ai";
-import { paypalApiBase, paypalCredentials } from "@/lib/paypal/client";
+import { paypalApiBase, paypalCredentials, paypalFetch } from "@/lib/paypal/client";
 import { listLedger } from "@/lib/ledger";
 import { getStoredOrder } from "@/lib/paypal/orders";
+import { invoiceUrlFromResponse } from "./invoice-link";
 
 const LIVE_API_BASE = "https://api-m.paypal.com";
 /** Toolkit results can be long (transaction lists); the model gets the first part. */
@@ -111,6 +112,22 @@ export async function paypalToolkitTools(accountId: string): Promise<Record<stri
           if (order?.accountId !== accountId) return { error: "Order not found" };
         }
         const result = readResult(await execute(input, {}));
+        if (name === "send_invoice" && !(result && typeof result === "object" && "error" in result)) {
+          let invoiceUrl = invoiceUrlFromResponse(result);
+          // Some send responses have no body. Read the invoice from PayPal for its payer link.
+          if (!invoiceUrl && typeof input.invoice_id === "string" && /^INV2(?:-[A-Z0-9]{4}){4}$/.test(input.invoice_id)) {
+            try {
+              invoiceUrl = invoiceUrlFromResponse(await paypalFetch(`/v2/invoicing/invoices/${input.invoice_id}`));
+            } catch {
+              // Sending succeeded; a failed link lookup must not invite a duplicate send.
+            }
+          }
+          return {
+            invoice_id: input.invoice_id,
+            status: "sent",
+            ...(invoiceUrl ? { invoice_url: invoiceUrl } : { note: "PayPal did not return an invoice link. Check the recipient email." }),
+          };
+        }
         if (name === "list_transactions" && result && typeof result === "object" && "transaction_details" in result) {
           const details = (result as { transaction_details?: Transaction[] }).transaction_details ?? [];
           const payments = await recordedPayments(accountId);

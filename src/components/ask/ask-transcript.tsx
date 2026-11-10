@@ -1,10 +1,11 @@
 "use client";
 
-import { CircleCheck, LoaderCircle, TriangleAlert } from "lucide-react";
+import { CircleCheck, ExternalLink, LoaderCircle, TriangleAlert } from "lucide-react";
 import { getToolName, isToolUIPart, type ChatStatus } from "ai";
 
 import { Button } from "@/components/ui/button";
 import type { AskUIMessage, AskUITools } from "@/lib/agent/types";
+import { validatedInvoiceUrl } from "@/lib/agent/invoice-link";
 import { cn } from "@/lib/utils";
 
 import { SpendingLimitCard, TopUpCard } from "./ask-cards";
@@ -62,8 +63,21 @@ function AssistantMessage({
         if (part.type === "tool-top_up" && part.state === "output-available" && part.output.approve_url !== undefined) {
           return <TopUpCard key={key} output={part.output} />;
         }
-        const activity = toolActivity(getToolName(part), part);
-        return activity ? <ActivityRow key={key} activity={activity} /> : null;
+        const name = getToolName(part);
+        const activity = toolActivity(name, part);
+        const invoiceUrl = name === "paypal_send_invoice" && part.state === "output-available"
+          ? validatedInvoiceUrl((part.output as { invoice_url?: unknown } | undefined)?.invoice_url)
+          : null;
+        return activity ? (
+          <div key={key} className="flex flex-col gap-2">
+            <ActivityRow activity={activity} />
+            {invoiceUrl ? (
+              <a href={invoiceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-body font-medium text-primary-strong underline underline-offset-2">
+                Open PayPal invoice <ExternalLink aria-hidden="true" className="size-3.5" />
+              </a>
+            ) : null}
+          </div>
+        ) : null;
       })}
     </div>
   );
