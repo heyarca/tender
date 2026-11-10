@@ -16,7 +16,7 @@ export function errorResponse(error: unknown): Response {
   throw error;
 }
 /** Request headers cross-origin browser clients may send to the v1 API. */
-const CORS_ALLOW_HEADERS = "PAYMENT-SIGNATURE, X-PAYMENT, Content-Type, Tender-Max-Price, Tender-Max-P95-Ms, Tender-Max-Data-Age-Ms, Tender-Min-Success-Rate, Tender-Preference, Tender-Pin";
+const CORS_ALLOW_HEADERS = "PAYMENT-SIGNATURE, X-PAYMENT, Authorization, Content-Type, Tender-Max-Price, Tender-Max-P95-Ms, Tender-Max-Data-Age-Ms, Tender-Min-Success-Rate, Tender-Preference, Tender-Pin";
 
 /** Decided CORS posture: the public v1 API is callable cross-origin without credentials. */
 export function preflight(): Response {

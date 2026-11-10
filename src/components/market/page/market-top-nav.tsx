@@ -3,6 +3,7 @@
 import { Play } from "lucide-react";
 import type * as React from "react";
 import { useMemo } from "react";
+import { BalanceChip } from "@/components/credits/balance-chip";
 import { TopNav, type TopNavLink } from "@/components/shell/top-nav";
 import { Button } from "@/components/ui/button";
 import { focusSection, MARKET_SECTIONS, type MarketSectionId } from "@/components/market/market-ui";
@@ -83,10 +84,13 @@ export function MarketTopNav({ marketId, onSearch, onOpenApi, onRun }: MarketTop
       onSearch={onSearch}
       searchLabel="Search"
       actions={
-        <Button variant="primary" onClick={onRun} aria-keyshortcuts="Meta+Enter Control+Enter">
-          <Play aria-hidden />
-          <span className="max-sm:sr-only">Run request</span>
-        </Button>
+        <>
+          <BalanceChip />
+          <Button variant="primary" onClick={onRun} aria-keyshortcuts="Meta+Enter Control+Enter">
+            <Play aria-hidden />
+            <span className="max-sm:sr-only">Run request</span>
+          </Button>
+        </>
       }
     />
   );

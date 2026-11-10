@@ -5,6 +5,7 @@ import { BiddingAgentsSection } from "@/components/market/bidding/bidding-agents
 import { ActivitySection } from "@/components/market/activity/activity-section";
 import { ProviderConditionsSection } from "@/components/market/conditions/provider-conditions-section";
 import { MarketUiProvider } from "@/components/market/market-ui";
+import { CreditsSection } from "@/components/credits/credits-section";
 import { ApiDialog } from "@/components/market/page/api-dialog";
 import { MarketCommandPalette } from "@/components/market/page/market-command-palette";
 import { MarketHeader } from "@/components/market/page/market-header";
@@ -77,6 +78,7 @@ function MarketPageContent({ marketId, onSwitchMarket }: MarketPageProps) {
               <RoutingPolicySection key={`routing-${marketId}`} marketId={marketId} />
               <ProviderConditionsSection key={`conditions-${marketId}`} marketId={marketId} />
             </div>
+            <CreditsSection key={`credits-${marketId}`} marketId={marketId} />
             <PaymentsSection key={`payments-${marketId}`} marketId={marketId} />
             <ActivitySection key={`activity-${marketId}`} marketId={marketId} />
           </div>
