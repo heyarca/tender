@@ -188,13 +188,17 @@ function serverTools(accountId: string) {
     }),
     run_request: tool({
       description:
-        "Run paid requests on a market with the user's credits, as the agent. Each one is charged the winning bid. The ledger refuses any charge over the approved weekly limit. Without a policy, the approved limit's policy is used.",
+        "Run paid requests on a market with the user's credits, as the agent. Each one is charged the winning bid. The ledger refuses any charge over the approved weekly limit. Without a policy, the approved limit's policy is used. Pass the user's text as params: text for translation, prompt for chat, query for geocoding.",
       inputSchema: z.object({
         marketId: marketIdSchema,
         policy: askPolicySchema.optional(),
+        params: z
+          .record(z.string(), z.string().max(500))
+          .optional()
+          .describe('Request inputs, for example { "text": "Where is the station?" } for translation or { "prompt": "..." } for chat'),
         count: z.number().int().min(1).max(MAX_RUN_COUNT).optional().describe(`How many requests, 1 to ${MAX_RUN_COUNT} (default 1)`),
       }),
-      execute: async ({ marketId, policy, count = 1 }) => {
+      execute: async ({ marketId, policy, params, count = 1 }) => {
         if (!isMarketId(marketId)) return { ran: 0, error: `Unknown market: ${marketId}` };
         const before = await getAccount(accountId);
         if (!before?.mandate) {
@@ -215,7 +219,7 @@ function serverTools(accountId: string) {
             const nextCharge = chargeEstimate(marketId, routing);
             if (balance < lowBalanceThreshold(nextCharge)) autoTopUpResult = await autoTopUp(accountId, nextCharge);
           }
-          const { status, body } = await serveWithCredits({ accountId, actor: "agent", marketId, policy: routing });
+          const { status, body } = await serveWithCredits({ accountId, actor: "agent", marketId, params, policy: routing });
           const result = body as ContractBody;
           if (status !== 200 || !result.payment) {
             refused = { code: result.error?.code ?? `http_${status}`, message: result.error?.message ?? "The request failed" };
