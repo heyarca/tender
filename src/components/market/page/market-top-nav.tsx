@@ -21,6 +21,8 @@ export function isSectionId(value: string): value is MarketSectionId {
 export function topNavLinks(): TopNavLink[] {
   return [
     { label: "Markets", href: "/markets" },
+    { label: "Leaderboard", href: "/leaderboard" },
+    { label: "Account", href: "/account" },
     { label: "Providers", href: "#providers" },
     { label: "Routing", href: "#routing" },
     { label: "Payments", href: "#payments" },
@@ -39,6 +41,7 @@ export interface MarketTopNavProps {
   onSearch: () => void;
   onOpenApi: () => void;
   onRun: () => void;
+  runLabel?: string;
 }
 
 /**
@@ -46,7 +49,7 @@ export interface MarketTopNavProps {
  * focus to its heading, "API" opens the API dialog, and "Markets" opens the API directory.
  * Plain hrefs keep the links usable in a new tab.
  */
-export function MarketTopNav({ onSearch, onOpenApi, onRun }: MarketTopNavProps) {
+export function MarketTopNav({ onSearch, onOpenApi, onRun, runLabel = "Run request" }: MarketTopNavProps) {
   const links = useMemo(
     () =>
       topNavLinks().map((link) => {
@@ -79,6 +82,7 @@ export function MarketTopNav({ onSearch, onOpenApi, onRun }: MarketTopNavProps) 
   return (
     <TopNav
       links={links}
+      wideNavigation
       homeHref="/landing"
       onSearch={onSearch}
       searchLabel="Search"
@@ -87,7 +91,7 @@ export function MarketTopNav({ onSearch, onOpenApi, onRun }: MarketTopNavProps) 
           <BalanceChip />
           <Button variant="primary" onClick={onRun} aria-keyshortcuts="Meta+Enter Control+Enter">
             <Play aria-hidden />
-            <span className="max-sm:sr-only">Run request</span>
+            <span className="max-sm:sr-only">{runLabel}</span>
           </Button>
         </>
       }
