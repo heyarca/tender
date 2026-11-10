@@ -154,6 +154,25 @@ create table payout_items (
 );
 ```
 
+Migration `0002_auto_top_ups.sql` adds automatic top-ups:
+
+```sql
+alter table accounts add column mandate_vault_email text;   -- payer email PayPal returned when saving
+create table auto_top_ups (
+  id text primary key,                 -- PayPal-Request-Id of the order (auto_...)
+  account_id text not null references accounts(id),
+  amount_micros bigint not null check (amount_micros > 0),
+  status text not null check (status in ('PENDING', 'COMPLETED', 'FAILED')),
+  paypal_order_id text unique,
+  paypal_capture_id text unique,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+```
+
+A PENDING row is written before PayPal is charged. Automatic top-ups since Monday 00:00 UTC (PENDING and
+COMPLETED) plus the new one never exceed the weekly limit.
+
 ## 6. Ledger API (`src/lib/ledger`, owned by the core lane)
 
 ```ts
@@ -187,6 +206,8 @@ start of the ISO week plus this amount must not exceed `mandate_weekly_cap_micro
 | `POST /api/paypal/orders/{id}/capture` | core | Captures; on `COMPLETED` calls `creditTopUp` -> `{ status, balanceMicros }`. |
 | `POST /api/paypal/webhook` | core | Verifies the signature, stores the event once, then dispatches: `PAYMENT.CAPTURE.COMPLETED` -> `creditTopUp` (idempotent); `PAYMENT.PAYOUTSBATCH.*` and `PAYMENT.PAYOUTS-ITEM.*` -> `handlePayoutsWebhook(event)` from `src/lib/paypal/payouts.ts`. |
 | `GET /api/payouts`, `POST /api/payouts/settle` | payouts | Batches and items; settle pays unpaid earnings. |
+| `GET /api/paypal/vault`, `POST /api/paypal/vault`, `DELETE /api/paypal/vault` | vault | Saved PayPal status; start saving (setup token -> approve URL); remove the saved PayPal (deletes the payment token). |
+| `GET /api/paypal/vault/return` | vault | PayPal returns here after approval: checks the setup token belongs to the cookie account, creates the payment token, stores it, closes the popup. |
 | `POST /api/ask` | ask | AI SDK UI message stream for Ask Tender. |
 | `POST /api/bidding/round` | bidding | `{ marketId, policy?, providers?, activeProviderId?, recentRequests?, recentWinners? }` (the console's current state; registry defaults when omitted) -> new bids from the LLM. |
 
@@ -214,9 +235,14 @@ Verify details against developer.paypal.com before relying on them.
 - Payouts: `POST /v1/payments/payouts` (`sender_batch_header.sender_batch_id`, items with
   `recipient_type: "EMAIL"`, `amount.value`, `receiver`, `sender_item_id`); status
   `GET /v1/payments/payouts/{payout_batch_id}`.
-- Vault (agent top-ups without a popup): setup token `POST /v3/vault/setup-tokens`, payment token
-  `POST /v3/vault/payment-tokens`, then orders with `payment_source.paypal.vault_id`. If the sandbox app
-  lacks Vault, the agent asks the user to approve each top-up in Checkout instead.
+- Vault (live; agent top-ups without a popup): `POST /v3/vault/setup-tokens` with `payment_source.paypal`
+  (`usage_type: MERCHANT`, `customer_type: CONSUMER`, `usage_pattern: UNSCHEDULED_PREPAID`,
+  `permit_multiple_payment_tokens: false`, `experience_context` with return/cancel URLs) and
+  `customer.merchant_customer_id` = the account id; after approval `POST /v3/vault/payment-tokens` with
+  `{ token: { id: <setup token>, type: "SETUP_TOKEN" } }`. Agent top-ups are Orders v2 with
+  `payment_source.paypal.vault_id` and `stored_credential { payment_initiator: MERCHANT, usage: SUBSEQUENT,
+  usage_pattern: UNSCHEDULED_PREPAID }`, `PayPal-Request-Id` = the reservation id; PayPal captures in the same
+  call. Without a saved PayPal, the agent asks the user to approve each top-up in Checkout.
 - Agent Toolkit: `@paypal/agent-toolkit` (`/ai-sdk` entry for the Vercel AI SDK). Check its README for the
   exact constructor and action names.
 

@@ -20,9 +20,11 @@ import type {
   MarketView,
   PolicyPatch,
   ProviderId,
+  RequestSource,
   RouteEvent,
   RouteEventKind,
   RoutingMode,
+  ServedEnvelope,
   TenderState,
 } from "./types";
 
@@ -40,6 +42,8 @@ export interface TenderActions {
   resetConditions(marketId: MarketId): void;
   /** Pinned: pin the rank-1 provider. Automatic: switch to rank 1 now (skips the cooldown). */
   switchToRecommended(marketId: MarketId): void;
+  /** Record requests the server served and charged to credits, in each envelope's market. */
+  ingestServed(source: RequestSource, envelopes: readonly ServedEnvelope[]): void;
 }
 
 export interface TenderStore {
@@ -109,6 +113,7 @@ export function createTenderStore(options: CreateTenderStoreOptions = {}): Tende
       act((now) => ({ type: "apply-agent-bids", marketId, bids, model, now })),
     resetConditions: (marketId) => act((now) => ({ type: "reset-conditions", marketId, now })),
     switchToRecommended: (marketId) => act((now) => ({ type: "switch-to-recommended", marketId, now })),
+    ingestServed: (source, envelopes) => act((now) => ({ type: "ingest-served", source, envelopes, now })),
   };
   return { api, dispatch, actions, clock, watch, watchedMarketIds: () => [...watchers.keys()] };
 }

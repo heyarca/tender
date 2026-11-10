@@ -12,6 +12,7 @@ export type {
   FieldsReading,
   ResultProvider,
   ResultRequest,
+  ResultSource,
   ResultStatus,
   WeatherCondition,
   WeatherReading,

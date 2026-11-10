@@ -2,7 +2,9 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { formatAge, formatLatency } from "@/components/viz/format";
 import { ProviderLogo } from "@/components/ui/provider-logo";
-import type { ResultProvider, ResultStatus } from "./types";
+import { Sparkles, Wallet } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import type { ResultProvider, ResultSource, ResultStatus } from "./types";
 
 export interface ResultMetaProps {
   /** Outcome of the request. Changes the lead-in: Served by / Failed at / Not sent. Default `ok`. */
@@ -13,8 +15,15 @@ export interface ResultMetaProps {
   dataAgeMs?: number | null;
   /** `req_000123`. */
   requestId?: string | null;
+  /** Who bought the request on the server; adds an "Ask Tender" or "Credits" tag after the provider. */
+  source?: ResultSource;
   className?: string;
 }
+
+const SOURCE_TAGS: Record<ResultSource, { label: string; icon: ReactNode }> = {
+  "ask-tender": { label: "Ask Tender", icon: <Sparkles aria-hidden="true" /> },
+  credits: { label: "Credits", icon: <Wallet aria-hidden="true" /> },
+};
 
 function Separator() {
   return (
@@ -34,6 +43,7 @@ export function ResultMeta({
   latencyMs,
   dataAgeMs,
   requestId,
+  source,
   className,
 }: ResultMetaProps) {
   const items: { key: string; node: ReactNode }[] = [];
@@ -50,6 +60,11 @@ export function ResultMeta({
           </span>
           <ProviderLogo src={provider.logo} name={provider.name} size={16} />
           <span className="truncate font-medium text-foreground">{provider.name}</span>
+          {source ? (
+            <Badge tone="active" icon={SOURCE_TAGS[source].icon} data-slot="result-source">
+              {SOURCE_TAGS[source].label}
+            </Badge>
+          ) : null}
         </span>
       ),
     });

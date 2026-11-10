@@ -54,7 +54,8 @@ Status of each flow:
 | Buyers add funds to their Tender credits | Checkout: JS SDK v6, Orders v2 create and capture | Live |
 | Credits are added once, when PayPal confirms the capture | Webhooks: `PAYMENT.CAPTURE.COMPLETED`, signature verification | Live |
 | Each successful request deducts the winning bid from the balance | Tender ledger (integer micro-USD) | Live |
-| Agents spend only within a weekly limit you approve, and ask you to approve each top-up | Orders v2 approve link | Live |
+| Agents spend only within a weekly limit you approve | Tender ledger | Live |
+| Ask Tender tops up by itself from a saved PayPal account, never more than the weekly limit; without one it asks you to approve each top-up | Vault v3 payment tokens, merchant-initiated Orders v2, approve link | Live |
 | Providers receive their earnings | Payouts (batch payouts), payout webhooks | Live |
 | Ask Tender looks up orders, sends invoices, and lists transactions | PayPal Agent Toolkit | Live (transaction listing starts working once PayPal enables transaction search on the app) |
 
@@ -71,7 +72,7 @@ In the product:
 | Feature | How AI is used | Status |
 |---|---|---|
 | `npx @heyarca/tender` | Writes instructions and MCP configs that make coding agents call APIs through Tender | Live |
-| Ask Tender | A chat agent (Vercel AI SDK, `openai/gpt-5-mini` through the Vercel AI Gateway) finds a market, sets the routing policy, asks you to approve a weekly spending limit, runs paid requests with credits, and reports spend. Its PayPal tools turn on with the PayPal credentials. | Live |
+| Ask Tender | A chat agent (Vercel AI SDK, `openai/gpt-5-mini` through the Vercel AI Gateway) finds a market, sets the routing policy, asks you to approve a weekly spending limit, tops up from your saved PayPal within that limit, runs paid requests with credits, and reports spend. | Live |
 | Provider bidding agents | An LLM reprices each provider's bid from its wins, rival bids, and performance, between 70% and 150% of its listed bid, and explains each change in the activity log | Live |
 
 Building Tender: the code was written with AI coding agents. Prime Agent orchestrated parallel workers

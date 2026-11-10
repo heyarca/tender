@@ -52,8 +52,8 @@ export function findMarkets(input: { query?: string; group?: string; category?: 
   return { markets: scored.slice(0, MAX_RESULTS).map(({ market }) => summary(market)), total: scored.length };
 }
 
-/** Bids and the routing decision of a market, from the same evaluation as `GET /api/v1/markets/{id}`. */
-export function marketBids(marketId: string, policy: Partial<RoutingPolicy> = {}) {
+/** The routing evaluation of `GET /api/v1/markets/{id}` under a policy, and the provider it serves. */
+function routing(marketId: string, policy: Partial<RoutingPolicy>) {
   const id: MarketId = parseMarketId(marketId);
   const url = new URL(`/api/v1/markets/${id}`, "https://tender.internal");
   for (const parameter of POLICY_PARAMETERS) {
@@ -63,7 +63,18 @@ export function marketBids(marketId: string, policy: Partial<RoutingPolicy> = {}
   if (policy.preference) url.searchParams.set("preference", policy.preference);
   if (policy.mode?.kind === "pinned") url.searchParams.set("pin", policy.mode.providerId);
   const detail = marketDetail(new Request(url), id);
-  const active = detail.providers.find((provider) => provider.id === detail.routing.active_provider);
+  return { id, detail, active: detail.providers.find((provider) => provider.id === detail.routing.active_provider) };
+}
+
+/** What the next request under a policy costs, in micro-USD: the serving provider's bid. 0 when none qualifies. */
+export function nextChargeMicros(marketId: string, policy: Partial<RoutingPolicy> = {}): number {
+  const { active } = routing(marketId, policy);
+  return active ? Number(bidToAtomic(active.bid_per_million)) : 0;
+}
+
+/** Bids and the routing decision of a market, from the same evaluation as `GET /api/v1/markets/{id}`. */
+export function marketBids(marketId: string, policy: Partial<RoutingPolicy> = {}) {
+  const { id, detail, active } = routing(marketId, policy);
   const dataAge = (ms: number) => (getMarketDefinition(id).units.dataAge === "ms" && ms < 10_000 ? `${ms} ms` : format.dataAge(ms));
   return {
     market: { id: detail.id, name: detail.name, contract_url: detail.contract_url },

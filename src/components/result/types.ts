@@ -19,7 +19,11 @@ export interface ResultRequest {
   latencyMs: number | null;
   /** Error text for failed requests (`503 Service Unavailable`) or the reason for a rejection. */
   error?: string;
+  /** Bought on the server by Ask Tender or Run with credits (shown as a tag after the provider). */
+  source?: ResultSource;
 }
+
+export type ResultSource = "ask-tender" | "credits";
 
 export type WeatherCondition =
   | "clear"
