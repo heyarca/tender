@@ -188,7 +188,7 @@ start of the ISO week plus this amount must not exceed `mandate_weekly_cap_micro
 | `POST /api/paypal/webhook` | core | Verifies the signature, stores the event once, then dispatches: `PAYMENT.CAPTURE.COMPLETED` -> `creditTopUp` (idempotent); `PAYMENT.PAYOUTSBATCH.*` and `PAYMENT.PAYOUTS-ITEM.*` -> `handlePayoutsWebhook(event)` from `src/lib/paypal/payouts.ts`. |
 | `GET /api/payouts`, `POST /api/payouts/settle` | payouts | Batches and items; settle pays unpaid earnings. |
 | `POST /api/ask` | ask | AI SDK UI message stream for Ask Tender. |
-| `POST /api/bidding/round` | bidding | `{ marketId }` -> new bids from the LLM. |
+| `POST /api/bidding/round` | bidding | `{ marketId, policy?, providers?, activeProviderId?, recentRequests?, recentWinners? }` (the console's current state; registry defaults when omitted) -> new bids from the LLM. |
 
 Contract route (`/api/v1/{namespace}/{action}`, core lane): if `accountFromRequest` returns an account,
 serve the request and call `chargeForRequest` with the winning bid; on success respond 200 with the usual

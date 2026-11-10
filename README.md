@@ -51,12 +51,15 @@ Status of each flow:
 
 | Flow | PayPal API | Status |
 |---|---|---|
-| Buyers top up Tender credits | Checkout: JS SDK v6, Orders v2 create and capture | Building |
-| Credits are added only after PayPal confirms the payment | Webhooks: `PAYMENT.CAPTURE.COMPLETED`, signature verification | Building |
-| Each successful request deducts the winning bid from the balance | Tender ledger (integer micro-USD) | Building |
-| An agent tops up on its own, within a budget you approve | Vault (saved payment method) | Building |
-| Providers receive their earnings | Payouts (batch payouts) | Building |
-| Ask Tender creates orders and invoices and reads transactions | PayPal Agent Toolkit | Building |
+| Buyers add funds to their Tender credits | Checkout: JS SDK v6, Orders v2 create and capture | Built |
+| Credits are added once, when PayPal confirms the capture | Webhooks: `PAYMENT.CAPTURE.COMPLETED`, signature verification | Built |
+| Each successful request deducts the winning bid from the balance | Tender ledger (integer micro-USD) | Live |
+| Agents spend only within a weekly limit you approve, and ask you to approve each top-up | Orders v2 approve link | Built (the weekly limit is Live) |
+| Providers receive their earnings | Payouts (batch payouts), payout webhooks | Built |
+| Ask Tender reads orders and transactions and sends invoices | PayPal Agent Toolkit | Built |
+
+**Built** means the code is on `main` and verified up to the PayPal call. Each flow goes **Live** once the
+PayPal sandbox app credentials are added.
 
 Credentials go in `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, and `PAYPAL_WEBHOOK_ID` (see
 [`.env.example`](.env.example)). The plan: [`docs/PAYPAL-HACKATHON.md`](docs/PAYPAL-HACKATHON.md).
@@ -67,9 +70,9 @@ In the product:
 
 | Feature | How AI is used | Status |
 |---|---|---|
-| `npx @heyarca/tender` | Writes instructions that make coding agents call APIs through Tender | Live |
-| Ask Tender | A chat agent (Vercel AI SDK + PayPal Agent Toolkit) picks a market, writes the routing policy, funds credits with PayPal, runs requests, and reports spend | Building |
-| Provider bidding agents | An LLM reprices each provider's bid from load and competition, never below the provider's floor price | Building |
+| `npx @heyarca/tender` | Writes instructions and MCP configs that make coding agents call APIs through Tender | Live |
+| Ask Tender | A chat agent (Vercel AI SDK, `openai/gpt-5-mini` through the Vercel AI Gateway) finds a market, sets the routing policy, asks you to approve a weekly spending limit, runs paid requests with credits, and reports spend. Its PayPal tools turn on with the PayPal credentials. | Live |
+| Provider bidding agents | An LLM reprices each provider's bid from its wins, rival bids, and performance, between 70% and 150% of its listed bid, and explains each change in the activity log | Live |
 
 Building Tender: the code was written with AI coding agents. Prime Agent orchestrated parallel workers
 running Claude Opus 5.5 (product UI and engine) and GLM-5.3-Flash (backend audits and fixes).
