@@ -57,7 +57,7 @@ const EDGE_PADDING = 16;
 const svg = (paths: string) =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
 
-/** Lucide ChevronUp, ChevronDown, and ChevronsUpDown, painted in the header text color. */
+/** Lucide ChevronUp, ChevronDown, ChevronsUpDown, and Funnel, painted in the header text color. */
 const sortIcons = iconOverrides({
   type: "image",
   mask: true,
@@ -65,6 +65,12 @@ const sortIcons = iconOverrides({
     asc: { svg: svg('<path d="m18 15-6-6-6 6"/>') },
     desc: { svg: svg('<path d="m6 9 6 6 6-6"/>') },
     none: { svg: svg('<path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/>') },
+    // Lucide Funnel: the "filtered" mark in a header.
+    filter: {
+      svg: svg(
+        '<path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/>',
+      ),
+    },
   },
 });
 
@@ -86,11 +92,31 @@ const tenderPart = createPart({
     .ag-header-cell-sorted-asc,
     .ag-header-cell-sorted-desc { color: var(--foreground); }
     .ag-cell { display: flex; align-items: center; }
+    .ag-cell-wrapper { min-width: 0; max-width: 100%; }
+    .ag-cell-wrapper > .ag-cell-value { min-width: 0; }
     .ag-right-aligned-cell { justify-content: flex-end; }
     .ag-row-animation .ag-row {
       transition: transform 500ms ${EASE}, top 500ms ${EASE}, height 500ms ${EASE}, opacity 200ms;
     }
     .ag-row-selected.ag-row-hover::before { background-image: none; }
+    .ag-header-cell:focus-visible,
+    .ag-header-cell.ag-focus-managed:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+    /* Measured values that tick every few seconds flash softer than a bid or route change. */
+    .tender-live.ag-cell-data-changed { background-color: var(--accent-subtle) !important; }
+    /* Floating filters: one Tender input per column, no button. */
+    .ag-floating-filter { padding-top: 6px; padding-bottom: 6px; }
+    .ag-floating-filter-body { height: 100%; }
+    /* Editable cells look like a field on hover; the focused cell gets the olive outline. */
+    .tender-editable { cursor: text; }
+    .ag-row:not(.ag-row-pinned) .tender-editable:hover { box-shadow: inset 0 0 0 1px var(--border); }
+    /* A value that differs from its default: lime wash (ink text) and an olive corner mark. */
+    .tender-modified { background-color: var(--accent-subtle); }
+    .tender-modified::after {
+      content: ""; position: absolute; top: 0; right: 0; width: 0; height: 0;
+      border-style: solid; border-width: 0 6px 6px 0; border-color: transparent var(--ring) transparent transparent;
+    }
+    .ag-checkbox-input-wrapper { box-shadow: none; }
+    .ag-row-pinned { font-variant-numeric: tabular-nums; }
     @media (prefers-reduced-motion: reduce) {
       .ag-row-animation .ag-row { transition: none; }
     }
@@ -121,7 +147,6 @@ const tokens = {
   headerRowBorder: true,
   columnBorder: false,
   headerColumnBorder: false,
-  pinnedColumnBorder: false,
   headerColumnResizeHandleColor: "transparent",
   headerCellHoverBackgroundColor: "transparent",
   rowHeight: 44,
@@ -139,6 +164,50 @@ const tokens = {
   valueChangeValueHighlightBackgroundColor: "var(--accent)",
   browserColorScheme: "light",
   focusShadow: "none",
+  // The focused cell (keyboard navigation and editing grids): the olive focus outline.
+  rangeSelectionBorderColor: "var(--ring)",
+  cellEditingBorder: { width: 1, style: "solid", color: "var(--ring)" },
+  cellEditingShadow: "var(--shadow-focus)",
+  // Inputs (floating filters, cell editors): the Tender input, 28px.
+  inputHeight: 28,
+  inputPaddingStart: 8,
+  inputBorderRadius: 6,
+  inputBackgroundColor: "var(--input-bg)",
+  inputBorder: { width: 1, style: "solid", color: "var(--input)" },
+  inputTextColor: "var(--foreground)",
+  inputPlaceholderTextColor: "var(--text-faint)",
+  inputIconColor: "var(--muted-foreground)",
+  inputFocusBorder: { width: 1, style: "solid", color: "var(--focus-border)" },
+  inputFocusShadow: "var(--shadow-focus)",
+  inputInvalidBorder: { width: 1, style: "solid", color: "var(--negative)" },
+  inputInvalidTextColor: "var(--negative-text)",
+  invalidColor: "var(--negative-text)",
+  // Checkboxes: lime fill with an ink check, like `ui/checkbox`.
+  checkboxBorderRadius: 4,
+  checkboxUncheckedBackgroundColor: "var(--input-bg)",
+  checkboxUncheckedBorderColor: "color-mix(in srgb, var(--foreground) 25%, transparent)",
+  checkboxCheckedBackgroundColor: "var(--primary)",
+  checkboxCheckedBorderColor: "var(--primary-border)",
+  checkboxCheckedShapeColor: "var(--primary-foreground)",
+  // Popups, menus, and tooltips: the popover surface.
+  menuBackgroundColor: "var(--popover)",
+  menuTextColor: "var(--popover-foreground)",
+  menuBorder: false,
+  menuShadow: "var(--shadow-popover)",
+  popupShadow: "var(--shadow-popover)",
+  dropdownShadow: "var(--shadow-popover)",
+  tooltipBackgroundColor: "var(--popover)",
+  tooltipTextColor: "var(--popover-foreground)",
+  tooltipBorder: { width: 1, style: "solid", color: "var(--border)" },
+  tooltipErrorBackgroundColor: "var(--popover)",
+  tooltipErrorTextColor: "var(--negative-text)",
+  tooltipErrorBorder: { width: 1, style: "solid", color: "var(--negative)" },
+  // Pinned columns keep a hairline edge while the rest scrolls; totals rows are muted and medium.
+  pinnedColumnBorder: true,
+  pinnedRowBorder: true,
+  pinnedRowBackgroundColor: "var(--muted)",
+  pinnedRowFontWeight: 500,
+  pinnedRowTextColor: "var(--foreground)",
 } as const;
 
 /** Tender theme: 12px cell padding (the default `or-table` density). */
@@ -169,7 +238,10 @@ export interface DataGridColumn<TData> extends ColDef<TData> {
 }
 
 export interface DataGridProps<TData>
-  extends Omit<AgGridReactProps<TData>, "theme" | "rowData" | "columnDefs" | "getRowId" | "domLayout" | "onRowClicked"> {
+  extends Omit<
+    AgGridReactProps<TData>,
+    "theme" | "rowData" | "columnDefs" | "getRowId" | "domLayout" | "onRowClicked" | "autoSizeStrategy"
+  > {
   rowData: readonly TData[];
   columnDefs: readonly DataGridColumn<TData>[];
   /**
@@ -192,6 +264,15 @@ export interface DataGridProps<TData>
   reserveHeight?: string;
   /** Class for the outer box. */
   className?: string;
+  /**
+   * Let cells take keyboard focus (arrow keys, Enter, editing). Off by default: most grids are
+   * read-only lists where a row click is the only action.
+   */
+  cellFocus?: boolean;
+  /** Minimum body height in px, so an overlay (no matching rows) has room in an auto-height grid. */
+  minBodyHeight?: number;
+  /** Defaults to fitting columns to their content; `null` keeps the column widths and flex as defined. */
+  autoSizeStrategy?: AutoSizeStrategy | null;
 }
 
 /**
@@ -214,6 +295,8 @@ export function DataGrid<TData>({
   "data-slot": dataSlot,
   reserveHeight,
   className,
+  cellFocus = false,
+  minBodyHeight,
   ...props
 }: DataGridProps<TData>) {
   const boxRef = useRef<HTMLDivElement>(null);
@@ -278,6 +361,10 @@ export function DataGrid<TData>({
   }, [onRowClicked]);
 
   const style: CSSProperties | undefined = !ready && reserveHeight ? { minHeight: reserveHeight } : undefined;
+  const theme = useMemo(() => {
+    const base = density === "tight" ? dataGridThemeTight : dataGridTheme;
+    return minBodyHeight ? base.withParams({ autoHeightMinBodyHeight: minBodyHeight }) : base;
+  }, [density, minBodyHeight]);
 
   return (
     <div ref={boxRef} data-slot={dataSlot} data-ready={ready || undefined} className={cn("relative w-full min-w-0", className)} style={style}>
@@ -287,21 +374,21 @@ export function DataGrid<TData>({
       )}
       <AgGridReact<TData>
         containerStyle={ready ? undefined : HIDDEN}
-        theme={density === "tight" ? dataGridThemeTight : dataGridTheme}
+        theme={theme}
         rowData={rowData as TData[]}
         columnDefs={columns}
         defaultColDef={gridDefaultColDef}
         getRowId={gridGetRowId}
         domLayout={domLayout}
         animateRows
-        suppressCellFocus
+        suppressCellFocus={!cellFocus}
         suppressMovableColumns
         suppressDragLeaveHidesColumns
         suppressColumnVirtualisation
         // Table-like text selection. No `ensureDomOrder`: it turns off row animation.
         enableCellTextSelection
         suppressNoRowsOverlay
-        autoSizeStrategy={autoSizeStrategy}
+        autoSizeStrategy={autoSizeStrategy ?? undefined}
         // A little room for sub-pixel text widths, so a measured label never wraps or clips.
         autoSizePadding={2}
         onGridReady={handleGridReady}
