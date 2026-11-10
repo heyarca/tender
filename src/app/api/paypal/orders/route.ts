@@ -1,6 +1,6 @@
 import { accountError, accountJson, readJsonObject, requireJson, writeAccount } from "@/lib/ledger/http";
 import { paypalErrorResponse } from "@/lib/paypal/http";
-import { createTopUpOrder, usdToMicros } from "@/lib/paypal/orders";
+import { createTopUpOrder, MAX_TOP_UP_MICROS, MIN_TOP_UP_MICROS, usdToMicros } from "@/lib/paypal/orders";
 
 /** `{ amountUsd }` -> a PayPal order for a credits top-up -> `{ orderId }`. */
 export async function POST(request: Request) {
@@ -14,6 +14,9 @@ export async function POST(request: Request) {
     amountMicros = null;
   }
   if (amountMicros === null) return accountError(400, "invalid_amount", "Send amountUsd, for example \"10.00\"");
+  if (amountMicros < MIN_TOP_UP_MICROS || amountMicros > MAX_TOP_UP_MICROS) {
+    return accountError(400, "invalid_amount", "Top-ups are $1.00 to $100.00");
+  }
   const account = await writeAccount(request);
   if (account instanceof Response) return account;
   try {
