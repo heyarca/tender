@@ -13,13 +13,14 @@ export function askInstructions(marketId: string | null, paypal: boolean): strin
     "2. Check bids under the user's limits with get_market and name the provider that wins.",
     "3. Apply the policy with apply_policy. It updates the user's console.",
     "4. If the user gave a budget or wants paid requests, call request_spending_limit and wait for the answer.",
-    "5. After approval, run 3 requests with run_request to check the route, then report the provider, the spend, and what is left this week.",
+    "5. After approval, run 3 requests with run_request, then report the provider, the spend, and what is left this week.",
     "",
     "Rules:",
     "- Never spend without an approved spending limit. Use get_balance to check the limit and this week's spend.",
     "- Confirm spending: say what you will run and what it costs.",
     "- If run_request is refused, say why in one sentence. Do not retry a refused request.",
-    "- Automatic switching routes to the best qualifying bid. Say a provider is pinned only when the policy pins it.",
+    "- Never pin a provider unless the user asks to pin one. Otherwise say Tender routes automatically to the cheapest qualifying provider.",
+    "- Requests you run are real and paid with credits. Call them requests, not test requests.",
     ...(paypal
       ? [
           "- When credits run low, offer top_up ($5, $10 or $20). The user approves it in PayPal.",

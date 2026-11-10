@@ -17,19 +17,17 @@ export const askPolicySchema = z.object({
   maxDataAgeMs: z.number().min(0).optional().describe("Oldest data to accept, in ms"),
   minSuccessRate: z.number().min(0).max(1).optional().describe("Lowest success rate from 0 to 1 (0.995 is 99.5%)"),
   preference: z.enum(["lowest-cost", "lowest-latency", "freshest-data"]).optional(),
-  pinnedProvider: z.string().nullable().optional().describe("Provider id to pin. null turns automatic switching back on."),
+  pinnedProvider: z.string().optional().describe("Provider id to pin, only when the user asks to pin one. Without it, Tender switches automatically."),
 });
 export type AskPolicy = z.infer<typeof askPolicySchema>;
 
-/** Engine fields of an agent policy, clamped to the market's inputs like the policy editor does. */
+/**
+ * Engine fields of an agent policy, clamped to the market's inputs like the policy editor does.
+ * The mode is automatic switching unless the policy pins a provider of the market.
+ */
 export function toRoutingPolicy(marketId: MarketId, policy: AskPolicy): Partial<RoutingPolicy> {
-  const patch: Partial<RoutingPolicy> = sanitizePolicyPatch(marketId, policy);
-  if (policy.pinnedProvider === null) patch.mode = { kind: "auto" };
-  else if (policy.pinnedProvider) {
-    const mode = sanitizeMode(marketId, { kind: "pinned", providerId: policy.pinnedProvider });
-    if (mode) patch.mode = mode;
-  }
-  return patch;
+  const pinned = policy.pinnedProvider ? sanitizeMode(marketId, { kind: "pinned", providerId: policy.pinnedProvider }) : null;
+  return { ...sanitizePolicyPatch(marketId, policy), mode: pinned ?? { kind: "auto" } };
 }
 
 /** Plain-English policy: "max $30.00 /M, P95 ≤ 300 ms". */
