@@ -4,9 +4,12 @@ import { CircleCheck, ExternalLink, ShieldCheck, Wallet } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { applyBalance } from "@/components/credits/credits-store";
 import { formatMicros } from "@/components/credits/money";
+import { readVaultStatus, savePayPal } from "@/components/credits/paypal-vault";
 import { usdToMicros } from "@/lib/agent/money";
+import { AUTO_TOP_UP_MICROS, LOW_BALANCE_MICROS } from "@/lib/ledger/auto-top-up";
 import { describePolicy, toRoutingPolicy } from "@/lib/agent/policy";
 import type { AskUITools } from "@/lib/agent/types";
 import { getMarketSpec } from "@/lib/registry";
@@ -43,40 +46,102 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
   return data;
 }
 
-/** Approval card for a weekly spending limit. Approve saves it for the visitor's account. */
-export function SpendingLimitCard({ input, onAnswer }: { input: LimitInput; onAnswer: (output: LimitOutput) => void }) {
+type LimitSaved = { weekly_cap: string; spent_this_week: string; policy: string };
+
+/**
+ * Approval card for a weekly spending limit. Approve saves it for the visitor's account. With
+ * "top up automatically" it also saves the visitor's PayPal in a PayPal window, so Ask Tender can
+ * top up by itself within the limit. Answered that way, it stays as a summary (`output`).
+ */
+export function SpendingLimitCard({ input, output, onAnswer }: { input: LimitInput; output?: LimitOutput; onAnswer?: (output: LimitOutput) => void }) {
+  const [paypalSaved, setPayPalSaved] = useState<boolean | null>(null);
+  const [autoTopUp, setAutoTopUp] = useState(false);
+  const [limit, setLimit] = useState<LimitSaved | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const known = isMarketId(input.marketId);
+  const answered = output !== undefined;
+
+  useEffect(() => {
+    if (answered) return;
+    readVaultStatus()
+      .then((status) => setPayPalSaved(status.saved))
+      .catch(() => setPayPalSaved(false));
+  }, [answered]);
 
   const approve = async () => {
     setBusy(true);
     setError(null);
+    // A limit saved by an earlier attempt (PayPal closed before saving) is not saved again.
+    const saved = { limit };
+    const saveLimit = async () => {
+      saved.limit ??= await postJson<LimitSaved>("/api/ask/mandate", input);
+      setLimit(saved.limit);
+    };
     try {
-      const saved = await postJson<{ weekly_cap: string; spent_this_week: string; policy: string }>("/api/ask/mandate", input);
-      onAnswer({ approved: true, ...saved });
+      if (autoTopUp && !paypalSaved) {
+        const status = await savePayPal(saveLimit);
+        if (!status.saved) throw new Error("PayPal was not saved. Try again, or clear the automatic top-up option.");
+      } else {
+        await saveLimit();
+      }
+      if (!saved.limit) throw new Error("Could not save the limit");
+      onAnswer?.({ approved: true, ...saved.limit, automatic_top_ups: autoTopUp || paypalSaved === true });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not save the limit");
       setBusy(false);
     }
   };
 
+  const policy = known ? describePolicy(input.marketId, toRoutingPolicy(input.marketId, input.policy)) : null;
+
+  if (output?.approved) {
+    return (
+      <CardFrame icon={<CircleCheck aria-hidden="true" />} title="Spending limit approved">
+        <dl className="flex flex-col gap-1.5">
+          <Row label="Weekly limit" value={output.weekly_cap ?? formatMicros(usdToMicros(input.weeklyCapUsd))} />
+          <Row label="Market" value={getMarketSpec(input.marketId)?.name ?? input.marketId} />
+          {output.policy ? <Row label="Policy" value={output.policy} /> : null}
+        </dl>
+        <p className="flex items-center gap-2 text-caption font-medium text-primary-strong" data-slot="paypal-saved">
+          <CircleCheck aria-hidden="true" className="size-3.5" />
+          PayPal saved for automatic top-ups
+        </p>
+      </CardFrame>
+    );
+  }
+
   return (
     <CardFrame icon={<ShieldCheck aria-hidden="true" />} title="Approve a spending limit">
       <dl className="flex flex-col gap-1.5">
         <Row label="Weekly limit" value={formatMicros(usdToMicros(input.weeklyCapUsd))} />
         <Row label="Market" value={getMarketSpec(input.marketId)?.name ?? input.marketId} />
-        {known ? <Row label="Policy" value={describePolicy(input.marketId, toRoutingPolicy(input.marketId, input.policy))} /> : null}
+        {policy ? <Row label="Policy" value={policy} /> : null}
+        {paypalSaved ? <Row label="Automatic top-ups" value="PayPal saved" /> : null}
       </dl>
       <p className="text-caption leading-snug text-muted-foreground">
         Ask Tender can run paid requests up to this amount each week. Charges come from your Tender credits.
       </p>
+      {paypalSaved === false ? (
+        <label className="flex cursor-pointer items-start gap-2.5 rounded-md border border-border px-3 py-2.5" data-slot="auto-top-up-option">
+          <Checkbox className="mt-0.5" checked={autoTopUp} disabled={busy} onCheckedChange={setAutoTopUp} />
+          <span className="flex flex-col gap-0.5">
+            <span className="text-body leading-snug text-foreground">Let Ask Tender top up automatically with PayPal</span>
+            <span className="text-caption leading-snug text-muted-foreground">
+              When credits drop below {formatMicros(LOW_BALANCE_MICROS)}, Ask Tender adds {formatMicros(AUTO_TOP_UP_MICROS)} from your PayPal, up to the weekly limit.
+            </span>
+          </span>
+        </label>
+      ) : null}
+      {busy && autoTopUp && !paypalSaved ? (
+        <p className="text-caption leading-snug text-muted-foreground">Save your PayPal account in the PayPal window.</p>
+      ) : null}
       {error ? <p className="text-caption text-negative-text">{error}</p> : null}
       <div className="flex justify-end gap-2">
-        <Button size="sm" disabled={busy} onClick={() => onAnswer({ approved: false, reason: "The user declined the spending limit." })}>
+        <Button size="sm" disabled={busy} onClick={() => onAnswer?.({ approved: false, reason: "The user declined the spending limit." })}>
           Decline
         </Button>
-        <Button size="sm" variant="primary" disabled={busy || !known} onClick={approve}>
+        <Button size="sm" variant="primary" disabled={busy || !known || paypalSaved === null} onClick={approve}>
           Approve
         </Button>
       </div>
