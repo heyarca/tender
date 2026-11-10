@@ -1,109 +1,27 @@
 "use client";
 
-import { KeyRound, Plus, Receipt, Wallet } from "lucide-react";
+import { KeyRound, Plus, Wallet } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CustomCellRendererProps } from "ag-grid-react";
 import { Notice, RelativeTime } from "@/components/market/payments/payment-ui";
-import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CodeBlock } from "@/components/ui/code-block";
 import { CopyButton } from "@/components/ui/copy-button";
 import { DataGrid, type DataGridColumn } from "@/components/ui/data-grid";
-import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
-import { ProviderLogo } from "@/components/ui/provider-logo";
 import { Section } from "@/components/ui/section";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/toast";
-import { getMarketSpec, getProvider } from "@/lib/registry";
-import type { ApiKeyView, CreatedApiKeyView, LedgerEntryView, LedgerKind, Actor } from "@/lib/ledger/types";
-import { getProviderFixture, isMarketId } from "@/lib/tender";
-import { cn } from "@/lib/utils";
+import type { ApiKeyView, CreatedApiKeyView } from "@/lib/ledger/types";
 import { AddFundsDialog } from "./add-funds-dialog";
 import { AgentAutopayCard } from "./agent-autopay-card";
 import { errorMessage, refreshAccount, setAddFundsOpen, useCreditsStore } from "./credits-store";
 import { formatMicros } from "./money";
 import { StartOverButton } from "./start-over-button";
+import { Transactions } from "./transactions-grid";
 
 const ROW_HEIGHT = 44;
 const HEADER_HEIGHT = 43;
-
-const KIND: Record<LedgerKind, { label: string; tone: BadgeTone }> = {
-  topup: { label: "Top-up", tone: "positive" },
-  charge: { label: "Charge", tone: "neutral" },
-  refund: { label: "Refund", tone: "info" },
-  adjustment: { label: "Adjustment", tone: "neutral" },
-};
-
-const ACTOR: Record<Actor, string> = { user: "You", api_key: "API key", agent: "Agent", system: "Tender" };
-
-const absoluteTime = (iso: string) =>
-  new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", second: "2-digit" });
-
-type EntryCell = CustomCellRendererProps<LedgerEntryView>;
-
-function TimeCell({ data }: EntryCell) {
-  if (!data) return null;
-  return (
-    <span title={absoluteTime(data.created_at)}>
-      <RelativeTime at={Date.parse(data.created_at)} />
-    </span>
-  );
-}
-
-function TypeCell({ data }: EntryCell) {
-  if (!data) return null;
-  const kind = KIND[data.kind];
-  return <Badge tone={kind.tone}>{kind.label}</Badge>;
-}
-
-function DetailsCell({ data }: EntryCell) {
-  if (!data) return null;
-  if (data.kind === "topup") {
-    return (
-      <span className="flex min-w-0 items-center gap-2">
-        <span className="text-foreground">{data.auto_top_up ? "Auto top-up by Ask Tender" : "PayPal"}</span>
-        {data.paypal_capture_id ? <span className="truncate font-mono text-caption text-muted-foreground">{data.paypal_capture_id}</span> : null}
-      </span>
-    );
-  }
-  const market = data.market_id ? getMarketSpec(data.market_id) : undefined;
-  const fixture = data.market_id && data.provider_id && isMarketId(data.market_id) ? getProviderFixture(data.market_id, data.provider_id) : undefined;
-  const providerName = fixture?.name ?? (data.provider_id ? (getProvider(data.provider_id)?.name ?? data.provider_id) : null);
-  return (
-    <span className="flex min-w-0 items-center gap-2">
-      {providerName ? <ProviderLogo src={fixture?.logo ?? null} name={providerName} size={16} /> : null}
-      <span className="truncate text-foreground">{providerName ?? "—"}</span>
-      {market ? <span className="truncate text-caption text-muted-foreground">{market.name}</span> : null}
-    </span>
-  );
-}
-
-function ActorCell({ data }: EntryCell) {
-  return data ? <span>{ACTOR[data.actor]}</span> : null;
-}
-
-function AmountCell({ data }: EntryCell) {
-  if (!data) return null;
-  return (
-    <span className={cn("tabular-nums", data.amount_micros > 0 ? "text-positive-text" : "text-foreground")}>
-      {formatMicros(data.amount_micros, { signed: true })}
-    </span>
-  );
-}
-
-function BalanceCell({ data }: EntryCell) {
-  return data ? <span className="text-foreground tabular-nums">{formatMicros(data.balance_after_micros)}</span> : null;
-}
-
-const ENTRY_COLUMNS: DataGridColumn<LedgerEntryView>[] = [
-  { colId: "time", headerName: "Time", cellRenderer: TimeCell },
-  { colId: "type", headerName: "Type", cellRenderer: TypeCell },
-  { colId: "details", headerName: "Details", cellRenderer: DetailsCell, flex: 1, minWidth: 200 },
-  { colId: "actor", headerName: "By", cellRenderer: ActorCell },
-  { colId: "amount", headerName: "Amount", align: "right", cellRenderer: AmountCell },
-  { colId: "balance", headerName: "Balance", align: "right", cellRenderer: BalanceCell },
-];
 
 /** Account page: balance, Add funds, transactions, API keys, and Start over. */
 export function AccountView() {
@@ -152,64 +70,6 @@ export function AccountView() {
       <ApiKeys key={generation} />
       <AddFundsDialog />
     </>
-  );
-}
-
-function Transactions({ revision }: { revision: number }) {
-  const [entries, setEntries] = useState<LedgerEntryView[] | null>(null);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/ledger?limit=200", { cache: "no-store" })
-      .then((response) => (response.ok ? (response.json() as Promise<{ entries: LedgerEntryView[] }>) : Promise.reject(new Error())))
-      .then((body) => {
-        if (!cancelled) {
-          setEntries(body.entries);
-          setFailed(false);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setFailed(true);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [revision]);
-
-  return (
-    <Section
-      id="transactions"
-      icon={<Receipt aria-hidden="true" />}
-      title="Transactions"
-      description="Top-ups and the requests your balance paid for, newest first."
-      framed={false}
-      actions={entries && entries.length > 0 ? <span className="text-caption text-muted-foreground tabular-nums">{entries.length} shown</span> : null}
-    >
-      {failed ? (
-        <Notice tone="negative">Transactions could not be loaded. Reload the page to try again.</Notice>
-      ) : entries === null ? (
-        <Skeleton className="h-32 w-full" />
-      ) : entries.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border">
-          <EmptyState
-            icon={<Receipt aria-hidden="true" />}
-            title="No transactions yet"
-            description="Add funds, then run a request with credits from any market."
-            className="py-8"
-          />
-        </div>
-      ) : (
-        <DataGrid<LedgerEntryView>
-          aria-label="Transactions"
-          data-slot="transactions"
-          rowData={entries}
-          columnDefs={ENTRY_COLUMNS}
-          getRowId={(entry) => entry.id}
-          reserveHeight={`${HEADER_HEIGHT + entries.length * ROW_HEIGHT + 2}px`}
-        />
-      )}
-    </Section>
   );
 }
 
