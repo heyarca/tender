@@ -48,7 +48,7 @@ export function PriceFieldsResult({
   points,
   providers,
   timeZone = "UTC",
-  timeZoneLabel = "UTC",
+  timeZoneLabel,
   chartHeight = 160,
   showMeta = true,
   className,

@@ -53,12 +53,12 @@ describe("format", () => {
   });
 
   it("formats times with an explicit time zone", () => {
-    expect(format.time(T, "America/Los_Angeles")).toBe("10:04 AM PT");
-    expect(format.time(T, "America/Los_Angeles", { seconds: true })).toBe("10:04:31 AM PT");
+    expect(format.time(T, "America/Los_Angeles")).toBe("10:04 AM PST");
+    expect(format.time(T, "America/Los_Angeles", { seconds: true })).toBe("10:04:31 AM PST");
     expect(format.time(T, "UTC")).toBe("18:04:31.220 UTC");
     expect(format.time(T, "UTC", { milliseconds: false })).toBe("18:04:31 UTC");
     expect(format.dateTime(T, "UTC")).toBe("Nov 9, 18:04:31 UTC");
-    expect(format.dateTime(T, "America/Los_Angeles")).toBe("Nov 9, 10:04 AM PT");
+    expect(format.dateTime(T, "America/Los_Angeles")).toBe("Nov 9, 10:04 AM PST");
     expect(format.isoTimestamp(T)).toBe("2026-11-09T18:04:31.220Z");
   });
 
