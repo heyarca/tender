@@ -18,10 +18,20 @@ runs paid requests within a weekly limit you approve, topping up from your saved
 npx @heyarca/tender@latest
 ```
 
-Adds Tender instructions to your project's `AGENTS.md` / `CLAUDE.md`, so coding agents route API calls
-through Tender instead of hard-coding a provider. The same package is a small CLI
-(`markets`, `categories`, `contracts`, `market <id>`, `quote <id>`) and a zero-dependency client. See
-[`packages/tender`](packages/tender/README.md).
+Adds Tender instructions to your project's `AGENTS.md` / `CLAUDE.md` and an MCP server config for Claude Code,
+Cursor, and VS Code, so coding agents route API calls through Tender instead of hard-coding a provider. The
+same package is a small CLI (`markets`, `categories`, `contracts`, `market <id>`, `quote <id>`, `call <id>`,
+`balance`) and a zero-dependency client. See [`packages/tender`](packages/tender/README.md).
+
+To let your agent pay for API calls from the editor:
+
+1. Add funds with PayPal at https://tender.heyarca.app/account.
+2. Create an API key on the same page. It starts with `tk_` and is shown once.
+3. Export it in the shell that starts your editor: `export TENDER_API_KEY=tk_...`
+
+The MCP tool `call_market` then buys a request from the best provider and charges your credits, for example
+`call_market { "id": "translate-en-ko", "params": { "text": "Where is the station?" } }`.
+
 
 ## What's in Tender
 
