@@ -94,7 +94,7 @@ export function BitcoinResult({
             <span className="truncate tabular-nums">Latency {formatLatency(quote.latencyMs)}</span>
           </>
         ) : (
-          <span>Run a request to see the current price</span>
+          <span>No result yet. The next request shows the current price here.</span>
         )}
       </ResultStatusLine>
 

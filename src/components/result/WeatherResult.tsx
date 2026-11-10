@@ -99,7 +99,7 @@ export function WeatherResult({
             <span className="truncate tabular-nums">Data age{preview ? " at response" : ""} {formatAge(reading.dataAgeMs)}</span>
           </>
         ) : (
-          <span>Run a request to see current conditions</span>
+          <span>No result yet. The next request shows current conditions here.</span>
         )}
       </ResultStatusLine>
 

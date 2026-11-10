@@ -182,7 +182,7 @@ export function FieldsResult({
         {reading ? (
           <ReadingMeta reading={reading} label={contract.freshness.label} timeZone={timeZone} timeZoneLabel={timeZoneLabel} />
         ) : (
-          <span>Run a request to see the result</span>
+          <span>No result yet. The next request shows it here.</span>
         )}
       </ResultStatusLine>
 
