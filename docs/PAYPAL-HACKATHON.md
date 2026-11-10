@@ -73,17 +73,23 @@ Keep USDC/x402 as an "also supports stablecoins" footnote, off the main demo pat
 
 ## 4. Compliance checklist (do first — Stage 1 and disqualification risks)
 
-- [ ] Public repo: make `heyarca/tender` public **or** publish a clean public mirror. Before that,
-      scan for secrets (`.env*`, keys, tokens, payer wallet) and remove testnet payer/private data.
-- [ ] MIT `LICENSE` at the repo root (visible in GitHub's About section).
-- [ ] **Third-party trademarks:** provider names/logos copied from OpenRouter (Together, DeepInfra,
-      Cloudflare, CoreWeave, …) are third-party marks. For the submission build and the video, use our
-      own (Arca Labs, THE ZONE BIO) plus clearly fictional providers with generated logos.
+- [x] Public repo: `heyarca/tender` is public. Secret scan (2026-11-10): the payer wallet key and common
+      token patterns (`sk-`, `ghp_`, `github_pat_`, `npm_`, `AKIA`, private-key blocks) appear nowhere in
+      the pushed history, and no `.env` file was ever committed.
+- [x] MIT `LICENSE` at the repo root (visible in GitHub's About section).
+- [x] **Third-party trademarks in the product:** every provider is fictional except our own Arca Labs and
+      THE ZONE BIO, with original logos ([`provider-logos.md`](provider-logos.md)). The README screenshot
+      shows the current landing.
+- [ ] **Third-party trademarks in media:** the landing demo video (`public/demo.mp4`) and its poster
+      show third-party names and logos (a Cloudflare outage headline, a TechCrunch clipping, old provider
+      tables). Replace them, or keep them off the submission path.
 - [ ] Video: our own footage, screen recording, royalty-free or no music.
 - [ ] Hosted demo at https://tender.heyarca.app with a PayPal **sandbox buyer account** (email +
       password) in the testing instructions, and a "reset demo" button so judges start clean.
-- [ ] README: what it is, how PayPal is used (which APIs), how AI is used (which models, which tools),
-      setup (`.env.example` with `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, model key), run, and deploy.
+- [ ] README: done: what it is, how PayPal and AI are used (with a status per flow), setup, deploy, and
+      `.env.example` with `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_WEBHOOK_ID`, and
+      `AI_GATEWAY_API_KEY`. To do: switch each PayPal and AI row to "Live" as its lane lands, and add the
+      test credentials.
 
 ## 5. Build plan (3 days, parallel lanes — same workflow as the Tender sprint)
 

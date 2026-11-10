@@ -1,6 +1,6 @@
 # @heyarca/tender
 
-[![Tender: make APIs compete for your traffic](https://tender.heyarca.app/readme-screenshot.png)](https://tender.heyarca.app)
+[![Tender: always on the best API](https://tender.heyarca.app/readme-screenshot.png)](https://tender.heyarca.app)
 
 Let your agent buy API access on **[Tender](https://tender.heyarca.app)**, the execution market for
 APIs. Providers compete to serve each request on price, latency, data freshness, and reliability. You
