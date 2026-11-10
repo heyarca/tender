@@ -5,7 +5,7 @@
  * is written to stdout; diagnostics go to stderr.
  */
 import { createInterface } from "node:readline";
-import { createTender } from "../index.js";
+import { createTender, formatMicros } from "../index.js";
 
 export const SUPPORTED_PROTOCOL_VERSIONS = ["2025-06-18", "2025-03-26", "2024-11-05"];
 const LATEST_PROTOCOL_VERSION = SUPPORTED_PROTOCOL_VERSIONS[0];
@@ -17,7 +17,9 @@ const INSTRUCTIONS =
   "or wants to replace a direct API integration. Tender is a market where providers bid to serve each request. " +
   "Find a market with list_markets (or list_categories and list_contracts), check bids and the routing decision " +
   "for a policy with get_market, and get the x402 price for the next paid call with quote. Prices are USD per " +
-  "1M requests. All tools are read-only and never pay.";
+  "1M requests (a $18 /M bid costs $0.000018 per request). call_market runs a request and pays the winning bid " +
+  "from the user's Tender credits (needs TENDER_API_KEY); get_balance shows the credits left. Every other tool is " +
+  "read-only and never pays.";
 
 const POLICY_PROPERTIES = {
   max_price: { type: "number", minimum: 0, description: "Highest bid you accept, in USD per 1M requests." },
@@ -100,6 +102,36 @@ export const TOOLS = [
     },
     annotations: { title: "Quote", ...READ_ONLY },
   },
+  {
+    name: "call_market",
+    title: "Call market",
+    description:
+      "Run one request on a market and pay the winning bid from the user's Tender credits. Returns the contract " +
+      "data, the provider that served it, the amount charged, and the balance left. Spends money: use it when the " +
+      "user wants the data, not to compare prices (use get_market or quote for that). Needs TENDER_API_KEY.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "Market id, for example \"sf-weather\"." },
+        params: {
+          type: "object",
+          additionalProperties: { type: "string" },
+          description: "Extra query parameters for the contract URL. The market already binds its own params.",
+        },
+        ...POLICY_PROPERTIES,
+      },
+      required: ["id"],
+      additionalProperties: false,
+    },
+    annotations: { title: "Call market", readOnlyHint: false, idempotentHint: false, openWorldHint: true },
+  },
+  {
+    name: "get_balance",
+    title: "Get balance",
+    description: "Show the Tender credits balance of the API key's account and its latest charges and top-ups. Needs TENDER_API_KEY.",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+    annotations: { title: "Get balance", ...READ_ONLY },
+  },
 ];
 
 const TOOLS_BY_NAME = new Map(TOOLS.map((tool) => [tool.name, tool]));
@@ -142,6 +174,10 @@ function validateArguments(tool, args) {
       if (typeof value !== "number" || !Number.isFinite(value)) throw new RpcError(-32602, `Invalid arguments for ${tool.name}: "${key}" must be a number`);
       if (schema.minimum !== undefined && value < schema.minimum) throw new RpcError(-32602, `Invalid arguments for ${tool.name}: "${key}" must be at least ${schema.minimum}`);
       if (schema.maximum !== undefined && value > schema.maximum) throw new RpcError(-32602, `Invalid arguments for ${tool.name}: "${key}" must be at most ${schema.maximum}`);
+    } else if (schema.type === "object") {
+      if (!isObject(value) || Object.values(value).some((v) => typeof v !== "string")) {
+        throw new RpcError(-32602, `Invalid arguments for ${tool.name}: "${key}" must be an object of string values`);
+      }
     }
   }
   return args;
@@ -327,6 +363,44 @@ export function createToolHandlers(tender) {
         how_to_pay: "Call contract_url again with an x402 payment signature (for example with @x402/fetch). The amount is in the asset's smallest unit.",
       };
     },
+
+    async call_market(args) {
+      const result = await tender
+        .callMarket(args.id, { params: args.params, policy: policyFromArgs(args) })
+        .catch((error) => rethrowForMarket(error, args.id));
+      const { charged_micros, balance_micros } = result.payment;
+      const body = result.response ?? {};
+      return {
+        market: args.id,
+        provider: result.provider,
+        charged: charged_micros === null ? null : formatMicros(charged_micros),
+        charged_micros,
+        balance: balance_micros === null ? null : formatMicros(balance_micros),
+        balance_micros,
+        request_id: body.request_id ?? null,
+        latency_ms: body.latency_ms ?? null,
+        data_age_ms: body.data_age_ms ?? null,
+        data: result.data,
+      };
+    },
+
+    async get_balance() {
+      const account = await tender.balance();
+      return {
+        balance: formatMicros(account.balance_micros),
+        balance_micros: account.balance_micros,
+        has_account: account.has_account,
+        recent: (account.ledger ?? []).slice(0, 10).map((e) => ({
+          kind: e.kind,
+          amount: formatMicros(e.amount_micros),
+          amount_micros: e.amount_micros,
+          market: e.market_id,
+          provider: e.provider_id,
+          at: e.created_at,
+        })),
+        add_funds_url: `${tender.baseUrl}/account`,
+      };
+    },
   };
 }
 
@@ -340,7 +414,7 @@ function toolResult(object, isError = false) {
  * Create a transport-independent MCP message handler.
  * `handle(message)` resolves to a JSON-RPC response object, or `undefined` for notifications.
  */
-export function createMcpServer({ baseUrl, version, fetch: fetchImpl, log = () => {} } = {}) {
+export function createMcpServer({ baseUrl, version, apiKey, fetch: fetchImpl, log = () => {} } = {}) {
   const baseFetch = fetchImpl ?? globalThis.fetch;
   const timedFetch = (url, init = {}) =>
     baseFetch(url, {
@@ -348,7 +422,7 @@ export function createMcpServer({ baseUrl, version, fetch: fetchImpl, log = () =
       headers: { "user-agent": `tender-mcp/${version ?? "0"}`, ...(init.headers ?? {}) },
       signal: init.signal ?? AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
-  const tender = createTender({ baseUrl, fetch: timedFetch });
+  const tender = createTender({ baseUrl, apiKey, fetch: timedFetch });
   const handlers = createToolHandlers(tender);
 
   async function callTool(params) {
@@ -361,17 +435,23 @@ export function createMcpServer({ baseUrl, version, fetch: fetchImpl, log = () =
     try {
       return toolResult(await handlers[name](args));
     } catch (error) {
-      const code = error?.body?.error?.code;
+      const code = error?.code ?? error?.body?.error?.code;
+      const accountUrl = `${tender.baseUrl}/account`;
       const message =
-        error instanceof ToolError
+        error instanceof ToolError || code === "missing_api_key"
           ? error.message
-          : code === "no_eligible_provider"
+          : code === "insufficient_credits"
+            ? `Your Tender balance is too low. Add funds at ${accountUrl}`
+          : code === "invalid_api_key"
+            ? `TENDER_API_KEY is unknown or revoked. Create a key at ${accountUrl}`
+          : code === "no_eligible_provider" || error?.status === 409
             ? "No provider meets this policy. Relax the policy (for example a higher max_price) or call get_market to see why each provider fails."
             : error?.name === "TimeoutError"
             ? `Tender did not answer within ${REQUEST_TIMEOUT_MS / 1000} s. Try again.`
             : `Tender request failed: ${error?.message ?? String(error)}`;
       log(`tools/call ${name} failed: ${message}`);
-      return toolResult({ error: message, ...(error?.status ? { status: error.status } : {}) }, true);
+      const balance = error?.body?.balance_micros;
+      return toolResult({ error: message, ...(error?.status ? { status: error.status } : {}), ...(typeof balance === "number" ? { balance: formatMicros(balance), balance_micros: balance } : {}) }, true);
     }
   }
 
@@ -439,7 +519,7 @@ export function createMcpServer({ baseUrl, version, fetch: fetchImpl, log = () =
 /** Run the MCP server on stdin/stdout until stdin ends. */
 export function runStdioServer({ baseUrl, version } = {}) {
   const log = (msg) => process.stderr.write(`[tender mcp] ${msg}\n`);
-  const server = createMcpServer({ baseUrl, version, log });
+  const server = createMcpServer({ baseUrl, version, apiKey: process.env.TENDER_API_KEY, log });
   const pending = new Set();
   const send = (payload) => process.stdout.write(`${JSON.stringify(payload)}\n`);
 
@@ -472,6 +552,6 @@ export function runStdioServer({ baseUrl, version } = {}) {
     await Promise.allSettled([...pending]);
     process.stdout.write("", () => process.exit(0));
   });
-  log(`ready (Tender API ${server.tender.baseUrl})`);
+  log(`ready (Tender API ${server.tender.baseUrl}, ${server.tender.hasApiKey ? "API key set" : "no TENDER_API_KEY; call_market and get_balance need one"})`);
   return server;
 }
