@@ -47,7 +47,7 @@ function SelectedProbe({ marketId }: { marketId: MarketId }) {
   return <output data-testid="selected">{selected ?? "none"}</output>;
 }
 
-function mount(marketId: MarketId = "sf-weather") {
+async function mount(marketId: MarketId = "sf-weather") {
   const store: TenderStore = createTenderStore();
   render(
     <TenderProvider store={store}>
@@ -65,6 +65,10 @@ function mount(marketId: MarketId = "sf-weather") {
       </TooltipProvider>
     </TenderProvider>,
   );
+  // AG Grid initializes asynchronously; end on a clock tick so cooldown assertions stay exact.
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(1_000);
+  });
   return store;
 }
 
@@ -83,8 +87,8 @@ const header = (colId: string) => document.querySelector<HTMLElement>(`[data-slo
 const decision = () => document.querySelector<HTMLElement>("[data-slot=routing-decision]")!;
 
 describe("ProvidersSection", () => {
-  it("renders the weather bids in routing order with statuses, tags, and the decision", () => {
-    mount();
+  it("renders the weather bids in routing order with statuses, tags, and the decision", async () => {
+    await mount();
     expect(screen.getByRole("heading", { name: "Providers", level: 2 })).toBeTruthy();
     expect(rowIds()).toEqual([
       "fernline",
@@ -115,8 +119,8 @@ describe("ProvidersSection", () => {
     expect(within(decision()).getByText(/Slatework is cheaper/)).toBeTruthy();
   });
 
-  it("renders the Bitcoin market defaults", () => {
-    mount("btc-usd");
+  it("renders the Bitcoin market defaults", async () => {
+    await mount("btc-usd");
     expect(rowIds()[0]).toBe("the-zone-bio");
     expect(provider("brindlewood").dataset.status).toBe("too-slow");
     expect(provider("hollowbrook").dataset.status).toBe("stale-data");
@@ -125,8 +129,8 @@ describe("ProvidersSection", () => {
     expect(screen.getByRole("button", { name: /Max data age 1,000 ms/ })).toBeTruthy();
   });
 
-  it("re-ranks when the routing preference changes", () => {
-    mount();
+  it("re-ranks when the routing preference changes", async () => {
+    await mount();
     fireEvent.click(screen.getByRole("radio", { name: "Lowest latency" }));
     expect(rowIds()[0]).toBe("cinderlane");
     expect(provider("cinderlane").dataset.role).toBe("active");
@@ -135,28 +139,34 @@ describe("ProvidersSection", () => {
     expect(within(row("fernline")).getByText("Best price")).toBeTruthy();
   });
 
-  it("selects a provider on row click and clears it on a second click", () => {
-    mount();
-    fireEvent.click(row("cinderlane"));
+  it("selects a provider on row click and clears it on a second click", async () => {
+    await mount();
+    await act(async () => {
+      fireEvent.click(row("cinderlane"));
+      await vi.advanceTimersByTimeAsync(0);
+    });
     expect(screen.getByTestId("selected").textContent).toBe("cinderlane");
     expect(row("cinderlane").classList.contains("ag-row-selected")).toBe(true);
     expect(row("cinderlane").querySelector('button[aria-label="Cinderlane, select to inspect"]')?.getAttribute("aria-pressed")).toBe("true");
-    fireEvent.click(row("cinderlane"));
+    await act(async () => {
+      fireEvent.click(row("cinderlane"));
+      await vi.advanceTimersByTimeAsync(0);
+    });
     expect(screen.getByTestId("selected").textContent).toBe("none");
   });
 
-  it("fails over when the active provider stops qualifying", () => {
-    const store = mount();
+  it("fails over when the active provider stops qualifying", async () => {
+    const store = await mount();
     act(() => store.actions.updateProvider("sf-weather", "fernline", { p95LatencyMs: 520 }));
     expect(rowIds()[0]).toBe("kitefin");
     expect(provider("fernline").dataset.status).toBe("too-slow");
     expect(rowIds().indexOf("fernline")).toBeGreaterThan(rowIds().findIndex((id) => id.startsWith("divider")));
     expect(within(decision()).getByRole("heading").textContent).toBe("Routing to Kitefin");
-    expect(document.querySelector("[aria-live=polite]")?.textContent).toBe("Routing to Kitefin");
+    expect(document.querySelector("#providers p.sr-only[aria-live=polite]")?.textContent).toBe("Routing to Kitefin");
   });
 
-  it("shows the cooldown countdown for an optimization switch", () => {
-    const store = mount();
+  it("shows the cooldown countdown for an optimization switch", async () => {
+    const store = await mount();
     act(() => store.actions.updateProvider("sf-weather", "fernline", { p95LatencyMs: 640 }));
     act(() => store.actions.updateProvider("sf-weather", "fernline", { p95LatencyMs: 210 }));
     expect(decision().dataset.kind).toBe("pending-switch");
@@ -171,8 +181,8 @@ describe("ProvidersSection", () => {
     expect(decision().dataset.kind).toBe("routing");
   });
 
-  it("surfaces a failing pinned provider with explicit actions", () => {
-    const store = mount();
+  it("surfaces a failing pinned provider with explicit actions", async () => {
+    const store = await mount();
     act(() => store.actions.setRoutingMode("sf-weather", { kind: "pinned", providerId: "slatework" }));
     expect(rowIds()[0]).toBe("slatework");
     expect(within(row("slatework")).getByText("Pinned, failing")).toBeTruthy();
@@ -185,8 +195,8 @@ describe("ProvidersSection", () => {
     expect(decision().dataset.kind).toBe("routing");
   });
 
-  it("explains No eligible provider and offers to relax the policy", () => {
-    const store = mount();
+  it("explains No eligible provider and offers to relax the policy", async () => {
+    const store = await mount();
     act(() => store.actions.setPolicy("sf-weather", { maxP95LatencyMs: 100 }));
     expect(decision().dataset.kind).toBe("no-eligible");
     expect(screen.getByText(/of 8 qualify/).textContent).toBe("0 of 8 qualify");
@@ -198,20 +208,29 @@ describe("ProvidersSection", () => {
     expect(decision().dataset.kind).toBe("routing");
   });
 
-  it("opens the routing policy from a policy chip", () => {
-    mount();
+  it("opens the routing policy from a policy chip", async () => {
+    await mount();
     fireEvent.click(screen.getByRole("button", { name: "Max price $40.00 /M req. Edit routing policy" }));
     expect(document.activeElement?.id).toBe("routing-title");
   });
 
-  it("sorts inside each group and returns to routing order", () => {
-    mount();
+  it("sorts inside each group and returns to routing order", async () => {
+    await mount();
     const bid = header("bid");
-    fireEvent.click(bid);
-    fireEvent.click(bid);
+    await act(async () => {
+      fireEvent.click(bid.querySelector(".ag-header-cell-label")!);
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    await act(async () => {
+      fireEvent.click(bid.querySelector(".ag-header-cell-label")!);
+      await vi.advanceTimersByTimeAsync(0);
+    });
     expect(rowIds().slice(0, 4)).toEqual(["saltmarsh", "cinderlane", "kitefin", "fernline"]);
     expect(bid.getAttribute("aria-sort")).toBe("descending");
-    fireEvent.click(bid);
+    await act(async () => {
+      fireEvent.click(bid.querySelector(".ag-header-cell-label")!);
+      await vi.advanceTimersByTimeAsync(0);
+    });
     expect(rowIds()[0]).toBe("fernline");
   });
 });
