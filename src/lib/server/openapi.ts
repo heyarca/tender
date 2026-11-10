@@ -74,7 +74,7 @@ function paidOperation(contract: ContractSpec) {
     description: `${contract.description} Paid per request in USDC on Base Sepolia (eip155:84532). First request returns HTTP 402. Retry the same URL and policy with PAYMENT-SIGNATURE. One routing decision binds the quote and response. Amounts below the USDC minimum unit are rounded up explicitly.`,
     parameters: [
       ...params,
-      { name: "market", in: "query", description: "Market id implementing this contract. Selects the market explicitly; contract parameters, if given, must match it.", schema: { type: "string", enum: markets.map((market) => market.id) } },
+      { name: contract.params.some((param) => param.key === "market") ? "tender_market" : "market", in: "query", description: "Market id implementing this contract. Selects the market explicitly; contract parameters, if given, must match it.", schema: { type: "string", enum: markets.map((market) => market.id) } },
       ...policyParameters,
       { name: "PAYMENT-SIGNATURE", in: "header", description: "Base64 x402 v2 PaymentPayload", schema: string },
     ],

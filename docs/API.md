@@ -186,6 +186,10 @@ curl -i "$BASE/api/v1/weather/current?location=san-francisco" \
   -H 'Tender-Max-Price: 30' -H 'Tender-Preference: lowest-latency'
 curl -i "$BASE/api/v1/translation/text?source=en&target=ko"
 curl -i "$BASE/api/v1/speech/transcribe?market=stt-diarized"
+# `market` selects a market by id. components.price has its own `market` parameter (the trading
+# market), so there use `tender_market`, which selects a market on every contract.
+curl -i "$BASE/api/v1/components/price?part=MLCC-0402-100NF&market=huaqiangbei"
+curl -i "$BASE/api/v1/components/price?tender_market=sz-mlcc"
 
 # Unsupported params: HTTP 400 with the supported values.
 curl -i "$BASE/api/v1/weather/current?location=paris"

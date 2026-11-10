@@ -64,7 +64,15 @@ const paramText = (market: MarketSpec) =>
   Object.entries(market.params).map(([key, value]) => `${key}=${value}`).join("&") || market.id;
 
 /**
- * Resolve the market of a contract request from its query: an explicit `market` id, the market whose
+ * Query keys that select a market explicitly. `tender_market` always works; `market` also works unless the
+ * contract has its own `market` parameter (components.price), where `market` stays a contract parameter.
+ */
+export function marketSelectorKeys(contract: ContractSpec): readonly string[] {
+  return contract.params.some((param) => param.key === "market") ? ["tender_market"] : ["market", "tender_market"];
+}
+
+/**
+ * Resolve the market of a contract request from its query: an explicit market id, the market whose
  * params match every given contract param (case-insensitive), or the contract's default market when
  * no contract param is given. Throws a 400 that lists the supported values when nothing matches.
  */
@@ -74,7 +82,7 @@ export function resolveContractMarket(contract: ContractSpec, query: URLSearchPa
     const supported = markets.map((market) => ({ market: market.id, params: market.params }));
     return new ContractInputError(`${message}. Supported: ${markets.map(paramText).join(", ")}.`, supported);
   };
-  const explicit = query.getAll("market");
+  const explicit = marketSelectorKeys(contract).flatMap((key) => query.getAll(key));
   if (explicit.length > 1) throw unsupported("Send one market value");
   const given: [string, string][] = [];
   for (const param of contract.params) {
@@ -100,12 +108,13 @@ export class ContractInputError extends ApiError {
   }
 }
 
-/** Every contract param in the query must match the market (case-insensitive); `market`, if given, must name it. */
+/** Every contract param in the query must match the market (case-insensitive); a market selector, if given, must name it. */
 function validateContract(request: Request, marketId: MarketId) {
   if (request.method !== "GET") throw new ApiError(405, "method_not_allowed", "Use GET for this contract");
   const spec = getMarketSpec(marketId);
   const query = new URL(request.url).searchParams;
-  const explicit = query.getAll("market");
+  const contract = spec ? getContract(spec.contractId) : undefined;
+  const explicit = (contract ? marketSelectorKeys(contract) : ["market", "tender_market"]).flatMap((key) => query.getAll(key));
   if (explicit.length > 1 || (explicit.length === 1 && explicit[0] !== marketId)) {
     throw new ApiError(400, "unsupported_input", `Supported market: ${marketId}`);
   }
