@@ -173,6 +173,8 @@ create table auto_top_ups (
 A PENDING row is written before PayPal is charged. Automatic top-ups since Monday 00:00 UTC (PENDING and
 COMPLETED) plus the new one never exceed the weekly limit.
 
+An explicit `top_up` request in Ask Tender creates a user-approved Checkout order with `actor: "user"`, even when PayPal is saved. It never charges the saved payment token or reserves automatic allowance. Only low-balance top-ups from `run_request` use the guarded vault path. The user must approve each explicit Checkout payment; the model cannot mark a vault charge as manual to bypass the allowance.
+
 ## 6. Ledger API (`src/lib/ledger`, owned by the core lane)
 
 ```ts

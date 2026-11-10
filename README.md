@@ -71,6 +71,8 @@ Status of each flow:
 | Providers receive their earnings | Payouts (batch payouts), payout webhooks | Live |
 | Ask Tender looks up orders, sends invoices, and lists transactions | PayPal Agent Toolkit | Live (transaction listing starts working once PayPal enables transaction search on the app) |
 
+Explicit top-up requests in Ask Tender (for example, "Add $5") always require one-off PayPal Checkout approval. They do not consume the saved-PayPal automatic top-up allowance. Low-balance top-ups during agent requests still use the saved PayPal account and the approved weekly limit.
+
 Everything runs on the PayPal sandbox with test accounts, so no real money moves. Testing credentials for
 a sandbox buyer are in the submission's testing instructions.
 
