@@ -6,6 +6,7 @@ import { LandingFooter, LandingHeader } from "@/components/landing/LandingChrome
 import { LandingProductProviders } from "@/components/landing/LandingProductProviders";
 import { MarketplaceSection } from "@/components/landing/MarketplaceSection";
 import { MarketsSection } from "@/components/landing/MarketsSection";
+import { PaySection } from "@/components/landing/PaySection";
 import { PriceSection } from "@/components/landing/PriceSection";
 import { RequirementsSection } from "@/components/landing/RequirementsSection";
 import { SwitchSection } from "@/components/landing/SwitchSection";
@@ -37,6 +38,7 @@ export default function LandingPage() {
         <main id="main">
           <HeroSection />
           <AgentBanner />
+          <PaySection />
           <MarketsSection />
           <RequirementsSection />
           <SwitchSection />
