@@ -20,6 +20,7 @@ import type { ApiKeyView, CreatedApiKeyView, LedgerEntryView, LedgerKind, Actor 
 import { getProviderFixture, isMarketId } from "@/lib/tender";
 import { cn } from "@/lib/utils";
 import { AddFundsDialog } from "./add-funds-dialog";
+import { AgentAutopayCard } from "./agent-autopay-card";
 import { errorMessage, refreshAccount, setAddFundsOpen, useCreditsStore } from "./credits-store";
 import { formatMicros } from "./money";
 import { StartOverButton } from "./start-over-button";
@@ -61,7 +62,7 @@ function DetailsCell({ data }: EntryCell) {
   if (data.kind === "topup") {
     return (
       <span className="flex min-w-0 items-center gap-2">
-        <span className="text-foreground">PayPal</span>
+        <span className="text-foreground">{data.auto_top_up ? "Auto top-up by Ask Tender" : "PayPal"}</span>
         {data.paypal_capture_id ? <span className="truncate font-mono text-caption text-muted-foreground">{data.paypal_capture_id}</span> : null}
       </span>
     );
@@ -146,6 +147,7 @@ export function AccountView() {
         </div>
       </Section>
 
+      <AgentAutopayCard key={generation} />
       <Transactions revision={revision} />
       <ApiKeys key={generation} />
       <AddFundsDialog />
