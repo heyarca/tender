@@ -152,7 +152,7 @@
 .tenderLanding_closingTitle { font-size: 56px; line-height: 1.04; letter-spacing: -0.035em; color: var(--lp-ink); }
 .tenderLanding_closingTitle span { display: block; }
 .tenderLanding_closingInner .tenderLanding_closingBody { max-width: 600px; margin-top: 28px; text-wrap: balance; font-size: 18px; line-height: 1.55; color: var(--lp-ink-2); }
-.tenderLanding_closingAction { margin-top: 40px; }
+.tenderLanding_closingActions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 40px; }
 
 @media (max-width: 1023px) {
   .tenderLanding_closingInner { padding-top: 96px; }
@@ -163,5 +163,5 @@
   .tenderLanding_closingInner { padding-top: 72px; }
   .tenderLanding_closingTitle { font-size: 36px; line-height: 1.08; }
   .tenderLanding_closingInner .tenderLanding_closingBody { margin-top: 20px; font-size: 17px; }
-  .tenderLanding_closingAction { margin-top: 32px; }
+  .tenderLanding_closingActions { margin-top: 32px; }
 }

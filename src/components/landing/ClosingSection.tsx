@@ -1,4 +1,4 @@
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Sparkles } from "lucide-react";
 import { ButtonLink } from "./LandingButton";
 import { SectionHeader } from "./SectionHeader";
 import { landingStyles as styles } from "./styles";
@@ -53,11 +53,17 @@ export function ClosingSection() {
           <span>Find a better provider</span> <span>for your next request.</span>
         </h2>
         <p className={styles.closingBody}>
-          Pick one of Tender’s markets or let your AI agent create a new one. Set your requirements and see where Tender routes your next request.
+          Pick one of Tender’s markets or let your AI agent create a new one. Add funds with PayPal, or let Ask Tender set your
+          requirements and pay for your next request.
         </p>
-        <ButtonLink href="/markets" variant="primary" size="lg" icon={<ArrowUpRight />} className={styles.closingAction}>
-          Try Tender
-        </ButtonLink>
+        <div className={styles.closingActions}>
+          <ButtonLink href="/markets" variant="primary" size="lg" icon={<ArrowUpRight />}>
+            Try Tender
+          </ButtonLink>
+          <ButtonLink href="/markets/sf-weather?ask=1" variant="secondary" size="lg" icon={<Sparkles size={20} />} iconPosition="start">
+            Try Ask Tender
+          </ButtonLink>
+        </div>
       </div>
     </section>
   );

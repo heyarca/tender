@@ -5,7 +5,9 @@
 **Always on the best API.** Tender is a marketplace where API providers bid to serve each request on
 price, latency, data freshness, and reliability. You declare what you need; Tender routes every request
 to the best provider that meets it, and switches the moment a provider stops qualifying. Your app never
-notices.
+notices. Money moves through PayPal: you add credits with PayPal Checkout, each request pays the winning
+bid, and providers get paid with PayPal Payouts. Ask Tender, an AI agent, sets your routing policy and
+runs paid requests within a weekly limit you approve, topping up from your saved PayPal.
 
 **Live:** https://tender.heyarca.app · **Markets:** https://tender.heyarca.app/markets ·
 **Demo:** https://tender.heyarca.app/demo

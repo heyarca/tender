@@ -88,6 +88,17 @@ export function AskTender({ marketId, onSwitchMarket }: AskTenderProps) {
     }
   }, [messages, store]);
 
+  // `?ask=1` opens the panel at the top of the market page (the landing page links here from far down,
+  // and client navigation would keep that scroll position).
+  useEffect(() => {
+    if (!new URLSearchParams(window.location.search).has("ask")) return;
+    const frame = requestAnimationFrame(() => {
+      window.scrollTo(0, 0);
+      setOpen(true);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
   useEffect(() => {
     const element = scroller.current;
     if (element) element.scrollTop = element.scrollHeight;

@@ -38,7 +38,7 @@ export function AgentBanner() {
             <span className={styles.agentIcon} aria-hidden="true"><Bot size={22} strokeWidth={1.75} /></span>
             <div>
               <h2 id="agent-banner-title" className={styles.agentTitle}>Let your agent buy and sell API access.</h2>
-              <p className={styles.agentText}>Let your agent move your API integrations to Tender.</p>
+              <p className={styles.agentText}>Let your agent move your API integrations to Tender. It pays for each call with credits you add with PayPal.</p>
             </div>
           </div>
           <div className={styles.agentCommandBlock}>
