@@ -78,6 +78,32 @@ In the product:
 Building Tender: the code was written with AI coding agents. Prime Agent orchestrated parallel workers
 running Claude Opus 5.5 (product UI and engine) and GLM-5.3-Flash (backend audits and fixes).
 
+## How Tender uses AG Grid
+
+Every table in Tender is [AG Grid](https://www.ag-grid.com/react-data-grid/) Community 36 (no Enterprise
+modules, no licence key) behind one wrapper, [`src/components/ui/data-grid.tsx`](src/components/ui/data-grid.tsx):
+
+- **Tender theme with the Theming API.** `themeQuartz.withParams(...)` maps the design tokens (PP Mori,
+  hairline borders, olive focus, lime only as a fill) onto cells, headers, inputs, floating filters,
+  editors, checkboxes, tooltips, and pinned rows; `withPart` adds lucide sort and filter icons. No AG Grid
+  CSS file is imported.
+- **Features per grid.** A grid lists what it uses (`features={["quickFilter", "editing", ...]}`) and gets
+  exactly those Community modules, so AG Grid validates each grid's setup.
+- **Loaded when needed.** AG Grid ships as its own chunk that loads when a grid comes within a screen of the
+  viewport, with the grid's height reserved so nothing jumps. The landing page shows grids far below the
+  fold, so it no longer downloads AG Grid up front (first-load JS on `/landing`: 749 KB gzip before this
+  work, 514 KB after).
+
+| Grid | Where | AG Grid features | Why |
+|---|---|---|---|
+| Market directory | `/markets`, Table view | Quick filter (search box), external filter (group tabs and category sidebar), Number Filters with custom React floating filters (≤ bid, ≤ P95, ≥ success), column state, row ids with immutable updates and cell flashing, React cell renderers (P95 trend), pinned column on small screens, CSV export | 75 markets tick every 5 s from the monitor; one query (search, filters, sort) is shared with the list view and mirrored in the URL, so a filtered, sorted view is a link |
+| Providers | Every market page | Row ids and row animation, custom comparators, full-width divider row, `flashCells` on route switches, row selection | The ranking re-orders live as bids and conditions change |
+| Provider conditions | Every market page | Inline editing with number and checkbox editors, `readOnlyEdit` + `cellEditRequest` into the store, undo/redo (⌘Z, ⌘⇧Z), cell class rules for edited values, React tooltip component with every policy check | Edit any provider like a spreadsheet; routing re-evaluates on Enter and the providers grid re-ranks |
+| Bid history | Every market page, Bidding agents | `applyTransaction({ add, addIndex: 0 })`, flashing new rows, Text Filter by provider, tooltips, row virtualisation past six rows | Each agent round and each manual edit slides in at the top without re-rendering the log |
+| Provider leaderboard | `/leaderboard` | Quick filter, Number Filters in floating filters, pinned totals row that follows the filters, live flashing, CSV export | All 29 providers across the 75 markets: markets won right now, bids, measured P95 and success, and PayPal earnings |
+| Transactions | `/account` | Text Filters (type, who paid) and a Date Filter with relative ranges, set from Tender selects; three pinned totals rows (top-ups, charges, net) that follow the filters; CSV export | Reconcile PayPal top-ups against what requests and Ask Tender spent |
+| Earnings and payout batches | `/payouts` | Sortable columns, pinned totals row, expandable batch rows, CSV export | What Tender owes each provider and what PayPal Payouts sent |
+
 ## HTTP API
 
 | Method | Path | |
