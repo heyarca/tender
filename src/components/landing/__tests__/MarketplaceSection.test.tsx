@@ -56,7 +56,7 @@ describe("MarketplaceSection", () => {
     expect(section?.getAttribute("aria-labelledby")).toBe(heading.id);
     expect(
       screen.getByText(
-        "We’re building toward a market where API providers publish offers and compete to serve application demand. Apps state what they need. Providers win traffic by offering better prices and meeting those requirements.",
+        "We’re building toward a market where API providers publish offers and compete to serve application demand. Apps state what they need. Providers win traffic by offering better prices and meeting those requirements. Bidding agents already reprice each offer, and Tender pays providers their earnings with PayPal Payouts.",
       ),
     ).toBeTruthy();
     // No caption or extra sentences: exactly one paragraph of body copy outside the figure.
@@ -113,16 +113,19 @@ describe("MarketplaceSection", () => {
 });
 
 describe("ClosingSection", () => {
-  it("renders the approved heading, body, and one Try Tender action", () => {
+  it("renders the approved heading, body, and the Try Tender and Try Ask Tender actions", () => {
     const { container } = render(<ClosingSection />);
     expect(screen.getByRole("heading", { level: 2, name: "Find a better provider for your next request." })).toBeTruthy();
     expect(
-      screen.getByText("Pick one of Tender’s markets or let your AI agent create a new one. Set your requirements and see where Tender routes your next request."),
+      screen.getByText(
+        "Pick one of Tender’s markets or let your AI agent create a new one. Add funds with PayPal, or let Ask Tender set your requirements and pay for your next request.",
+      ),
     ).toBeTruthy();
     const links = screen.getAllByRole("link");
-    expect(links).toHaveLength(1);
-    expect(links[0]?.textContent).toBe("Try Tender");
-    expect(links[0]?.getAttribute("href")).toBe("/markets");
+    expect(links.map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
+      ["Try Tender", "/markets"],
+      ["Try Ask Tender", "/markets/sf-weather?ask=1"],
+    ]);
     expect(container.textContent ?? "").not.toMatch(BANNED);
   });
 

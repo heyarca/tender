@@ -6,13 +6,14 @@ import { LandingFooter, LandingHeader } from "@/components/landing/LandingChrome
 import { LandingProductProviders } from "@/components/landing/LandingProductProviders";
 import { MarketplaceSection } from "@/components/landing/MarketplaceSection";
 import { MarketsSection } from "@/components/landing/MarketsSection";
+import { PaySection } from "@/components/landing/PaySection";
 import { PriceSection } from "@/components/landing/PriceSection";
 import { RequirementsSection } from "@/components/landing/RequirementsSection";
 import { SwitchSection } from "@/components/landing/SwitchSection";
 
 const TITLE = "Tender — Always on the best API";
 const DESCRIPTION =
-  "If an API breaks, Tender switches. If a better one shows up, Tender switches. Your app never notices.";
+  "If an API breaks, Tender switches. If a better one shows up, Tender switches. Your app never notices. Pay with PayPal, or let Ask Tender spend for you.";
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },
@@ -37,6 +38,7 @@ export default function LandingPage() {
         <main id="main">
           <HeroSection />
           <AgentBanner />
+          <PaySection />
           <MarketsSection />
           <RequirementsSection />
           <SwitchSection />

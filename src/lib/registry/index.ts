@@ -2,7 +2,7 @@ import { CONTRACTS } from "./contracts";
 import { MARKET_SPECS } from "./markets";
 import { PROVIDERS } from "./providers";
 import { CATEGORIES, GROUPS } from "./taxonomy";
-import type { Breadcrumb, CategorySpec, ContractSpec, GroupSpec, MarketSpec, ProviderSpec } from "./types";
+import type { Breadcrumb, CategorySpec, ContractSpec, GroupSpec, MarketSpec, ParamSpec, ProviderSpec } from "./types";
 
 export type * from "./types";
 export { CATEGORIES, CONTRACTS, GROUPS, MARKET_SPECS, PROVIDERS };
@@ -20,6 +20,13 @@ export const getContract = (id: string): ContractSpec | undefined => CONTRACT_BY
 export const getMarketSpec = (id: string): MarketSpec | undefined => MARKET_BY_ID.get(id);
 export const getProvider = (id: string): ProviderSpec | undefined => PROVIDER_BY_ID.get(id);
 export const isRegisteredMarket = (id: unknown): id is string => typeof id === "string" && MARKET_BY_ID.has(id);
+
+/** True for a free-text request input, false for a param that markets bind. */
+export const isInputParam = (param: ParamSpec): boolean => param.kind === "input";
+/** Contract params that select a market (inputs excluded). */
+export const marketParams = (contract: ContractSpec): ParamSpec[] => contract.params.filter((param) => !isInputParam(param));
+/** Free-text request inputs of a contract. */
+export const inputParams = (contract: ContractSpec): ParamSpec[] => contract.params.filter(isInputParam);
 
 /** Categories of a group, in display order. */
 export const categoriesOf = (groupId: string): CategorySpec[] => CATEGORIES.filter((category) => category.groupId === groupId);
@@ -97,6 +104,7 @@ export function validateRegistry(): string[] {
   for (const category of CATEGORIES) if (!getGroup(category.groupId)) errors.push(`category ${category.id}: unknown group ${category.groupId}`);
   for (const contract of CONTRACTS) {
     if (contract.output.filter((field) => field.primary).length !== 1) errors.push(`contract ${contract.id}: needs exactly one primary field`);
+    for (const param of inputParams(contract)) if (!param.maxLength) errors.push(`contract ${contract.id}: input ${param.key} needs maxLength`);
     for (const field of contract.output) {
       if (!field.optional && readField(contract.sample, field.key) === undefined) errors.push(`contract ${contract.id}: sample misses ${field.key}`);
     }
@@ -113,9 +121,11 @@ export function validateRegistry(): string[] {
       errors.push(`market ${market.id}: unknown contract ${market.contractId}`);
       continue;
     }
-    const expected = contract.params.map((param) => param.key).sort().join(",");
+    const expected = marketParams(contract).map((param) => param.key).sort().join(",");
     const actual = Object.keys(market.params).sort().join(",");
     if (expected !== actual) errors.push(`market ${market.id}: params ${actual} do not match ${contract.id} (${expected})`);
+    const inputs = new Set(inputParams(contract).map((param) => param.key));
+    for (const key of Object.keys(market.inputs ?? {})) if (!inputs.has(key)) errors.push(`market ${market.id}: ${key} is not an input of ${contract.id}`);
     if (market.listings.length === 0) errors.push(`market ${market.id}: no listings`);
     for (const listing of market.listings) if (!getProvider(listing.providerId)) errors.push(`market ${market.id}: unknown provider ${listing.providerId}`);
     const sample = sampleFor(market);

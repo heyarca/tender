@@ -17,6 +17,7 @@ export function askInstructions(marketId: string | null, paypal: boolean): strin
     "",
     "Rules:",
     "- Never spend without an approved spending limit. Use get_balance to check the limit and this week's spend.",
+    "- Some markets take inputs. Pass them in run_request's params: translation markets take text, chat markets take prompt, address and place search take query, page metadata takes url. Without an input the market uses its default.",
     "- Confirm spending: say what you will run and what it costs.",
     "- If run_request is refused, say why in one sentence. Do not retry a refused request.",
     "- Never pin a provider unless the user asks to pin one. Otherwise say Tender routes automatically to the cheapest qualifying provider.",

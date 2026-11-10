@@ -1,0 +1,47 @@
+/* #paypal: how money moves (tenderLanding_pay* namespace). */
+
+/* Three step cards: copy on top, a pale stage with a product window at the bottom.
+   Subgrid rows keep the three stages aligned when the copy runs to different lengths. */
+.tenderLanding_payGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: auto auto; gap: 24px; margin: 0; padding: 0; list-style: none; }
+.tenderLanding_payCard { display: grid; grid-row: span 2; grid-template-rows: subgrid; row-gap: 40px; min-width: 0; padding: 40px 32px 32px; }
+.tenderLanding_payCopy { min-width: 0; padding-inline: 8px; }
+.tenderLanding_payStepNumber { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: var(--lp-ink); font-size: 15px; line-height: 20px; color: var(--lp-lime); }
+.tenderLanding_payTitleLine { display: block; }
+.tenderLanding_payHeading span { display: block; }
+.tenderLanding_payHeading { margin-top: 24px; font-size: 24px; line-height: 1.25; letter-spacing: -0.018em; color: var(--lp-ink); }
+.tenderLanding_payText { margin-top: 12px; font-size: 17px; line-height: 1.5; color: var(--lp-ink-3); }
+
+.tenderLanding_payStage { position: relative; isolation: isolate; display: flex; flex: 1 0 auto; flex-direction: column; justify-content: flex-end; gap: 12px; min-height: 360px; padding: 20px; overflow: hidden; border-radius: 16px; background-color: var(--lp-page); }
+.tenderLanding_payWindow { position: relative; width: 100%; padding: 16px 18px; border-radius: 14px; background: var(--lp-surface); box-shadow: 0 0 0 1px rgb(3 8 10 / 0.06), 0 1px 2px rgb(3 8 10 / 0.04), 0 18px 40px -22px rgb(3 8 10 / 0.24); }
+/* Floating result above the window: the toast after a payment, the winning bid. */
+.tenderLanding_payFloat { align-self: flex-end; width: min(100%, 260px); padding: 12px 14px; border-radius: 12px; background: var(--lp-surface); box-shadow: 0 0 0 1px rgb(3 8 10 / 0.08), 0 2px 6px rgb(3 8 10 / 0.08), 0 28px 56px -24px rgb(3 8 10 / 0.42); }
+.tenderLanding_payBid { display: flex; align-items: center; gap: 10px; align-self: stretch; width: auto; white-space: nowrap; }
+
+/* Ask Tender panel: the newest messages stay in view, older ones scroll away under the header. */
+.tenderLanding_payChat { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+.tenderLanding_payChatBody { justify-content: flex-end; min-height: 0; overflow: hidden; }
+
+.tenderLanding_payActions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 40px; }
+
+/* Embedded product text never drops below 13px on the landing page. */
+.tenderLanding_payStage :is(.text-caption, .text-overline, .text-micro, .text-2xs) { font-size: 13px; }
+
+.tenderLanding_payCard:hover .tenderLanding_payWindow { transform: translateY(-4px); }
+.tenderLanding_payWindow { transition: transform 0.45s var(--lp-ease); }
+
+@media (max-width: 1279px) {
+  /* One card per row: copy on the left, the product window on the right. */
+  .tenderLanding_payGrid { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
+  .tenderLanding_payCard { grid-row: auto; grid-template-rows: none; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); align-items: start; gap: 48px; padding: 40px; }
+  .tenderLanding_payCopy { padding: 8px 0 0; }
+}
+@media (max-width: 767px) {
+  .tenderLanding_payCard { grid-template-columns: minmax(0, 1fr); gap: 28px; padding: 28px 20px 20px; }
+  .tenderLanding_payHeading { margin-top: 20px; font-size: 22px; }
+  .tenderLanding_payText { font-size: 16px; }
+  .tenderLanding_payStage { min-height: 0; padding: 10px; }
+  .tenderLanding_payWindow { padding: 14px 12px; }
+  .tenderLanding_payChat { padding: 0; }
+  .tenderLanding_payActions { margin-top: 32px; }
+  .tenderLanding_payActions > * { flex: 1 1 0; }
+}

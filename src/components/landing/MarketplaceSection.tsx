@@ -145,7 +145,8 @@ export function MarketplaceSection() {
             <p className={styles.marketplaceBody}>
               We’re building toward a market where API providers publish offers and compete to serve application
               demand. Apps state what they need. Providers win traffic by offering better prices and meeting those
-              requirements.
+              requirements. Bidding agents already reprice each offer, and Tender pays providers their earnings with
+              PayPal Payouts.
             </p>
           </div>
           <MarketplaceFigure scene={scene} />
