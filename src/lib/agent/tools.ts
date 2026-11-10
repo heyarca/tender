@@ -194,7 +194,7 @@ function serverTools(accountId: string) {
         marketId: marketIdSchema,
         policy: askPolicySchema.optional(),
         params: z
-          .record(z.string(), z.string().max(500))
+          .record(z.string(), z.string())
           .optional()
           .describe('Request inputs, for example { "text": "Where is the station?" } for translation or { "prompt": "..." } for chat'),
         count: z.number().int().min(1).max(MAX_RUN_COUNT).optional().describe(`How many requests, 1 to ${MAX_RUN_COUNT} (default 1)`),

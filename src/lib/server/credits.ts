@@ -1,5 +1,6 @@
 import { contractUrl, getMarketSpec } from "@/lib/registry";
 import { isMarketId, type RoutingPolicy } from "@/lib/tender";
+import { parseRequestInputs } from "@/lib/tender/request-inputs";
 import { handleContract } from "./handlers";
 import { POLICY_PARAMETERS } from "./policy";
 
@@ -23,8 +24,15 @@ export async function serveWithCredits(input: {
 }): Promise<{ status: number; body: unknown }> {
   const spec = getMarketSpec(input.marketId);
   if (!spec || !isMarketId(spec.id)) return { status: 404, body: { error: { code: "market_not_found", message: "Unknown market" } } };
+  // Only contract inputs pass through, so params can never override the routing policy below.
+  let params: Record<string, string>;
+  try {
+    params = parseRequestInputs(spec.id, input.params);
+  } catch (error) {
+    return { status: 400, body: { error: { code: "invalid_request", message: error instanceof Error ? error.message : "Invalid request inputs" } } };
+  }
   const url = new URL(contractUrl(spec), INTERNAL_ORIGIN);
-  for (const [key, value] of Object.entries(input.params ?? {})) url.searchParams.set(key, value);
+  for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
   const policy = input.policy ?? {};
   for (const parameter of POLICY_PARAMETERS) {
     const value = policy[parameter.field];
