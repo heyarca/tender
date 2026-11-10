@@ -1,11 +1,14 @@
 import { tool, type JSONValue, type Tool } from "ai";
 import { z } from "zod";
-import { getAccount, listLedger } from "@/lib/ledger";
+import { getAccount, getAutopay, listLedger, lowBalanceThreshold } from "@/lib/ledger";
+import { PayPalError } from "@/lib/paypal/client";
+import { paypalIssue } from "@/lib/paypal/http";
 import { createTopUpOrder } from "@/lib/paypal/orders";
+import { createVaultedTopUp, topUpBeforeAgentCharge, type VaultedTopUp } from "@/lib/paypal/vault";
 import { serveWithCredits } from "@/lib/server/credits";
 import { ApiError } from "@/lib/server/http";
 import { getMarketDefinition, isMarketId, providerName, type MarketId, type RoutingPolicy, type ServedEnvelope } from "@/lib/tender";
-import { findMarkets, marketBids } from "./markets";
+import { findMarkets, marketBids, nextChargeMicros } from "./markets";
 import { formatMicros } from "@/components/credits/money";
 import { usdToMicros } from "./money";
 import { askPolicySchema, describePolicy, readMandatePolicy, toRoutingPolicy, type AskPolicy } from "./policy";
@@ -46,6 +49,8 @@ export const clientTools = {
       weekly_cap: z.string().optional(),
       spent_this_week: z.string().optional(),
       policy: z.string().optional(),
+      /** The user saved PayPal, so Ask Tender tops up by itself within the weekly limit. */
+      automatic_top_ups: z.boolean().optional(),
       reason: z.string().optional(),
     }),
   }),
@@ -61,7 +66,42 @@ function weekStart(now = new Date()): number {
 }
 
 function errorMessage(error: unknown): string {
+  if (error instanceof PayPalError) {
+    return `PayPal refused: ${paypalIssue(error) ?? error.message}${error.debugId ? ` (debug id ${error.debugId})` : ""}`;
+  }
   return error instanceof Error ? error.message : "Something went wrong";
+}
+
+/** Why the saved PayPal was not charged: this week's automatic top-ups reached the weekly limit. */
+function weeklyLimitReached(result: Extract<VaultedTopUp, { status: "REFUSED" }>): string {
+  return `weekly limit reached (${formatMicros(result.topUpsThisWeekMicros)} of ${formatMicros(result.weeklyCapMicros ?? 0)} added this week)`;
+}
+
+/** A completed automatic top-up from the saved PayPal, as the model and the panel read it. */
+function autoTopUpView(result: Exclude<VaultedTopUp, { status: "REFUSED" }>) {
+  return {
+    added: formatMicros(result.amountMicros),
+    status: result.status === "COMPLETED" ? "completed" : "pending",
+    paypal_order_id: result.orderId,
+    paypal_capture_id: result.captureId,
+    balance: formatMicros(result.balanceMicros),
+    top_ups_this_week: formatMicros(result.topUpsThisWeekMicros),
+    top_ups_left_this_week: formatMicros(Math.max(0, result.weeklyCapMicros - result.topUpsThisWeekMicros)),
+  };
+}
+
+/**
+ * The automatic top-up before an agent charge (rules in `reserveAgentTopUp`). Nothing when it is not
+ * needed or not set up; a refusal or a PayPal failure is reported, and the run goes on with the balance.
+ */
+async function autoTopUp(accountId: string, nextCharge: number) {
+  try {
+    const result = await topUpBeforeAgentCharge(accountId, nextCharge);
+    if (result.status !== "REFUSED") return autoTopUpView(result);
+    return result.reason === "weekly_limit" ? { refused: weeklyLimitReached(result) } : undefined;
+  } catch (error) {
+    return { refused: errorMessage(error) };
+  }
 }
 
 function policyFor(marketId: MarketId, policy: AskPolicy | undefined, mandatePolicy: unknown): Partial<RoutingPolicy> {
@@ -113,7 +153,7 @@ function serverTools(accountId: string) {
       inputSchema: z.object({}),
       execute: async () => {
         const account = await getAccount(accountId);
-        const entries = account ? await listLedger(accountId, MAX_LEDGER_ENTRIES) : [];
+        const [entries, autopay] = account ? await Promise.all([listLedger(accountId, MAX_LEDGER_ENTRIES), getAutopay(accountId)]) : [[], null];
         const charges = entries.filter((entry) => entry.kind === "charge" && Date.parse(entry.createdAt) >= weekStart());
         const mandate = account?.mandate ?? null;
         const approved = readMandatePolicy(mandate?.policy);
@@ -126,6 +166,12 @@ function serverTools(accountId: string) {
                 left_this_week: formatMicros(Math.max(0, mandate.weeklyCapMicros - mandate.spentThisWeekMicros)),
                 market: approved && isMarketId(approved.marketId) ? getMarketDefinition(approved.marketId).name : null,
                 policy: approved && isMarketId(approved.marketId) ? describePolicy(approved.marketId, approved.policy) : null,
+                automatic_top_ups: autopay?.savedPayPal
+                  ? {
+                      top_ups_this_week: formatMicros(autopay.topUpsThisWeekMicros),
+                      top_ups_left_this_week: formatMicros(Math.max(0, mandate.weeklyCapMicros - autopay.topUpsThisWeekMicros)),
+                    }
+                  : "off: no saved PayPal",
               }
             : null,
           usage_this_week: { requests: charges.length, charged: formatMicros(-charges.reduce((sum, entry) => sum + entry.amountMicros, 0)) },
@@ -161,13 +207,21 @@ function serverTools(accountId: string) {
         let chargedMicros = 0;
         let refused: { code: string; message: string } | undefined;
         let lastData: unknown;
+        let balance = before.balanceMicros;
+        let autoTopUpResult: Awaited<ReturnType<typeof autoTopUp>>;
         for (let index = 0; index < count; index++) {
+          // With a saved PayPal, a low balance tops up by itself first (at most once per run).
+          if (before.mandate.hasVault && !autoTopUpResult) {
+            const nextCharge = chargeEstimate(marketId, routing);
+            if (balance < lowBalanceThreshold(nextCharge)) autoTopUpResult = await autoTopUp(accountId, nextCharge);
+          }
           const { status, body } = await serveWithCredits({ accountId, actor: "agent", marketId, policy: routing });
           const result = body as ContractBody;
           if (status !== 200 || !result.payment) {
             refused = { code: result.error?.code ?? `http_${status}`, message: result.error?.message ?? "The request failed" };
             break;
           }
+          balance = result.payment.balance_micros;
           chargedMicros += result.payment.charged_micros;
           lastData = result.data;
           requests.push({
@@ -200,6 +254,7 @@ function serverTools(accountId: string) {
           spent_this_week: mandate ? formatMicros(mandate.spentThisWeekMicros) : null,
           weekly_cap: mandate ? formatMicros(mandate.weeklyCapMicros) : null,
           last_result: lastData,
+          ...(autoTopUpResult ? { auto_top_up: autoTopUpResult } : {}),
           served,
           // The run stops at the first refusal; later requests were not tried.
           ...(refused ? { refused, not_tried: count - requests.length - 1 } : {}),
@@ -215,14 +270,21 @@ function serverTools(accountId: string) {
   };
 }
 
-/** PayPal top-up for the account. The user approves it from the panel; `/api/ask/top-up` captures it. */
+/**
+ * PayPal top-up for the account. With a saved PayPal and an approved weekly limit it is charged
+ * right away, with no approval; otherwise the user approves it from the panel and
+ * `/api/ask/top-up` captures it.
+ */
 function topUpTool(accountId: string, origin: string) {
   return tool({
-    description: "Start a PayPal payment that adds Tender credits. The user approves it in PayPal from the panel; credits arrive after approval.",
+    description:
+      "Add Tender credits with PayPal. With a saved PayPal the top-up happens right away (automatic: true), within the weekly limit. Otherwise the user approves it in PayPal from the panel; credits arrive after approval.",
     inputSchema: z.object({ amountUsd: z.union([z.literal(5), z.literal(10), z.literal(20)]).describe("5, 10 or 20") }),
     execute: async ({ amountUsd }) => {
       const amountMicros = usdToMicros(amountUsd);
       try {
+        const automatic = await createVaultedTopUp({ accountId, amountMicros, actor: "agent" });
+        if (automatic.status !== "REFUSED") return { automatic: true as const, ...autoTopUpView(automatic) };
         const order = await createTopUpOrder({
           accountId,
           amountMicros,
@@ -230,20 +292,43 @@ function topUpTool(accountId: string, origin: string) {
           returnUrl: `${origin}/api/ask/top-up`,
           cancelUrl: `${origin}/api/ask/top-up?cancel=1`,
         });
-        return { order_id: order.orderId, approve_url: order.approveUrl, amount: formatMicros(amountMicros), status: "waiting_for_approval" };
+        return {
+          order_id: order.orderId,
+          approve_url: order.approveUrl,
+          amount: formatMicros(amountMicros),
+          status: "waiting_for_approval",
+          // Over the weekly limit the saved PayPal is not charged; the user can still approve this one.
+          ...(automatic.reason === "weekly_limit" ? { automatic_refused: weeklyLimitReached(automatic) } : {}),
+        };
       } catch (error) {
         return { error: errorMessage(error) };
       }
     },
     // The panel shows the approve link as a button; the model never repeats it.
     toModelOutput: ({ output }) => {
-      if ("error" in output) return { type: "json", value: output };
+      if (!("approve_url" in output)) return { type: "json", value: output };
       return {
         type: "json",
-        value: { order_id: output.order_id, amount: output.amount, status: output.status, approval: "The panel shows an Approve in PayPal button." },
+        value: {
+          order_id: output.order_id,
+          amount: output.amount,
+          status: output.status,
+          ...("automatic_refused" in output ? { automatic_refused: output.automatic_refused } : {}),
+          approval: "The panel shows an Approve in PayPal button.",
+        },
       };
     },
   });
+}
+
+/** The next request's cost for the low-balance check. 0 when the policy cannot be evaluated; the request then says why. */
+function chargeEstimate(marketId: MarketId, routing: Partial<RoutingPolicy>): number {
+  try {
+    return nextChargeMicros(marketId, routing);
+  } catch (error) {
+    if (error instanceof ApiError) return 0;
+    throw error;
+  }
 }
 
 /** Every tool the UI renders by type. PayPal Agent Toolkit tools are added at runtime and rendered by name. */

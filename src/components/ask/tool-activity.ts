@@ -36,6 +36,11 @@ function invoiceId(part: ToolPartState): string | null {
   return typeof href === "string" ? (/INV2(?:-[A-Z0-9]{4}){4}/.exec(href)?.[0] ?? null) : null;
 }
 
+/** An automatic top-up from the saved PayPal, or why it was refused. */
+function autoTopUpText(topUp: { added: string } | { refused: string }): string {
+  return "added" in topUp ? `Topped up ${topUp.added} automatically with your saved PayPal` : `Automatic top-up refused: ${topUp.refused}`;
+}
+
 /** The `error` of a tool result (`{ error }`). */
 function outputError(output: unknown): string | null {
   return output && typeof output === "object" && "error" in output ? String((output as { error: unknown }).error) : null;
@@ -89,7 +94,8 @@ export function toolActivity(name: string, part: ToolPartState): Activity | null
       const refused = "refused" in output ? output.refused : undefined;
       if (output.ran === 0 && refused) return { tone: "error", text: `Request refused: ${refused.message}` };
       if (!("market" in output)) return { tone: "error", text: "Request refused" };
-      const ran = `Ran ${plural(output.ran, "request")} on ${output.market}: ${output.charged_total} charged to credits`;
+      const topUp = "auto_top_up" in output ? output.auto_top_up : undefined;
+      const ran = `${topUp ? `${autoTopUpText(topUp)}. ` : ""}Ran ${plural(output.ran, "request")} on ${output.market}: ${output.charged_total} charged to credits`;
       return refused ? { tone: "error", text: `${ran}. Then refused: ${refused.message}` } : { tone: "done", text: ran };
     }
     case "apply_policy": {
@@ -106,8 +112,10 @@ export function toolActivity(name: string, part: ToolPartState): Activity | null
         ? { tone: "done", text: `Spending limit approved: ${output.weekly_cap} per week` }
         : { tone: "error", text: "Spending limit declined" };
     }
-    case "top_up":
-      return null;
+    case "top_up": {
+      const output = part.output as Output<"top_up">;
+      return done && output && "automatic" in output ? { tone: "done", text: autoTopUpText(output) } : null;
+    }
     default: {
       const labels = PAYPAL_LABELS[name];
       if (labels) {

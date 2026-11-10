@@ -18,6 +18,18 @@ export type {
 } from "./types";
 export { getAccount, getOrCreateAccount, listLedger, setMandate } from "./accounts";
 export { chargeForRequest, creditTopUp } from "./money";
+export { AUTO_TOP_UP_MICROS, LOW_BALANCE_MICROS } from "./auto-top-up";
+export {
+  attachAutoTopUpOrder,
+  clearVault,
+  failAutoTopUp,
+  getAutopay,
+  lowBalanceThreshold,
+  reserveAgentTopUp,
+  saveVault,
+  savedVaultId,
+} from "./autopay";
+export type { AgentTopUpRefusal, AgentTopUpReservation, Autopay } from "./autopay";
 export { accountForApiKey, createApiKey, listApiKeys, revokeApiKey } from "./keys";
 export {
   ACCOUNT_COOKIE,

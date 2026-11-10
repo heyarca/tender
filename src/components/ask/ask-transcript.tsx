@@ -56,7 +56,10 @@ function AssistantMessage({
         if (part.type === "tool-request_spending_limit" && part.state === "input-available") {
           return <SpendingLimitCard key={key} input={part.input} onAnswer={(output) => onLimitAnswer(part.toolCallId, output)} />;
         }
-        if (part.type === "tool-top_up" && part.state === "output-available" && !("error" in part.output)) {
+        if (part.type === "tool-request_spending_limit" && part.state === "output-available" && part.output.automatic_top_ups) {
+          return <SpendingLimitCard key={key} input={part.input} output={part.output} />;
+        }
+        if (part.type === "tool-top_up" && part.state === "output-available" && "approve_url" in part.output) {
           return <TopUpCard key={key} output={part.output} />;
         }
         const activity = toolActivity(getToolName(part), part);
