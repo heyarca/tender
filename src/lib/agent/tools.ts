@@ -1,4 +1,4 @@
-import { tool, type Tool } from "ai";
+import { tool, type JSONValue, type Tool } from "ai";
 import { z } from "zod";
 import { getAccount, getAutopay, listLedger, lowBalanceThreshold } from "@/lib/ledger";
 import { PayPalError } from "@/lib/paypal/client";
@@ -7,7 +7,7 @@ import { createTopUpOrder } from "@/lib/paypal/orders";
 import { createVaultedTopUp, topUpBeforeAgentCharge, type VaultedTopUp } from "@/lib/paypal/vault";
 import { serveWithCredits } from "@/lib/server/credits";
 import { ApiError } from "@/lib/server/http";
-import { getMarketDefinition, isMarketId, providerName, type MarketId, type RoutingPolicy } from "@/lib/tender";
+import { getMarketDefinition, isMarketId, providerName, type MarketId, type RoutingPolicy, type ServedEnvelope } from "@/lib/tender";
 import { findMarkets, marketBids, nextChargeMicros } from "./markets";
 import { formatMicros } from "@/components/credits/money";
 import { usdToMicros } from "./money";
@@ -111,8 +111,11 @@ function policyFor(marketId: MarketId, policy: AskPolicy | undefined, mandatePol
 }
 
 type ContractBody = {
+  request_id?: string;
   provider?: string;
   latency_ms?: number;
+  data_age_ms?: number;
+  price_usd?: number;
   data?: unknown;
   error?: { code?: string; message?: string };
   payment?: { charged_micros: number; balance_micros: number };
@@ -199,6 +202,8 @@ function serverTools(accountId: string) {
         }
         const routing = policyFor(marketId, policy, before.mandate.policy);
         const requests: { provider: string; latency_ms?: number; charged: string }[] = [];
+        // What the console records for each request (the model sees `requests` instead).
+        const served: ServedEnvelope[] = [];
         let chargedMicros = 0;
         let refused: { code: string; message: string } | undefined;
         let lastData: unknown;
@@ -224,6 +229,18 @@ function serverTools(accountId: string) {
             latency_ms: result.latency_ms,
             charged: formatMicros(result.payment.charged_micros),
           });
+          served.push({
+            request_id: result.request_id ?? "",
+            market: marketId,
+            provider: result.provider ?? "",
+            provider_name: result.provider ? providerName(marketId, result.provider) : undefined,
+            latency_ms: result.latency_ms ?? 0,
+            data_age_ms: result.data_age_ms ?? 0,
+            price_usd: result.price_usd ?? 0,
+            charged_micros: result.payment.charged_micros,
+            served_at: new Date().toISOString(),
+            data: (result.data ?? {}) as Record<string, unknown>,
+          });
         }
         const after = await getAccount(accountId);
         const mandate = after?.mandate;
@@ -238,9 +255,16 @@ function serverTools(accountId: string) {
           weekly_cap: mandate ? formatMicros(mandate.weeklyCapMicros) : null,
           last_result: lastData,
           ...(autoTopUpResult ? { auto_top_up: autoTopUpResult } : {}),
+          served,
           // The run stops at the first refusal; later requests were not tried.
           ...(refused ? { refused, not_tried: count - requests.length - 1 } : {}),
         };
+      },
+      // The panel records `served` in the console; the model gets the summary without it.
+      toModelOutput: ({ output }) => {
+        if (!("served" in output)) return { type: "json", value: output };
+        const { served: _served, ...summary } = output;
+        return { type: "json", value: summary as JSONValue };
       },
     }),
   };

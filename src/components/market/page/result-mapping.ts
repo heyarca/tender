@@ -48,6 +48,7 @@ export function toResultRequest(
         status: "ok",
         provider: resultProvider(result.providerId, result.providerName, identities),
         latencyMs: result.latencyMs,
+        ...(result.source ? { source: result.source } : {}),
       };
     case "failed":
       return {

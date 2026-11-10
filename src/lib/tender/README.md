@@ -76,6 +76,7 @@ updateProvider(marketId, providerId, patch: ConditionsPatch): void   // Partial<
 restoreProvider(marketId, providerId): void
 resetConditions(marketId): void                        // every provider to fixture defaults; policy unchanged
 switchToRecommended(marketId): void                    // pinned: pin rank 1; auto: switch to rank 1 now (skips cooldown)
+ingestServed(source: RequestSource, envelopes: ServedEnvelope[]): void  // record server-served requests (Ask Tender, Run with credits); routing unchanged
 ```
 
 ### Store (tests, previews)

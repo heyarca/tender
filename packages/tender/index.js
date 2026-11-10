@@ -26,15 +26,35 @@ async function json(response) {
   return body;
 }
 
+/** Format micro-USD as dollars: 18 -> "$0.000018", 5000000 -> "$5.00". */
+export function formatMicros(micros) {
+  const sign = micros < 0 ? "-" : "";
+  const abs = Math.abs(micros);
+  const fraction = String(abs % 1_000_000).padStart(6, "0").replace(/0+$/, "").padEnd(2, "0");
+  return `${sign}$${Math.floor(abs / 1_000_000)}.${fraction}`;
+}
+
 /**
  * Create a Tender client.
- * @param {{ baseUrl?: string, fetch?: typeof fetch }} [options]
+ * @param {{ baseUrl?: string, fetch?: typeof fetch, apiKey?: string }} [options]
  *   Pass an x402-aware `fetch` (for example from `@x402/fetch`) to pay for contract requests in USDC.
+ *   Pass `apiKey` (or set `TENDER_API_KEY`) to pay with Tender credits through `callMarket`.
  */
 export function createTender(options = {}) {
   const baseUrl = (options.baseUrl ?? DEFAULT_BASE_URL).replace(/\/$/, "");
   const doFetch = options.fetch ?? globalThis.fetch;
   if (typeof doFetch !== "function") throw new Error("No fetch available. Use Node 18+ or pass options.fetch.");
+  const configuredKey = options.apiKey ?? globalThis.process?.env?.TENDER_API_KEY;
+  // Tender keys start with `tk_`. Anything else (empty, or an editor's unexpanded "${TENDER_API_KEY}") is no key.
+  const apiKey = typeof configuredKey === "string" && configuredKey.trim().startsWith("tk_") ? configuredKey.trim() : null;
+  const authorized = () => {
+    if (!apiKey) {
+      const error = new Error(`Set TENDER_API_KEY: create a key at ${baseUrl}/account`);
+      error.code = "missing_api_key";
+      throw error;
+    }
+    return { authorization: `Bearer ${apiKey}` };
+  };
 
   return {
     baseUrl,
@@ -77,6 +97,33 @@ export function createTender(options = {}) {
       }
       const body = await json(response);
       return { status: response.status, provider: response.headers.get("Tender-Provider"), data: body?.data ?? body, response: body };
+    },
+    /** True when an API key is set (`apiKey` option or `TENDER_API_KEY`). */
+    hasApiKey: apiKey !== null,
+    /**
+     * Call a market's contract and pay the winning bid with Tender credits (API key).
+     * `params` are extra query parameters for the contract URL. Throws on errors: `error.status` is
+     * 402 when the balance is too low and 409 when no provider meets the policy.
+     */
+    async callMarket(id, { params, policy } = {}) {
+      const headers = authorized();
+      const detail = await this.market(id);
+      const url = new URL(contractPathFor(detail), baseUrl);
+      for (const [key, value] of Object.entries(params ?? {})) url.searchParams.set(key, String(value));
+      for (const [key, value] of policyParams(policy)) url.searchParams.set(key, value);
+      const response = await doFetch(url.toString(), { headers });
+      const body = await json(response);
+      return {
+        status: response.status,
+        provider: body?.provider ?? response.headers.get("Tender-Provider"),
+        data: body?.data,
+        payment: { charged_micros: body?.payment?.charged_micros ?? null, balance_micros: body?.payment?.balance_micros ?? null },
+        response: body,
+      };
+    },
+    /** Credits balance, spending limit, and the last 20 ledger entries of the API key's account. */
+    async balance() {
+      return json(await doFetch(`${baseUrl}/api/account`, { headers: authorized() }));
     },
   };
 }
