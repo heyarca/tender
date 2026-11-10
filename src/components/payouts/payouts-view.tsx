@@ -137,10 +137,15 @@ export function PayoutsView() {
             Providers earn their bid for every request they serve. Tender pays them with PayPal Payouts, in whole cents.
           </p>
         </div>
-        <Button variant="primary" size="lg" className="ml-auto" onClick={settle} disabled={settling || data === null}>
-          {settling ? <Loader2 aria-hidden="true" className="animate-spin" /> : <Send aria-hidden="true" />}
-          {settling ? "Sending payout…" : "Settle now"}
-        </Button>
+        <div className="ml-auto flex flex-col items-end gap-1">
+          <Button variant="primary" size="lg" onClick={settle} disabled={settling || data === null || payable === 0}>
+            {settling ? <Loader2 aria-hidden="true" className="animate-spin" /> : <Send aria-hidden="true" />}
+            {settling ? "Sending payout…" : "Settle now"}
+          </Button>
+          {data !== null && payable === 0 && !settling ? (
+            <p className="text-caption text-muted-foreground">Nothing to pay yet. PayPal pays at least $0.01 per provider.</p>
+          ) : null}
+        </div>
       </div>
 
       {notice ? (
@@ -153,7 +158,7 @@ export function PayoutsView() {
 
       <div className="mb-10 grid gap-3 sm:grid-cols-3">
         <StatCard label="Unpaid earnings" value={data ? formatMicros(unpaid) : "—"} />
-        <StatCard label="Ready to pay" value={data ? formatCents(payable) : "—"} sub="Connected providers, whole cents" />
+        <StatCard label="Ready to pay" value={data ? formatCents(payable) : "—"} sub={payable === 0 ? "Providers are paid once they earn $0.01" : "Connected providers, whole cents"} />
         <StatCard label="Paid with PayPal" value={data ? formatCents(paid) : "—"} sub="Successful batches" />
       </div>
 
