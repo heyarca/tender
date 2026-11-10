@@ -14,7 +14,8 @@ export function SimpleHeader() {
         <Link href={marketHref(DEFAULT_MARKET_ID)} aria-label="Tender home" className={`${NAV_LINK} -ml-2 text-foreground lg:ml-0`}>
           <TenderLogo />
         </Link>
-        <nav aria-label="Main" className="ml-auto flex items-center gap-1">
+        {/* On narrow screens the links scroll sideways instead of widening the page. */}
+        <nav aria-label="Main" className="-mr-2 ml-auto flex min-w-0 items-center gap-0.5 overflow-x-auto [scrollbar-width:none] sm:mr-0 sm:gap-1">
           <Link href="/markets" className={NAV_LINK}>
             Markets
           </Link>
