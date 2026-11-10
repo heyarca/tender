@@ -2,7 +2,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createTender, DEFAULT_BASE_URL } from "../index.js";
+import { createTender, DEFAULT_BASE_URL, formatMicros } from "../index.js";
 import { runStdioServer, TOOLS } from "../lib/mcp.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -28,7 +28,12 @@ function parseArgs(argv) {
       const k = eq === -1 ? a.slice(2) : a.slice(2, eq);
       const v = eq === -1 ? undefined : a.slice(eq + 1);
       if (BOOLEAN_FLAGS.has(k)) flags[k] = true;
-      else flags[k] = v ?? (argv[i + 1] && !argv[i + 1].startsWith("-") ? argv[++i] : true);
+      else {
+        const value = v ?? (argv[i + 1] && !argv[i + 1].startsWith("-") ? argv[++i] : true);
+        // --param repeats: --param text=hello --param units=metric
+        if (k === "param") (flags.param ??= []).push(value);
+        else flags[k] = value;
+      }
     } else if (a === "-h") flags.help = true;
     else if (a === "-v") flags.version = true;
     else args.push(a);
@@ -46,6 +51,26 @@ function policyFrom(flags) {
     preference: typeof flags.preference === "string" ? flags.preference : undefined,
     pin: typeof flags.pin === "string" ? flags.pin : undefined,
   };
+}
+
+function paramsFrom(flags) {
+  const params = {};
+  for (const pair of flags.param ?? []) {
+    const eq = typeof pair === "string" ? pair.indexOf("=") : -1;
+    if (eq < 1) throw new Error(`--param needs key=value, got "${pair === true ? "" : pair}"`);
+    params[pair.slice(0, eq)] = pair.slice(eq + 1);
+  }
+  return params;
+}
+
+/** CLI message for a failed paid call, matching the MCP tool errors. */
+function paidCallError(error, baseUrl, id) {
+  const code = error?.code ?? error?.body?.error?.code;
+  if (error?.status === 404 && id) return new Error(`Unknown market "${id}". Run tender markets to see market ids.`);
+  if (code === "insufficient_credits") return new Error(`Your Tender balance is too low. Add funds at ${baseUrl}/account`);
+  if (code === "invalid_api_key") return new Error(`TENDER_API_KEY is unknown or revoked. Create a key at ${baseUrl}/account`);
+  if (code === "no_eligible_provider" || error?.status === 409) return new Error("No provider meets this policy");
+  return error;
 }
 
 function table(rows, columns) {
@@ -77,27 +102,34 @@ function installAgentInstructions(cwd) {
   }
 }
 
-// MCP configs for editor agents. Each entry: file, the key that holds servers, and how one server is written.
+// MCP configs for editor agents. Each entry: file, the key that holds servers, how one server is written,
+// and how the client references an environment variable (so the API key is never written to disk):
+// Claude Code expands ${VAR} in .mcp.json; Cursor and VS Code expand ${env:VAR}.
 const MCP_TARGETS = [
-  { file: ".mcp.json", client: "Claude Code", key: "mcpServers", entry: (server) => server },
-  { file: ".cursor/mcp.json", client: "Cursor", key: "mcpServers", entry: (server) => server },
-  { file: ".vscode/mcp.json", client: "VS Code", key: "servers", entry: (server) => ({ type: "stdio", ...server }) },
+  { file: ".mcp.json", client: "Claude Code", key: "mcpServers", entry: (server) => server, envRef: (name) => `\${${name}}` },
+  { file: ".cursor/mcp.json", client: "Cursor", key: "mcpServers", entry: (server) => server, envRef: (name) => `\${env:${name}}` },
+  { file: ".vscode/mcp.json", client: "VS Code", key: "servers", entry: (server) => ({ type: "stdio", ...server }), envRef: (name) => `\${env:${name}}` },
 ];
 
-function mcpServers({ baseUrl, paypal }) {
+const API_KEY_ENV = "TENDER_API_KEY";
+
+function mcpServers({ baseUrl, paypal }, envRef) {
   const tenderArgs = ["-y", "@heyarca/tender@latest", "mcp"];
   if (baseUrl) tenderArgs.push("--base-url", baseUrl);
-  const servers = { tender: { command: "npx", args: tenderArgs } };
+  const servers = { tender: { command: "npx", args: tenderArgs, env: { [API_KEY_ENV]: envRef(API_KEY_ENV) } } };
   // PayPal's official MCP server (npm @paypal/mcp). It reads PAYPAL_ACCESS_TOKEN from the environment,
   // so no secret is written to the project.
   if (paypal) servers.paypal = { command: "npx", args: ["-y", "@paypal/mcp", "--tools=all"], env: { PAYPAL_ENVIRONMENT: "SANDBOX" } };
   return servers;
 }
 
-/** Merge Tender (and optionally PayPal) into each editor's MCP config. Existing servers are never removed or changed. */
+/**
+ * Merge Tender (and optionally PayPal) into each editor's MCP config. Existing servers are never removed;
+ * an existing stdio `tender` server only gains the TENDER_API_KEY env reference when it has none.
+ */
 function installMcpConfigs(cwd, options) {
-  const servers = mcpServers(options);
   for (const target of MCP_TARGETS) {
+    const servers = mcpServers(options, target.envRef);
     const file = join(cwd, target.file);
     const label = `${target.file} ${dim(`(${target.client})`)}`;
     let config = {};
@@ -118,21 +150,31 @@ function installMcpConfigs(cwd, options) {
     }
     const existed = existsSync(file);
     const current = { ...(config[target.key] ?? {}) };
-    const added = [];
+    const changes = [];
     for (const [name, server] of Object.entries(servers)) {
-      if (current[name] !== undefined) continue;
-      current[name] = target.entry(server);
-      added.push(name);
+      if (current[name] === undefined) {
+        current[name] = target.entry(server);
+        changes.push(`added ${name}`);
+        continue;
+      }
+      const existing = current[name];
+      if (name === "tender" && isPlainObject(existing) && typeof existing.command === "string" &&
+          (existing.env === undefined || isPlainObject(existing.env)) && existing.env?.[API_KEY_ENV] === undefined) {
+        current[name] = { ...existing, env: { ...(existing.env ?? {}), [API_KEY_ENV]: target.envRef(API_KEY_ENV) } };
+        changes.push(`added ${API_KEY_ENV} to tender`);
+      }
     }
-    if (!added.length) {
+    if (!changes.length) {
       console.log(`${dim("·")} ${label} already has ${Object.keys(servers).join(" and ")}`);
       continue;
     }
     mkdirSync(dirname(file), { recursive: true });
     writeFileSync(file, `${JSON.stringify({ ...config, [target.key]: current }, null, 2)}\n`);
-    console.log(`${lime("✓")} ${existed ? "Updated" : "Created"} ${label}: added ${added.join(", ")}`);
+    console.log(`${lime("✓")} ${existed ? "Updated" : "Created"} ${label}: ${changes.join(", ")}`);
   }
 }
+
+const isPlainObject = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 
 function help() {
   console.log(`${bold("tender")} ${dim(`v${pkg.version}`)}: let your agent buy API access on Tender.
@@ -149,8 +191,15 @@ ${bold("Commands")}
   contracts           List contracts (the API shapes markets implement)
   market <id>         Show provider bids and the routing decision for a market
   quote <id>          Ask a market's contract for a price (returns the x402 payment requirements)
+  call <id>           Run one request and pay the winning bid from your Tender credits
+  balance             Show your Tender credits balance
 
-${bold("Policy options")} ${dim("(market, quote)")}
+${bold("Paying with credits")} ${dim("(call, balance, and the MCP call_market tool)")}
+  Add funds with PayPal and create a key at ${DEFAULT_BASE_URL}/account, then
+  export ${API_KEY_ENV}=tk_...
+  --param <key=value>        Extra query parameter for the contract URL (repeatable)
+
+${bold("Policy options")} ${dim("(market, quote, call)")}
   --max-price <usd/1M req>   --max-p95-ms <ms>   --max-data-age-ms <ms>
   --min-success-rate <0..1>  --preference lowest-cost|lowest-latency|freshest-data   --pin <provider>
 
@@ -186,6 +235,7 @@ async function main() {
       installMcpConfigs(process.cwd(), { baseUrl, paypal: Boolean(flags.paypal) });
       console.log(`\nMCP tools: ${TOOLS.map((t) => t.name).join(", ")}. Restart your editor's agent to load them.`);
       if (flags.paypal) console.log(`PayPal MCP needs ${bold("PAYPAL_ACCESS_TOKEN")} in your environment (sandbox by default).`);
+      console.log(`Next: create a key at ${tender.baseUrl}/account and run ${bold(`export ${API_KEY_ENV}=tk_...`)} so your agent can pay for calls.`);
     }
     const markets = await tender.markets().catch(() => []);
     if (markets.length) console.log(`\n${markets.length} markets are open. Run ${bold("npx @heyarca/tender markets")} to list them.`);
@@ -238,6 +288,31 @@ async function main() {
     ]);
     const active = m.routing?.active_provider ?? m.routing?.provider;
     if (active) console.log(`\nRouting to ${bold(active)}`);
+    return;
+  }
+  if (command === "call") {
+    if (!args[1]) throw new Error("Usage: tender call <id> [--param key=value ...]");
+    const result = await tender.callMarket(args[1], { params: paramsFrom(flags), policy: policyFrom(flags) })
+      .catch((error) => { throw paidCallError(error, tender.baseUrl, args[1]); });
+    const { charged_micros, balance_micros } = result.payment;
+    console.log(`${bold(args[1])} served by ${bold(result.provider ?? "unknown")} · charged ${formatMicros(charged_micros ?? 0)} · balance ${formatMicros(balance_micros ?? 0)}`);
+    console.log(JSON.stringify(result.data, null, 2));
+    return;
+  }
+  if (command === "balance") {
+    const account = await tender.balance().catch((error) => { throw paidCallError(error, tender.baseUrl); });
+    console.log(`Balance ${bold(formatMicros(account.balance_micros))}`);
+    const last = (account.ledger ?? []).slice(0, 5);
+    if (last.length) {
+      console.log("");
+      table(last, [
+        { label: "WHEN", get: (e) => e.created_at.replace("T", " ").slice(0, 19) },
+        { label: "KIND", get: (e) => e.kind },
+        { label: "AMOUNT", get: (e) => formatMicros(e.amount_micros) },
+        { label: "MARKET", get: (e) => e.market_id ?? "" },
+        { label: "PROVIDER", get: (e) => e.provider_id ?? "" },
+      ]);
+    }
     return;
   }
   if (command === "quote") {
