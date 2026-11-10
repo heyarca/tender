@@ -113,9 +113,11 @@ export function createTender(options = {}) {
       for (const [key, value] of policyParams(policy)) url.searchParams.set(key, value);
       const response = await doFetch(url.toString(), { headers });
       const body = await json(response);
+      const provider = body?.provider ?? response.headers.get("Tender-Provider");
       return {
         status: response.status,
-        provider: body?.provider ?? response.headers.get("Tender-Provider"),
+        provider,
+        providerName: detail.providers?.find((entry) => entry.id === provider)?.name ?? null,
         data: body?.data,
         payment: { charged_micros: body?.payment?.charged_micros ?? null, balance_micros: body?.payment?.balance_micros ?? null },
         response: body,

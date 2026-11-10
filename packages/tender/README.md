@@ -130,6 +130,10 @@ npx @heyarca/tender mcp                     # run the MCP server on stdio
 Policy options: `--max-price` (USD per 1M requests), `--max-p95-ms`, `--max-data-age-ms`,
 `--min-success-rate` (0..1), `--preference lowest-cost|lowest-latency|freshest-data`, `--pin <provider>`.
 Use `--base-url` to point at another Tender deployment. `call` and `balance` read `TENDER_API_KEY`.
+Human-readable output uses provider names from market metadata. Unknown or deleted providers retain
+their IDs. If balance metadata is unavailable, the CLI warns and keeps showing the transactions with IDs.
+Library results, MCP responses, and `quote` JSON retain provider IDs. `callMarket()` also returns
+`providerName` (or `null` when the provider is unknown) without an extra metadata request.
 
 ## Library
 
@@ -155,6 +159,19 @@ const account = await paid.balance();         // { balance_micros, ledger, ... }
 ```
 
 No dependencies. Works anywhere with a global `fetch` (Node 18+, Bun, Deno, browsers).
+
+## Package development
+
+From the repository root, run `bun install --frozen-lockfile`. Then run the focused CLI tests:
+
+```bash
+cd packages/tender
+bun run test
+npm pack --dry-run
+```
+
+Tests use the repository's Vitest dependency; the published client and CLI have no runtime dependencies.
+There is no package build step: the JavaScript and TypeScript declarations ship directly.
 
 ## Links
 
