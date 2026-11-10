@@ -57,7 +57,27 @@ export interface TenderRequestResult {
   data?: unknown;
   /** Full JSON body: request id, market, contract, provider, latency, data age, settlement, data. */
   response?: unknown;
+  /** 402 response body: provider, payee, price, and settlement amount. */
   paymentRequired?: unknown;
+  /** Decoded `PAYMENT-REQUIRED` header (x402 v2): `{ x402Version, resource, accepts: [{ scheme, network, amount, asset, payTo, ... }] }`. */
+  paymentRequirements?: TenderPaymentRequirements | null;
+}
+
+export interface TenderPaymentRequirements {
+  x402Version: number;
+  error?: string;
+  resource?: { url: string; description?: string; mimeType?: string };
+  accepts: {
+    scheme: string;
+    network: string;
+    /** Amount in the asset's smallest unit (USDC has 6 decimals). */
+    amount: string;
+    asset: string;
+    payTo: string;
+    maxTimeoutSeconds?: number;
+    extra?: Record<string, unknown>;
+  }[];
+  [key: string]: unknown;
 }
 
 export interface TenderClient {
