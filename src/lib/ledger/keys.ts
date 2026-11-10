@@ -9,20 +9,20 @@ type Row = Record<string, unknown>;
 const PREFIX_LENGTH = 8;
 
 /** Creates an API key. The secret is returned once; only its SHA-256 hash and an 8-character prefix are stored. */
-export async function createApiKey(accountId: string, label?: string): Promise<{ id: string; secret: string; prefix: string }> {
+export async function createApiKey(
+  accountId: string,
+  label?: string,
+): Promise<{ id: string; secret: string; prefix: string; label: string | null; createdAt: string }> {
   await ensureAccount(accountId);
   const id = newApiKeyId();
   const secret = newApiKeySecret();
   const prefix = secret.slice(3, 3 + PREFIX_LENGTH);
   const cleanLabel = label?.trim().slice(0, 60) || null;
-  await sql.query("insert into api_keys (id, account_id, hash, prefix, label) values ($1, $2, $3, $4, $5)", [
-    id,
-    accountId,
-    hashApiKey(secret),
-    prefix,
-    cleanLabel,
-  ]);
-  return { id, secret, prefix };
+  const rows = (await sql.query(
+    "insert into api_keys (id, account_id, hash, prefix, label) values ($1, $2, $3, $4, $5) returning created_at",
+    [id, accountId, hashApiKey(secret), prefix, cleanLabel],
+  )) as Row[];
+  return { id, secret, prefix, label: cleanLabel, createdAt: toIso(rows[0]?.created_at) };
 }
 
 /** Active (not revoked) keys of an account, newest first. */
