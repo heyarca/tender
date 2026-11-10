@@ -74,7 +74,7 @@ function errorMessage(error: unknown): string {
 
 /** Why the saved PayPal was not charged: this week's automatic top-ups reached the weekly limit. */
 function weeklyLimitReached(result: Extract<VaultedTopUp, { status: "REFUSED" }>): string {
-  return `Automatic top-ups this week reached the ${formatMicros(result.weeklyCapMicros ?? 0)} weekly limit (${formatMicros(result.topUpsThisWeekMicros)} added)`;
+  return `weekly limit reached (${formatMicros(result.topUpsThisWeekMicros)} of ${formatMicros(result.weeklyCapMicros ?? 0)} added this week)`;
 }
 
 /** A completed automatic top-up from the saved PayPal, as the model and the panel read it. */
