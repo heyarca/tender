@@ -18,6 +18,13 @@ class TenderPaymentServer extends x402ResourceServer {
   }
 }
 
+/** Plain decimal USD for text: 7e-7 -> "0.0000007" (no exponent, up to 12 decimals, trailing zeros trimmed). */
+export function plainUsd(value: number): string {
+  if (!Number.isFinite(value)) return String(value);
+  const text = value.toFixed(12).replace(/0+$/, "").replace(/\.$/, "");
+  return text === "" || text === "-0" ? "0" : text;
+}
+
 export function createPaymentServer(facilitator?: FacilitatorClient): x402ResourceServer {
   return new TenderPaymentServer(facilitator ?? new HTTPFacilitatorClient({
     url: process.env.TENDER_FACILITATOR_URL || DEFAULT_FACILITATOR_URL,
@@ -46,7 +53,7 @@ export function paymentRouteConfig(quote: ValidatedPaymentQuote): RouteConfig {
       },
       maxTimeoutSeconds: 60,
     },
-    description: `${quote.description}. Bid $${quote.price_usd}; settlement $${quote.settled_usd} USDC (${quote.settled_atomic} atomic).${quote.settlement_note ? ` ${quote.settlement_note}.` : ""}`,
+    description: `${quote.description}. Bid $${plainUsd(quote.price_usd)}; settlement $${plainUsd(quote.settled_usd)} USDC (${quote.settled_atomic} atomic).${quote.settlement_note ? ` ${quote.settlement_note}.` : ""}`,
     mimeType: "application/json",
     unpaidResponseBody: async () => ({
       contentType: "application/json",
