@@ -18,6 +18,8 @@ const snapshot: BalanceSnapshot = {
 
 let fresh: BalancesRateLimiter;
 beforeEach(() => {
+  // Keep expiry-boundary assertions on the same clock as the route.
+  vi.spyOn(Date, "now").mockReturnValue(Date.now());
   fresh = new BalancesRateLimiter();
   vi.spyOn(balancesRateLimiter, "acquire").mockImplementation((now?: number) => fresh.acquire(now));
   vi.spyOn(balancesRateLimiter, "retryAfterSeconds").mockImplementation((now?: number) => fresh.retryAfterSeconds(now));
