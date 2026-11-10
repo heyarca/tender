@@ -10,7 +10,6 @@ import { CreditsSection } from "@/components/credits/credits-section";
 import { ApiDialog } from "@/components/market/page/api-dialog";
 import { MarketCommandPalette } from "@/components/market/page/market-command-palette";
 import { MarketHeader } from "@/components/market/page/market-header";
-import { RequestInputs } from "@/components/market/page/request-inputs";
 import { MarketOverview } from "@/components/market/page/market-overview";
 import { MarketSidebar } from "@/components/market/page/market-sidebar";
 import { MarketStickyBar } from "@/components/market/page/market-sticky-bar";
@@ -75,7 +74,6 @@ function MarketPageContent({ marketId, onSwitchMarket }: MarketPageProps) {
           onAutoRunChange={(enabled) => actions.setAutoRun(marketId, enabled)}
           onRun={run}
         />
-        <RequestInputs marketId={marketId} />
         <MarketOverview key={marketId} view={view} />
         <div className="mt-6 grid grid-cols-1 gap-x-6 border-t border-border pt-6 lg:grid-cols-[200px_minmax(0,1fr)]">
           <MarketSidebar marketId={marketId} onSwitchMarket={onSwitchMarket} />

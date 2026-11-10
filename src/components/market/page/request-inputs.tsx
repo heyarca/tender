@@ -10,7 +10,7 @@ export function RequestInputs({ marketId }: { marketId: string }) {
   const fields = requestInputFields(marketId);
   if (!fields.length) return null;
   return (
-    <fieldset className="mt-5 min-w-0 rounded-lg border border-border bg-card p-4">
+    <fieldset className="min-w-0 rounded-lg border border-border bg-card p-4">
       <legend className="px-1 text-body font-medium">Request input</legend>
       <div className="grid gap-3">
         {fields.map((field) => (
