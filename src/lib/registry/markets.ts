@@ -1958,8 +1958,7 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
       "label": "Seoul, South Korea",
       "latitude": 37.566,
       "longitude": 126.9784,
-      "countryCode": "KR",
-      "confidence": 96
+      "countryCode": "KR"
     },
     "listings": [
       {
@@ -2044,7 +2043,11 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     "timeZone": "UTC",
     "source": "upstream",
     "featured": true,
-    "sample": {},
+    "sample": {
+      "output": "An API marketplace is an online platform where developers and businesses can discover, compare, purchase, and manage third‑party APIs and related services, often with documentation, usage plans, billing, and developer tools included.",
+      "inputTokens": 32,
+      "outputTokens": 60
+    },
     "listings": [
       {
         "providerId": "the-zone-bio",
@@ -2089,9 +2092,9 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     "featured": false,
     "sample": {
       "model": "reasoning",
-      "output": "The cheapest qualifying provider is Kitefin: it meets the 400 ms P95 limit and bids below your max price.",
-      "inputTokens": 180,
-      "outputTokens": 64
+      "output": "$18 per million = $18/1,000,000 = $0.000018 per request. $0.70 per million = $0.70/1,000,000 = $0.0000007 per request. The $0.70 plan is cheaper (about 25.7× cheaper per request).",
+      "inputTokens": 52,
+      "outputTokens": 289
     },
     "listings": [
       {
@@ -2137,9 +2140,9 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     "featured": false,
     "sample": {
       "model": "json",
-      "output": "{\"provider\":\"kitefin\",\"reason\":\"lowest qualifying bid\"}",
-      "inputTokens": 96,
-      "outputTokens": 22
+      "output": "{\"country\":\"South Korea\",\"capital\":\"Seoul\",\"currency\":\"South Korean won (KRW)\"}",
+      "inputTokens": 35,
+      "outputTokens": 39
     },
     "listings": [
       {
@@ -2700,7 +2703,10 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     "timeZone": "Asia/Seoul",
     "source": "upstream",
     "featured": true,
-    "sample": {},
+    "sample": {
+      "translation": "가장 가까운 기차역이 어디에 있나요?",
+      "characters": 35
+    },
     "listings": [
       {
         "providerId": "the-zone-bio",
@@ -2745,10 +2751,10 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     "source": "upstream",
     "featured": false,
     "sample": {
-      "translation": "Automatically switches to the best API.",
+      "translation": "Where is the nearest train station?",
       "sourceLanguage": "ko",
       "targetLanguage": "en",
-      "characters": 17
+      "characters": 18
     },
     "listings": [
       {
@@ -3527,7 +3533,12 @@ export const MARKET_SPECS: readonly MarketSpec[] = [
     "timeZone": "UTC",
     "source": "upstream",
     "featured": false,
-    "sample": {},
+    "sample": {
+      "url": "https://tender.heyarca.app/landing",
+      "title": "Tender — Always on the best API",
+      "description": "If an API breaks, Tender switches. If a better one shows up, Tender switches. Your app never notices. Pay with PayPal, or let Ask Tender spend for you.",
+      "image": "https://tender.heyarca.app/landing/opengraph-image.png"
+    },
     "listings": [
       {
         "providerId": "the-zone-bio",

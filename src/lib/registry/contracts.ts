@@ -861,11 +861,10 @@ export const CONTRACTS: readonly ContractSpec[] = [
     },
     "resultView": "fields",
     "sample": {
-      "label": "1600 Amphitheatre Parkway, Mountain View, CA",
-      "latitude": 37.422,
-      "longitude": -122.0841,
-      "countryCode": "US",
-      "confidence": 98
+      "label": "Google Building 41, 1600 Amphitheatre Parkway, Mountain View, California, United States",
+      "latitude": 37.4224858,
+      "longitude": -122.0855846,
+      "countryCode": "US"
     },
     "version": 1,
     "pricingUnit": "request"
