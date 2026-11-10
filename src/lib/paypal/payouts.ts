@@ -11,7 +11,12 @@ const MICROS_PER_CENT = 10_000;
 const FINAL_BATCH_STATUSES = ["SUCCESS", "DENIED", "CANCELED", "FAILED"];
 /** Carry rows keep a provider's sub-cent remainder unpaid for the next batch. */
 const CARRY_PREFIX = "carry:";
+/** `account_id` and `market_id` of earnings rows that are not a served request (carry and repay rows). */
 const CARRY_SOURCE = "carry";
+/** Item statuses where the money did not reach the provider; the amount is paid again. */
+const UNPAID_ITEM_STATUSES = ["FAILED", "RETURNED", "BLOCKED"];
+/** Earnings rows that re-pay such an item. */
+const REPAY_PREFIX = "repay:";
 /** Minimum time between two status refreshes of one batch. */
 const REFRESH_INTERVAL_MS = 10_000;
 /**
@@ -42,7 +47,7 @@ export interface PayoutBatch {
 
 export interface ProviderEarnings {
   providerId: string;
-  /** Unpaid earnings, including carried sub-cent remainders. */
+  /** Unpaid earnings, including carried sub-cent remainders and failed payout items. */
   unpaidMicros: number;
   /** Unpaid earnings rounded down to whole cents: what the next batch pays. */
   payableMicros: number;
@@ -266,11 +271,23 @@ async function updateBatchStatus(input: { id?: string; paypalBatchId?: string; s
   );
 }
 
+/**
+ * Stores an item status. When PayPal reports that an item's money did not reach the provider,
+ * the item amount becomes unpaid earnings again (`repay:<item id>`, once per item), so the
+ * next settle pays it. The original earnings stay linked to the item.
+ */
 async function updateItemStatus(input: { id?: string; paypalItemId?: string; status: string }): Promise<void> {
   await sql.query(
-    `update payout_items set transaction_status = $3, paypal_item_id = coalesce($2, paypal_item_id), updated_at = now()
-     where id = $1 or paypal_item_id = $2`,
-    [input.id ?? null, input.paypalItemId ?? null, input.status],
+    `with item as (
+       update payout_items set transaction_status = $3, paypal_item_id = coalesce($2, paypal_item_id), updated_at = now()
+       where id = $1 or paypal_item_id = $2
+       returning id, provider_id, amount_micros
+     )
+     insert into provider_earnings (provider_id, request_id, account_id, market_id, amount_micros)
+     select provider_id, '${REPAY_PREFIX}' || id, '${CARRY_SOURCE}', '${CARRY_SOURCE}', amount_micros
+     from item where $3 = any($4::text[])
+     on conflict (request_id) do nothing`,
+    [input.id ?? null, input.paypalItemId ?? null, input.status, UNPAID_ITEM_STATUSES],
   );
 }
 
@@ -341,7 +358,7 @@ export async function listPayoutBatches(limit = 50): Promise<PayoutBatch[]> {
 export async function listUnpaidEarnings(): Promise<ProviderEarnings[]> {
   const rows = (await sql.query(
     `select provider_id, sum(amount_micros) as unpaid,
-       count(*) filter (where request_id not like '${CARRY_PREFIX}%') as requests
+       count(*) filter (where market_id <> '${CARRY_SOURCE}') as requests
      from provider_earnings where payout_item_id is null
      group by provider_id`,
   )) as Row[];
