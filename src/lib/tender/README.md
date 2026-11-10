@@ -43,7 +43,12 @@ from `localStorage["tender:v1:policies"]` (and re-evaluates), persists policy
 changes, runs the 1 s clock tick (which also drives auto-run every 2 s per
 market), the 5 s monitor tick, and a timer that executes pending switches exactly
 when due. Server render and first client render use the same fixture state, so
-there are no hydration mismatches.
+there are no hydration mismatches. Upstream markets start with no result, request activity,
+spend, or price history. Only explicit credits/USDC calls and Ask Tender populate those results.
+The client `runRequest` and `setAutoRun` actions are signal-market-only: opening a market never
+fetches or pays for an upstream result. `createInitialState()` still supplies deterministic
+sample results for explicit instructional scenes; it is not the production store initializer.
+Landing market previews show data age at response and elapsed chart time, not wall-clock freshness.
 
 Props: `{ children: ReactNode; store?: TenderStore }` (`store` for tests/previews).
 

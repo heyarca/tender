@@ -74,12 +74,13 @@ describe("selectMarketView", () => {
       bidPrice: 18,
       p95LatencyMs: 210,
       dataAgeMs: 360_000,
-      requests: { total: 1, served: 1, failed: 0, rejected: 0 },
+      requests: { total: 0, served: 0, failed: 0, rejected: 0 },
     });
     expect(view.metrics.successRate).toBeCloseTo(0.9994, 6);
-    expect(view.lastResult?.status).toBe("ok");
-    expect(view.lastServed?.providerId).toBe("fernline");
-    expect(view.activity.length).toBeGreaterThan(0);
+    expect(view.lastResult).toBeNull();
+    expect(view.lastServed).toBeNull();
+    expect(view.activity).toEqual([]);
+    expect(view.series).toEqual([]);
     expect(view.autoRun).toBe(false);
   });
 

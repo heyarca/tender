@@ -5,11 +5,12 @@ import { BiddingAgentsSection } from "@/components/market/bidding/bidding-agents
 import { ActivitySection } from "@/components/market/activity/activity-section";
 import { AskTender } from "@/components/ask/ask-tender";
 import { ProviderConditionsSection } from "@/components/market/conditions/provider-conditions-section";
-import { MarketUiProvider } from "@/components/market/market-ui";
+import { focusSection, MarketUiProvider } from "@/components/market/market-ui";
 import { CreditsSection } from "@/components/credits/credits-section";
 import { ApiDialog } from "@/components/market/page/api-dialog";
 import { MarketCommandPalette } from "@/components/market/page/market-command-palette";
 import { MarketHeader } from "@/components/market/page/market-header";
+import { RequestInputs } from "@/components/market/page/request-inputs";
 import { MarketOverview } from "@/components/market/page/market-overview";
 import { MarketSidebar } from "@/components/market/page/market-sidebar";
 import { MarketStickyBar } from "@/components/market/page/market-sticky-bar";
@@ -21,6 +22,7 @@ import { ProvidersSection } from "@/components/market/providers/providers-sectio
 import { useHotkey } from "@/components/shell/command-palette";
 import { PageContainer } from "@/components/shell/page-container";
 import type { MarketId } from "@/lib/tender";
+import { getMarketSpec } from "@/lib/registry";
 import { useMarketView, useTenderActions } from "@/lib/tender/client";
 
 export interface MarketPageProps {
@@ -49,7 +51,10 @@ function MarketPageContent({ marketId, onSwitchMarket }: MarketPageProps) {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [apiOpen, setApiOpen] = useState(false);
 
-  const run = useCallback(() => actions.runRequest(marketId), [actions, marketId]);
+  const run = useCallback(() => {
+    if (getMarketSpec(marketId)?.source === "upstream") focusSection("credits");
+    else actions.runRequest(marketId);
+  }, [actions, marketId]);
   const openApi = useCallback(() => setApiOpen(true), []);
   const openPalette = useCallback(() => setPaletteOpen(true), []);
 
@@ -69,6 +74,7 @@ function MarketPageContent({ marketId, onSwitchMarket }: MarketPageProps) {
           onAutoRunChange={(enabled) => actions.setAutoRun(marketId, enabled)}
           onRun={run}
         />
+        <RequestInputs marketId={marketId} />
         <MarketOverview key={marketId} view={view} />
         <div className="mt-6 grid grid-cols-1 gap-x-6 border-t border-border pt-6 lg:grid-cols-[200px_minmax(0,1fr)]">
           <MarketSidebar marketId={marketId} onSwitchMarket={onSwitchMarket} />

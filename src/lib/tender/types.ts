@@ -426,9 +426,11 @@ interface RequestBase {
 }
 
 /** Who bought a request on the server instead of the console engine: Ask Tender or Run with credits. */
-export type RequestSource = "ask-tender" | "credits";
+export type RequestSource = "ask-tender" | "credits" | "usdc";
 
 interface ServedBase extends RequestBase {
+  /** Actual input snapshot sent with this request, never the editable draft. */
+  params?: Readonly<Record<string, string>>;
   status: "ok";
   providerId: ProviderId;
   providerName: string;
@@ -481,6 +483,8 @@ export type ServedRequestResult = ServedWeatherResult | ServedBtcResult | Served
  * Fields follow the contract's 200 body; `data` is the contract result (`resultData`).
  */
 export interface ServedEnvelope {
+  /** Actual contract input snapshot sent with this request. */
+  params?: Readonly<Record<string, string>>;
   request_id: string;
   market: MarketId;
   provider: ProviderId;

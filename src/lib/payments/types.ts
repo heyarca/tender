@@ -33,6 +33,7 @@ export interface PaymentReceipt extends SettlementAmounts {
   explorerUrl: string;
 }
 export interface PaidResponsePayload {
+  params?: Record<string, string>;
   provider: string;
   latency_ms: number;
   data_age_ms: number;
@@ -52,6 +53,7 @@ export interface PaymentPolicy {
 }
 export interface PaidRequestInput {
   market: PaymentMarket;
+  params?: Record<string, string>;
   policy?: PaymentPolicy;
   conditions?: PaymentConditions;
 }

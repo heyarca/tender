@@ -104,14 +104,33 @@ describe("TenderProvider", () => {
     expect(route.pending).toBeNull();
   });
 
-  it("drives auto-run every 2 s", () => {
+  it("drives signal-market auto-run every 2 s", () => {
     const { store, actions } = mount();
-    act(() => actions().setAutoRun("btc-usd", true));
-    expect(store.api.getState().markets["btc-usd"].counters.total).toBe(2);
+    act(() => actions().setAutoRun("sz-mlcc", true));
+    expect(store.api.getState().markets["sz-mlcc"].counters.total).toBe(2);
     act(() => {
       vi.advanceTimersByTime(6_000);
     });
-    expect(store.api.getState().markets["btc-usd"].counters.total).toBe(5);
+    expect(store.api.getState().markets["sz-mlcc"].counters.total).toBe(5);
+  });
+
+  it("keeps upstream markets empty on mount and never auto-runs or bills them", () => {
+    const fetcher = vi.spyOn(globalThis, "fetch");
+    const store = createTenderStore();
+    const initial = store.api.getState().markets["btc-usd"];
+    expect(initial.requests).toEqual([]);
+    expect(initial.activity).toEqual([]);
+    expect(initial.series).toEqual([]);
+    mount(store);
+    act(() => {
+      store.actions.runRequest("btc-usd");
+      store.actions.setAutoRun("btc-usd", true);
+      vi.advanceTimersByTime(10_000);
+    });
+    expect(store.api.getState().markets["btc-usd"].counters.total).toBe(0);
+    expect(store.api.getState().markets["btc-usd"].autoRun).toBe(false);
+    expect(fetcher).not.toHaveBeenCalled();
+    fetcher.mockRestore();
   });
 
   it("persists policies and rehydrates them on the next mount", () => {

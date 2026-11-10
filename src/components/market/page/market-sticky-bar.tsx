@@ -6,6 +6,7 @@ import { StatusDot } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ProviderLogo } from "@/components/ui/provider-logo";
 import { focusSection } from "@/components/market/market-ui";
+import { getMarketSpec } from "@/lib/registry";
 import type { MarketView } from "@/lib/tender";
 import { cn } from "@/lib/utils";
 import { MARKET_TITLE_ID } from "./market-header";
@@ -57,7 +58,7 @@ export function MarketStickyBar({ view, onRun, onOpenApi }: { view: MarketView; 
         </Button>
         <Button variant="primary" className="gap-2 px-4 max-sm:px-2.5" onClick={onRun}>
           <Play aria-hidden />
-          <span className="max-sm:sr-only">Run request</span>
+          <span className="max-sm:sr-only">{getMarketSpec(view.id)?.source === "upstream" ? "Request options" : "Run request"}</span>
         </Button>
       </StickyBarActions>
     </StickyBar>

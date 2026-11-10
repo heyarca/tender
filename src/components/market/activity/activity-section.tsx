@@ -8,6 +8,7 @@ import {
   Ban,
   Check,
   CircleCheck,
+  CircleDollarSign,
   CircleX,
   Gauge,
   History,
@@ -85,7 +86,7 @@ const KIND_ICONS: Record<ActivityEntry["kind"], LucideIcon> = {
   "auto-run": Play,
 };
 
-const SOURCE_ICONS: Record<RequestSource, LucideIcon> = { "ask-tender": Sparkles, credits: Wallet };
+const SOURCE_ICONS: Record<RequestSource, LucideIcon> = { "ask-tender": Sparkles, credits: Wallet, usdc: CircleDollarSign };
 
 const TILE_TONE: Record<Tone, string> = {
   neutral: "border-border bg-background text-muted-foreground",

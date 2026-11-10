@@ -571,6 +571,7 @@ export function requestEntry(result: RequestResult): EntryFields {
 export const SOURCE_LABELS: Readonly<Record<RequestSource, string>> = {
   "ask-tender": "Ask Tender",
   credits: "Credits",
+  usdc: "USDC",
 };
 
 /** Server request ids are `req_<uuid>`; activity titles show the first 8 characters of the uuid. */

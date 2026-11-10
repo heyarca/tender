@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { formatAge, formatLatency } from "@/components/viz/format";
 import { ProviderLogo } from "@/components/ui/provider-logo";
-import { Sparkles, Wallet } from "lucide-react";
+import { CircleDollarSign, Sparkles, Wallet } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { ResultProvider, ResultSource, ResultStatus } from "./types";
 
@@ -23,6 +23,7 @@ export interface ResultMetaProps {
 const SOURCE_TAGS: Record<ResultSource, { label: string; icon: ReactNode }> = {
   "ask-tender": { label: "Ask Tender", icon: <Sparkles aria-hidden="true" /> },
   credits: { label: "Credits", icon: <Wallet aria-hidden="true" /> },
+  usdc: { label: "USDC", icon: <CircleDollarSign aria-hidden="true" /> },
 };
 
 function Separator() {

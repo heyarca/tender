@@ -10,6 +10,7 @@ import { createStore, type StoreApi } from "zustand/vanilla";
 import { CLOCK_TICK_MS, MONITOR_INTERVAL_MS, POLICIES_STORAGE_KEY } from "./constants";
 import { reduce, type TenderAction } from "./engine";
 import { MARKET_IDS } from "./markets";
+import { getMarketSpec } from "@/lib/registry";
 import { parsePersistedPolicies, policiesChanged, serializePolicies } from "./persistence";
 import { getInitialState } from "./sample-state";
 import { formatPendingSwitch, pendingSecondsRemaining, selectMarketView } from "./selectors";
@@ -101,8 +102,12 @@ export function createTenderStore(options: CreateTenderStoreOptions = {}): Tende
     };
   };
   const actions: TenderActions = {
-    runRequest: (marketId) => act((now) => ({ type: "run-request", marketId, now })),
-    setAutoRun: (marketId, enabled) => act((now) => ({ type: "set-auto-run", marketId, enabled, now })),
+    runRequest: (marketId) => {
+      if (getMarketSpec(marketId)?.source !== "upstream") act((now) => ({ type: "run-request", marketId, now }));
+    },
+    setAutoRun: (marketId, enabled) => {
+      if (getMarketSpec(marketId)?.source !== "upstream") act((now) => ({ type: "set-auto-run", marketId, enabled, now }));
+    },
     setPolicy: (marketId, patch) => act((now) => ({ type: "set-policy", marketId, patch, now })),
     setRoutingMode: (marketId, mode) => act((now) => ({ type: "set-routing-mode", marketId, mode, now })),
     resetPolicy: (marketId) => act((now) => ({ type: "reset-policy", marketId, now })),

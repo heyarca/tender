@@ -18,6 +18,7 @@ export const SECTION_ICONS: Record<MarketSectionId, LucideIcon> = {
   providers: Server,
   routing: Route,
   conditions: SlidersHorizontal,
+  credits: CircleDollarSign,
   payments: CircleDollarSign,
   activity: Activity,
 };
