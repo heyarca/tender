@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { BiddingAgentsSection } from "@/components/market/bidding/bidding-agents-section";
 import { ActivitySection } from "@/components/market/activity/activity-section";
 import { ProviderConditionsSection } from "@/components/market/conditions/provider-conditions-section";
 import { MarketUiProvider } from "@/components/market/market-ui";
@@ -71,6 +72,7 @@ function MarketPageContent({ marketId, onSwitchMarket }: MarketPageProps) {
           <MarketSidebar marketId={marketId} onSwitchMarket={onSwitchMarket} />
           <div className="min-w-0">
             <ProvidersSection key={`providers-${marketId}`} marketId={marketId} />
+            <BiddingAgentsSection key={`bidding-${marketId}`} marketId={marketId} />
             <div className="grid grid-cols-1 gap-x-6 xl:grid-cols-2">
               <RoutingPolicySection key={`routing-${marketId}`} marketId={marketId} />
               <ProviderConditionsSection key={`conditions-${marketId}`} marketId={marketId} />
