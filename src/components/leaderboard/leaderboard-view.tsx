@@ -203,7 +203,7 @@ const COLUMNS: DataGridColumn<LeaderRow>[] = [
     valueGetter: ({ data }) => data?.avgBid ?? null,
     enableCellChangeFlash: true,
     cellRenderer: ({ value }: CellProps) => (typeof value === "number" ? <span className="text-foreground tabular-nums">{format.price(value)}</span> : <Missing />),
-    context: { csvUnit: "USD per 1M requests" },
+    context: { csv: (row: LeaderRow) => (row.avgBid === null ? null : Math.round(row.avgBid * 10_000) / 10_000), csvUnit: "USD per 1M requests" },
     ...limit({ bound: "max", prefix: "$", placeholder: "Any" }),
   },
   {
