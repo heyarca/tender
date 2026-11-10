@@ -16,8 +16,9 @@ beforeEach(() => {
   vi.setSystemTime(WALL);
   window.localStorage.clear();
   // jsdom has neither matchMedia nor scrollIntoView (used by focusSection and reduced-motion checks).
+  // Width queries match (a desktop viewport, so the provider column is not pinned); reduced motion does not.
   window.matchMedia = ((query: string) => ({
-    matches: false,
+    matches: query.includes("min-width"),
     media: query,
     onchange: null,
     addEventListener: () => {},
@@ -60,11 +61,18 @@ function mount(marketId: MarketId = "sf-weather") {
   return store;
 }
 
+/** Grid rows in display order (AG Grid keeps DOM order stable and positions rows by `row-index`). */
 const rowIds = () =>
-  Array.from(document.querySelectorAll<HTMLTableRowElement>("[data-slot=providers-table] tbody tr")).map(
-    (tr) => tr.dataset.provider ?? `divider:${tr.textContent?.trim()}`,
-  );
-const row = (id: string) => document.querySelector<HTMLTableRowElement>(`[data-provider="${id}"]`)!;
+  Array.from(document.querySelectorAll<HTMLElement>("[data-slot=providers-table] .ag-row[row-id]"))
+    .sort((a, b) => Number(a.getAttribute("row-index")) - Number(b.getAttribute("row-index")))
+    .map((el) => {
+      const id = el.getAttribute("row-id")!;
+      return id === "excluded-divider" ? `divider:${el.textContent?.trim()}` : id;
+    });
+const row = (id: string) => document.querySelector<HTMLElement>(`[data-slot=providers-table] .ag-row[row-id="${id}"]`)!;
+/** The provider cell, which carries `data-role` and `data-status`. */
+const provider = (id: string) => row(id).querySelector<HTMLElement>(`[data-provider="${id}"]`)!;
+const header = (colId: string) => document.querySelector<HTMLElement>(`[data-slot=providers-table] .ag-header-cell[col-id="${colId}"]`)!;
 const decision = () => document.querySelector<HTMLElement>("[data-slot=routing-decision]")!;
 
 describe("ProvidersSection", () => {
@@ -93,7 +101,7 @@ describe("ProvidersSection", () => {
     expect(row("mossgate").querySelector("[data-slot=status-badge]")?.textContent).toBe("Stale data");
     expect(row("owlbridge").querySelector("[data-slot=status-badge]")?.textContent).toBe("Over budget");
     expect(row("kelpwave").querySelector("[data-slot=status-badge]")?.textContent).toBe("Unavailable");
-    expect(row("kitefin").querySelector("td:nth-child(8)")?.textContent).toBe("Rank #2 standby");
+    expect(row("kitefin").querySelector("[col-id=route]")?.textContent).toBe("Rank #2 standby");
     expect(screen.getByText(/of 8 qualify/).textContent).toBe("4 of 8 qualify");
     expect(decision().dataset.kind).toBe("routing");
     expect(within(decision()).getByRole("heading", { name: "Routing to Fernline" })).toBeTruthy();
@@ -103,10 +111,10 @@ describe("ProvidersSection", () => {
   it("renders the Bitcoin market defaults", () => {
     mount("btc-usd");
     expect(rowIds()[0]).toBe("the-zone-bio");
-    expect(row("brindlewood").dataset.status).toBe("too-slow");
-    expect(row("hollowbrook").dataset.status).toBe("stale-data");
-    expect(row("basaltine").dataset.status).toBe("over-budget");
-    expect(row("heronway").dataset.status).toBe("unreliable");
+    expect(provider("brindlewood").dataset.status).toBe("too-slow");
+    expect(provider("hollowbrook").dataset.status).toBe("stale-data");
+    expect(provider("basaltine").dataset.status).toBe("over-budget");
+    expect(provider("heronway").dataset.status).toBe("unreliable");
     expect(screen.getByRole("button", { name: /Max data age 1,000 ms/ })).toBeTruthy();
   });
 
@@ -114,7 +122,7 @@ describe("ProvidersSection", () => {
     mount();
     fireEvent.click(screen.getByRole("radio", { name: "Lowest latency" }));
     expect(rowIds()[0]).toBe("cinderlane");
-    expect(row("cinderlane").dataset.role).toBe("active");
+    expect(provider("cinderlane").dataset.role).toBe("active");
     expect(within(decision()).getByRole("heading").textContent).toBe("Routing to Cinderlane");
     // Best price still marks the cheapest qualified provider.
     expect(within(row("fernline")).getByText("Best price")).toBeTruthy();
@@ -124,8 +132,8 @@ describe("ProvidersSection", () => {
     mount();
     fireEvent.click(row("cinderlane"));
     expect(screen.getByTestId("selected").textContent).toBe("cinderlane");
-    expect(row("cinderlane").dataset.state).toBe("selected");
-    expect(within(row("cinderlane")).getByRole("button", { name: "Cinderlane, select to inspect" }).getAttribute("aria-pressed")).toBe("true");
+    expect(row("cinderlane").classList.contains("ag-row-selected")).toBe(true);
+    expect(row("cinderlane").querySelector('button[aria-label="Cinderlane, select to inspect"]')?.getAttribute("aria-pressed")).toBe("true");
     fireEvent.click(row("cinderlane"));
     expect(screen.getByTestId("selected").textContent).toBe("none");
   });
@@ -134,7 +142,7 @@ describe("ProvidersSection", () => {
     const store = mount();
     act(() => store.actions.updateProvider("sf-weather", "fernline", { p95LatencyMs: 520 }));
     expect(rowIds()[0]).toBe("kitefin");
-    expect(row("fernline").dataset.status).toBe("too-slow");
+    expect(provider("fernline").dataset.status).toBe("too-slow");
     expect(rowIds().indexOf("fernline")).toBeGreaterThan(rowIds().findIndex((id) => id.startsWith("divider")));
     expect(within(decision()).getByRole("heading").textContent).toBe("Routing to Kitefin");
     expect(document.querySelector("[aria-live=polite]")?.textContent).toBe("Routing to Kitefin");
@@ -191,11 +199,11 @@ describe("ProvidersSection", () => {
 
   it("sorts inside each group and returns to routing order", () => {
     mount();
-    const bid = screen.getByRole("button", { name: /^Bid/ });
+    const bid = header("bid");
     fireEvent.click(bid);
     fireEvent.click(bid);
     expect(rowIds().slice(0, 4)).toEqual(["saltmarsh", "cinderlane", "kitefin", "fernline"]);
-    expect(bid.closest("th")?.getAttribute("aria-sort")).toBe("descending");
+    expect(bid.getAttribute("aria-sort")).toBe("descending");
     fireEvent.click(bid);
     expect(rowIds()[0]).toBe("fernline");
   });

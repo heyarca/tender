@@ -203,6 +203,52 @@ export function sortProviders(rows: readonly ProviderRow[], sort: SortState | nu
     .map(({ row }) => row);
 }
 
+/** Sort value of a provider in a column: name, or the number the column shows. */
+export function sortValue(row: ProviderRow, key: SortKey): number | string {
+  return key === "name" ? row.name : SORT_VALUE[key](row);
+}
+
+/** Row id of the "Excluded by your policy" divider in the providers grid. */
+export const EXCLUDED_DIVIDER_ID = "excluded-divider";
+
+/**
+ * One row of the providers grid: a provider, or the full-width divider before
+ * the excluded group. `group` orders routed (0), divider (1), excluded (2);
+ * `rank` is the position in routing order.
+ */
+export type ProviderGridRow =
+  | { kind: "provider"; id: ProviderRow["id"]; row: ProviderRow; group: 0 | 2; rank: number }
+  | { kind: "divider"; id: typeof EXCLUDED_DIVIDER_ID; count: number; group: 1; rank: number };
+
+/** Grid rows in routing order: routed providers, the divider (when any provider is excluded), then excluded ones. */
+export function providerGridRows(rows: readonly ProviderRow[]): ProviderGridRow[] {
+  const { routed, excluded } = groupProviders(rows);
+  const result: ProviderGridRow[] = routed.map((row, rank) => ({ kind: "provider", id: row.id, row, group: 0, rank }));
+  if (excluded.length > 0) {
+    result.push({ kind: "divider", id: EXCLUDED_DIVIDER_ID, count: excluded.length, group: 1, rank: result.length });
+  }
+  for (const row of excluded) {
+    result.push({ kind: "provider", id: row.id, row, group: 2, rank: result.length });
+  }
+  return result;
+}
+
+/**
+ * Column sort that keeps the groups in place (routed, divider, excluded) and
+ * sorts inside each group; ties keep routing order. The grid negates the
+ * result for a descending sort, so the group and tie terms are pre-negated.
+ */
+export function compareGridRows(a: ProviderGridRow, b: ProviderGridRow, key: SortKey, descending: boolean): number {
+  const keep = descending ? -1 : 1;
+  if (a.group !== b.group) return (a.group - b.group) * keep;
+  if (a.kind !== "provider" || b.kind !== "provider") return 0;
+  const diff =
+    key === "name"
+      ? a.row.name.localeCompare(b.row.name, "en", { sensitivity: "base" })
+      : SORT_VALUE[key](a.row) - SORT_VALUE[key](b.row);
+  return diff !== 0 ? diff : (a.rank - b.rank) * keep;
+}
+
 export interface ProviderGroups {
   /** Serving provider (even when a pinned one fails) and every qualified provider. */
   routed: ProviderRow[];

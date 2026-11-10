@@ -1,22 +1,23 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
-import { motion, type Transition } from "motion/react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import type {
+  GridApi,
+  GridReadyEvent,
+  IsFullWidthRowParams,
+  RowClickedEvent,
+  RowHeightParams,
+  RowSelectionOptions,
+  SortComparatorFn,
+  SortDirection as GridSortDirection,
+} from "ag-grid-community";
+import type { CustomCellRendererProps } from "ag-grid-react";
 import { Check, Pin, X } from "lucide-react";
 
 import { badgeVariants, Badge, StatusDot } from "@/components/ui/badge";
+import { DataGrid, type DataGridColumn } from "@/components/ui/data-grid";
 import { ProviderLogo } from "@/components/ui/provider-logo";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  TableRowHeader,
-  TableSubheadRow,
-  TableValue,
-} from "@/components/ui/table";
+import { TableValue } from "@/components/ui/table";
 import { InfoTooltip, Tooltip } from "@/components/ui/tooltip";
 import { Sparkline, SuccessBars, usePrefersReducedMotion, type SparklineTone } from "@/components/viz";
 import { format, type MarketView, type ProviderRow } from "@/lib/tender";
@@ -25,10 +26,11 @@ import { cn } from "@/lib/utils";
 
 import { ProviderRowMenu } from "./provider-row-menu";
 import {
+  compareGridRows,
+  defaultDirection,
   failingMetrics,
-  groupProviders,
   metricReason,
-  nextSort,
+  providerGridRows,
   providerTags,
   providerTrend,
   routeLabel,
@@ -37,17 +39,18 @@ import {
   trendScale,
   valueParts,
   type MetricKey,
+  type ProviderGridRow,
   type SignalTone,
   type SortKey,
-  type SortState,
 } from "./provider-table-model";
 
-const MotionRow = motion.create(TableRow);
-const MotionSubheadRow = motion.create(TableSubheadRow);
-
-const COLUMN_COUNT = 9;
-const LAYOUT_TRANSITION: Transition = { type: "tween", duration: 0.5, ease: [0.22, 1, 0.36, 1] };
 const FLASH_MS = 1600;
+/** Row heights in px: provider rows, and the "Excluded by your policy" divider. */
+const ROW_HEIGHT = 44;
+const DIVIDER_HEIGHT = 29;
+const HEADER_HEIGHT = 43;
+/** Width of the pinned provider column on small screens (OpenRouter's `max-w-44`). */
+const PINNED_PROVIDER_WIDTH = 176;
 
 const TINT: Record<SignalTone, string> = {
   warning: "text-warning-text",
@@ -60,182 +63,312 @@ export interface ProvidersTableProps {
   onSelect: (providerId: string | null) => void;
 }
 
-/**
- * OpenRouter's provider table adapted to bids: routed providers first (active,
- * then qualified by rank), a muted "Excluded by your policy" divider, then the
- * excluded rows with their failing metric tinted. Rows animate when the route
- * changes; the new active row flashes once.
- */
-export function ProvidersTable({ view, selectedId, onSelect }: ProvidersTableProps) {
-  const [sort, setSort] = useState<SortState | null>(null);
-  const reduceMotion = usePrefersReducedMotion();
-  const rowRefs = useRef(new Map<string, HTMLTableRowElement>());
-  const { routed, excluded } = groupProviders(view.providers, sort);
-  const order = [...routed.map((r) => r.id), "|", ...excluded.map((r) => r.id)].join(",");
+interface ProvidersGridContextValue {
+  view: MarketView;
+  selectedId: string | null;
+  onSelect: (providerId: string | null) => void;
+}
 
-  useActiveRowFlash(view, rowRefs, reduceMotion);
+/** Cell renderers live inside the grid; React context gives them the market view and the selection. */
+const ProvidersGridContext = createContext<ProvidersGridContextValue | null>(null);
 
-  const sortProps = (key: SortKey) => ({
-    sort: sort?.key === key ? sort.direction : (false as const),
-    onSort: () => setSort((current) => nextSort(current, key)),
-  });
+function useProvidersGrid(): ProvidersGridContextValue {
+  const value = useContext(ProvidersGridContext);
+  if (!value) throw new Error("Provider cells must render inside ProvidersTable");
+  return value;
+}
 
-  const renderRow = (row: ProviderRow) => (
-    <ProviderTableRow
-      key={row.id}
-      row={row}
-      view={view}
-      selected={selectedId === row.id}
-      onSelect={onSelect}
-      layoutKey={order}
-      reduceMotion={reduceMotion}
-      rowRef={(el) => {
-        if (el) rowRefs.current.set(row.id, el);
-        else rowRefs.current.delete(row.id);
-      }}
-    />
-  );
+const getRowId = (row: ProviderGridRow) => row.id;
 
-  return (
-    <Table
-      aria-label={`${view.definition.name} providers`}
-      data-slot="providers-table"
-      // OpenRouter's `or-table--tight-x`: 10px inner cell padding, 16px at the row edges.
-      className="[&_td]:px-2.5 [&_th]:px-2.5"
-      // The provider column is sticky on small screens, so do not fade the start edge there.
-      scrollClassName="max-md:data-overflow-start:mask-none"
-    >
-      <TableHeader>
-        <TableRow>
-          <TableHead {...sortProps("name")} className="max-md:sticky max-md:left-0 max-md:z-[2] max-md:bg-card">
-            Provider
-          </TableHead>
-          <TableHead
-            align="right"
-            unit={view.definition.units.price}
-            tooltip="What the provider bids to serve this contract, in USD per 1M requests."
-            {...sortProps("bid")}
-          >
-            Bid
-          </TableHead>
-          <TableHead
-            align="right"
-            tooltip="95th-percentile request latency, as the monitor measures it now."
-            {...sortProps("latency")}
-          >
-            P95
-          </TableHead>
-          <TableHead
-            align="right"
-            tooltip="Age of the data when the response is sent. This is freshness, not request latency."
-            {...sortProps("dataAge")}
-          >
-            Data age
-          </TableHead>
-          <TableHead
-            align="right"
-            tooltip="Share of requests that succeed. Bars show the last three monitor samples."
-            {...sortProps("success")}
-          >
-            Success
-          </TableHead>
-          <TableHead tooltip="Last 30 monitor samples of the metric that decides this row: the failing check, or the one your preference ranks on. Dashed line: your limit.">
-            Trend
-          </TableHead>
-          <TableHead tooltip="Qualification against your routing policy. Focus or hover a status to see every check.">
-            Status
-          </TableHead>
-          <TableHead tooltip="Active serves requests now. Standby providers qualify and take over in rank order.">
-            Route
-          </TableHead>
-          <TableHead className="w-0 pl-1! last:pr-2">
-            <span className="sr-only">Actions</span>
-          </TableHead>
-        </TableRow>
-      </TableHeader>
-      {/* One keyed list, so a provider that changes group moves (and animates) instead of remounting. */}
-      <TableBody>
-        {[
-          ...routed.map(renderRow),
-          excluded.length > 0 ? (
-            <MotionSubheadRow
-              key="excluded-divider"
-              layout={reduceMotion ? false : "position"}
-              layoutDependency={order}
-              transition={LAYOUT_TRANSITION}
-              colSpan={COLUMN_COUNT}
-              data-slot="excluded-divider"
-            >
-              {/* Sticky on small screens so the label stays beside the sticky provider column while scrolling. */}
-              <span className="flex items-center gap-1.5 max-md:sticky max-md:left-4">
-                Excluded by your policy ({excluded.length})
-                <InfoTooltip
-                  label="Why providers are excluded"
-                  iconSize={12}
-                  content="These providers fail at least one requirement in your routing policy. Automatic routing never sends them requests."
-                />
-              </span>
-            </MotionSubheadRow>
-          ) : null,
-          ...excluded.map(renderRow),
-        ]}
-      </TableBody>
-    </Table>
+const isFullWidthRow = (params: IsFullWidthRowParams<ProviderGridRow>) => params.rowNode.data?.kind === "divider";
+
+const getRowHeight = (params: RowHeightParams<ProviderGridRow>) =>
+  params.data?.kind === "divider" ? DIVIDER_HEIGHT : undefined;
+
+const ROW_SELECTION: RowSelectionOptions<ProviderGridRow> = {
+  mode: "singleRow",
+  checkboxes: false,
+  enableClickSelection: false,
+  isRowSelectable: (node) => node.data?.kind === "provider",
+};
+
+/** Header click order: natural direction (cheapest, fastest, freshest, most reliable, A–Z), reversed, routing order. */
+function sortingOrder(key: SortKey): GridSortDirection[] {
+  const first = defaultDirection(key);
+  return [first, first === "asc" ? "desc" : "asc", null];
+}
+
+function comparator(key: SortKey): SortComparatorFn<ProviderGridRow> {
+  return (_a, _b, nodeA, nodeB, isDescending) =>
+    nodeA.data && nodeB.data ? compareGridRows(nodeA.data, nodeB.data, key, isDescending) : 0;
+}
+
+function sortable(key: SortKey): Pick<DataGridColumn<ProviderGridRow>, "sortable" | "comparator" | "sortingOrder"> {
+  return { sortable: true, comparator: comparator(key), sortingOrder: sortingOrder(key) };
+}
+
+const MD_QUERY = "(min-width: 48rem)";
+
+function subscribeMd(onChange: () => void) {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return () => {};
+  const media = window.matchMedia(MD_QUERY);
+  media.addEventListener("change", onChange);
+  return () => media.removeEventListener("change", onChange);
+}
+
+/** `md` and up. The grid renders on the client only, so the server value is never shown. */
+function useIsMdUp(): boolean {
+  return useSyncExternalStore(
+    subscribeMd,
+    () => typeof window.matchMedia !== "function" || window.matchMedia(MD_QUERY).matches,
+    () => true,
   );
 }
 
-/** Flash the row that just became active (Web Animations, so hover and selection classes keep working). */
-function useActiveRowFlash(
-  view: MarketView,
-  rowRefs: RefObject<Map<string, HTMLTableRowElement>>,
-  reduceMotion: boolean,
-) {
+function providerColumns(priceUnit: ReactNode, mdUp: boolean): DataGridColumn<ProviderGridRow>[] {
+  return [
+    {
+      colId: "name",
+      headerName: "Provider",
+      cellRenderer: ProviderCell,
+      ...sortable("name"),
+      // Small screens: the provider column stays in view while the metrics scroll, and tags wrap under the name.
+      ...(mdUp
+        ? { pinned: null, autoHeight: false }
+        : {
+            pinned: "left" as const,
+            width: PINNED_PROVIDER_WIDTH,
+            minWidth: PINNED_PROVIDER_WIDTH,
+            maxWidth: PINNED_PROVIDER_WIDTH,
+            suppressAutoSize: true,
+            suppressSizeToFit: true,
+            autoHeight: true,
+          }),
+    },
+    {
+      colId: "bid",
+      headerName: "Bid",
+      headerUnit: priceUnit,
+      headerHint: "What the provider bids to serve this contract, in USD per 1M requests.",
+      align: "right",
+      ...sortable("bid"),
+      // A bid edit flashes the cell.
+      valueGetter: (params) => (params.data?.kind === "provider" ? params.data.row.conditions.bidPrice : null),
+      enableCellChangeFlash: true,
+      cellRenderer: BidCell,
+    },
+    {
+      colId: "latency",
+      headerName: "P95",
+      headerHint: "95th-percentile request latency, as the monitor measures it now.",
+      align: "right",
+      ...sortable("latency"),
+      cellRenderer: LatencyCell,
+    },
+    {
+      colId: "dataAge",
+      headerName: "Data age",
+      headerHint: "Age of the data when the response is sent. This is freshness, not request latency.",
+      align: "right",
+      ...sortable("dataAge"),
+      cellRenderer: DataAgeCell,
+    },
+    {
+      colId: "success",
+      headerName: "Success",
+      headerHint: "Share of requests that succeed. Bars show the last three monitor samples.",
+      align: "right",
+      ...sortable("success"),
+      cellRenderer: SuccessCell,
+    },
+    {
+      colId: "trend",
+      headerName: "Trend",
+      headerHint:
+        "Last 30 monitor samples of the metric that decides this row: the failing check, or the one your preference ranks on. Dashed line: your limit.",
+      cellRenderer: TrendCell,
+    },
+    {
+      colId: "status",
+      headerName: "Status",
+      headerHint: "Qualification against your routing policy. Focus or hover a status to see every check.",
+      cellRenderer: StatusCell,
+    },
+    {
+      colId: "route",
+      headerName: "Route",
+      headerHint: "Active serves requests now. Standby providers qualify and take over in rank order.",
+      cellRenderer: RouteCell,
+    },
+    {
+      colId: "actions",
+      headerName: "Actions",
+      headerHidden: true,
+      padding: { start: 4, end: 8 },
+      suppressSizeToFit: true,
+      cellRenderer: ActionsCell,
+    },
+  ];
+}
+
+/**
+ * OpenRouter's provider table adapted to bids, on AG Grid: routed providers
+ * first (active, then qualified by rank), a muted "Excluded by your policy"
+ * divider, then the excluded rows with their failing metric tinted. Numeric
+ * columns sort inside each group. Rows are keyed by provider id, so a route
+ * switch or a failover moves rows (animated) instead of redrawing them, and
+ * the new active row flashes once.
+ */
+export function ProvidersTable({ view, selectedId, onSelect }: ProvidersTableProps) {
+  const reduceMotion = usePrefersReducedMotion();
+  const mdUp = useIsMdUp();
+  const [api, setApi] = useState<GridApi<ProviderGridRow> | null>(null);
+
+  const rowData = useMemo(() => providerGridRows(view.providers), [view.providers]);
+  const priceUnit = view.definition.units.price;
+  const columns = useMemo(() => providerColumns(priceUnit, mdUp), [priceUnit, mdUp]);
+  const context = useMemo(() => ({ view, selectedId, onSelect }), [view, selectedId, onSelect]);
+
+  const onGridReady = useCallback((event: GridReadyEvent<ProviderGridRow>) => setApi(event.api), []);
+  const onRowClicked = useCallback(
+    (event: RowClickedEvent<ProviderGridRow>) => {
+      const data = event.data;
+      if (data?.kind !== "provider") return;
+      onSelect(selectedId === data.id ? null : data.id);
+    },
+    [onSelect, selectedId],
+  );
+
+  useSyncedSelection(api, selectedId, rowData);
+  useActiveRowFlash(api, view, reduceMotion);
+
+  const providerCount = rowData.filter((row) => row.kind === "provider").length;
+  const tagRows = rowData.filter((row) => row.kind === "provider" && providerTags(row.row).length > 0).length;
+  const dividers = rowData.length - providerCount;
+  const reserveHeight = `calc(${HEADER_HEIGHT + providerCount * ROW_HEIGHT + dividers * DIVIDER_HEIGHT + 2}px + ${tagRows} * var(--tag-row-extra, 0px))`;
+
+  return (
+    <ProvidersGridContext.Provider value={context}>
+      <DataGrid<ProviderGridRow>
+        aria-label={`${view.definition.name} providers`}
+        data-slot="providers-table"
+        density="tight"
+        rowData={rowData}
+        columnDefs={columns}
+        getRowId={getRowId}
+        rowSelection={ROW_SELECTION}
+        isFullWidthRow={isFullWidthRow}
+        fullWidthCellRenderer={ExcludedDivider}
+        getRowHeight={getRowHeight}
+        animateRows={!reduceMotion}
+        onGridReady={onGridReady}
+        onRowClicked={onRowClicked}
+        reserveHeight={reserveHeight}
+        // Small screens: rows with tags are taller (the tags wrap under the name).
+        className="max-md:[--tag-row-extra:27px]"
+      />
+    </ProvidersGridContext.Provider>
+  );
+}
+
+/** Keep the grid's row selection (the selected-row wash) in step with the selected provider. */
+function useSyncedSelection(api: GridApi<ProviderGridRow> | null, selectedId: string | null, rowData: readonly ProviderGridRow[]) {
+  useEffect(() => {
+    if (!api || api.isDestroyed()) return;
+    const select = selectedId ? api.getRowNode(selectedId) : undefined;
+    if (select) {
+      if (!select.isSelected()) select.setSelected(true, true, "api");
+    } else {
+      api.deselectAll();
+    }
+  }, [api, selectedId, rowData]);
+}
+
+/** Flash the row that just became active (lime wash; lime is a fill only, the row text stays ink). */
+function useActiveRowFlash(api: GridApi<ProviderGridRow> | null, view: MarketView, reduceMotion: boolean) {
   const activeId = view.route.activeProviderId;
   const previous = useRef<{ marketId: string; activeId: string | null } | null>(null);
   useEffect(() => {
     const prev = previous.current;
     previous.current = { marketId: view.id, activeId };
-    if (!prev || prev.marketId !== view.id || prev.activeId === activeId || !activeId) return;
-    const el = rowRefs.current.get(activeId);
-    if (!el || typeof el.animate !== "function") return;
-    // The selected-row wash (lime 25%): lime is a fill only, the row text stays ink.
-    const flash = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim();
-    if (!flash) return;
-    const rest = getComputedStyle(el).backgroundColor;
-    const animation = el.animate([{ backgroundColor: flash }, { backgroundColor: rest }], {
-      duration: FLASH_MS,
-      easing: reduceMotion ? "steps(1, end)" : "cubic-bezier(0.22, 1, 0.36, 1)",
+    if (!api || api.isDestroyed() || !prev || prev.marketId !== view.id || prev.activeId === activeId || !activeId) return;
+    const node = api.getRowNode(activeId);
+    if (!node) return;
+    api.flashCells({
+      rowNodes: [node],
+      flashDuration: reduceMotion ? FLASH_MS : 150,
+      fadeDuration: reduceMotion ? 0 : FLASH_MS - 150,
     });
-    el.dataset.flash = "";
-    animation.onfinish = () => delete el.dataset.flash;
-    return () => animation.cancel();
-  }, [view.id, activeId, rowRefs, reduceMotion]);
+  }, [api, view.id, activeId, reduceMotion]);
 }
 
-interface ProviderTableRowProps {
-  row: ProviderRow;
-  view: MarketView;
-  selected: boolean;
-  onSelect: (providerId: string | null) => void;
-  layoutKey: string;
-  reduceMotion: boolean;
-  rowRef: (el: HTMLTableRowElement | null) => void;
+type CellProps = CustomCellRendererProps<ProviderGridRow>;
+
+function providerOf(props: CellProps): ProviderRow | null {
+  return props.data?.kind === "provider" ? props.data.row : null;
 }
 
-function ProviderTableRow({ row, view, selected, onSelect, layoutKey, reduceMotion, rowRef }: ProviderTableRowProps) {
+function ExcludedDivider({ data }: CellProps) {
+  if (data?.kind !== "divider") return null;
+  return (
+    <div
+      data-slot="excluded-divider"
+      className="flex h-full items-center gap-1.5 bg-muted px-4 text-caption font-medium text-muted-foreground"
+    >
+      Excluded by your policy ({data.count})
+      <InfoTooltip
+        label="Why providers are excluded"
+        iconSize={12}
+        content="These providers fail at least one requirement in your routing policy. Automatic routing never sends them requests."
+      />
+    </div>
+  );
+}
+
+function ProviderCell(props: CellProps) {
+  const { selectedId } = useProvidersGrid();
+  const row = providerOf(props);
+  if (!row) return null;
   const excluded = row.role === "excluded";
-  const failing = failingMetrics(row);
-  const route = routeLabel(row);
-  const trend = providerTrend(row, view.policy);
-  const sparkTone: SparklineTone =
-    row.role === "pinned-failing" ? "negative" : row.isActive ? "active" : excluded ? "muted" : "neutral";
+  const selected = selectedId === row.id;
+  return (
+    <div
+      data-provider={row.id}
+      data-role={row.role}
+      data-status={row.status}
+      className={cn(
+        "flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 whitespace-normal max-md:py-[9.5px]",
+        excluded ? "font-normal text-muted-foreground" : "font-medium text-foreground",
+      )}
+    >
+      {selected ? (
+        <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 w-0.5 bg-primary-strong" />
+      ) : null}
+      <button
+        type="button"
+        aria-pressed={selected}
+        aria-label={`${row.name}, select to inspect`}
+        className="flex min-w-0 cursor-pointer items-center gap-2.5 rounded-sm text-left outline-none focus-visible:ring-1 focus-visible:ring-ring"
+      >
+        <ProviderLogo src={row.logo} name={row.name} className={cn(excluded && "opacity-75")} />
+        <span className={cn("truncate text-xs whitespace-nowrap", excluded ? "text-muted-foreground" : "text-foreground")}>
+          {row.name}
+        </span>
+      </button>
+      <ProviderTags row={row} />
+    </div>
+  );
+}
 
+function metricCell(props: CellProps) {
+  const row = providerOf(props);
+  const failing = row ? failingMetrics(row) : {};
   const tint = (metric: MetricKey) => {
     const tone = failing[metric];
     return tone ? TINT[tone] : undefined;
   };
   const reasonTooltip = (metric: MetricKey, node: ReactNode) => {
-    const reason = metricReason(row, metric);
+    const reason = row ? metricReason(row, metric) : null;
     if (!reason) return node;
     return (
       <Tooltip content={reason}>
@@ -243,105 +376,97 @@ function ProviderTableRow({ row, view, selected, onSelect, layoutKey, reduceMoti
       </Tooltip>
     );
   };
+  return { row, failing, tint, reasonTooltip, excluded: row?.role === "excluded" };
+}
 
+function BidCell(props: CellProps) {
+  const { row, tint, reasonTooltip, excluded } = metricCell(props);
+  if (!row) return null;
+  return <BidValue row={row} muted={excluded} tintClass={tint("bid")} wrap={(node) => reasonTooltip("bid", node)} />;
+}
+
+function LatencyCell(props: CellProps) {
+  const { row, tint, reasonTooltip, excluded } = metricCell(props);
+  if (!row) return null;
+  return reasonTooltip(
+    "latency",
+    <PartsValue text={format.latency(row.conditions.p95LatencyMs)} muted={excluded} tintClass={tint("latency")} />,
+  );
+}
+
+function DataAgeCell(props: CellProps) {
+  const { row, tint, reasonTooltip, excluded } = metricCell(props);
+  if (!row) return null;
+  return reasonTooltip(
+    "dataAge",
+    <PartsValue text={format.dataAge(row.conditions.dataAgeMs)} muted={excluded} tintClass={tint("dataAge")} />,
+  );
+}
+
+function SuccessCell(props: CellProps) {
+  const { view } = useProvidersGrid();
+  const { row, failing, excluded } = metricCell(props);
+  if (!row) return null;
   return (
-    <MotionRow
-      ref={rowRef}
-      layout={reduceMotion ? false : "position"}
-      layoutDependency={layoutKey}
-      transition={LAYOUT_TRANSITION}
-      interactive
-      selected={selected}
-      onClick={() => onSelect(selected ? null : row.id)}
-      data-provider={row.id}
-      data-role={row.role}
-      data-status={row.status}
-      // Opaque rows, so a row sliding past others during a reorder covers them instead of overlapping text.
-      className={cn("group/row", !selected && "bg-card")}
-    >
-      <TableRowHeader
-        muted={excluded}
-        className={cn(
-          // Small screens: the provider column stays in view while the metrics scroll, and tags wrap under the name.
-          // Wider screens: tags wrap under the name only when the table runs out of room.
-          "whitespace-normal max-md:sticky max-md:left-0 max-md:z-[1] max-md:max-w-44 max-md:bg-card",
-          selected && "shadow-[inset_2px_0_0_var(--primary-strong)]",
-        )}
-      >
-        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-          <button
-            type="button"
-            aria-pressed={selected}
-            aria-label={`${row.name}, select to inspect`}
-            className="flex min-w-0 cursor-pointer items-center gap-2.5 rounded-sm text-left outline-none focus-visible:ring-1 focus-visible:ring-ring"
-          >
-            <ProviderLogo src={row.logo} name={row.name} className={cn(excluded && "opacity-75")} />
-            <span className={cn("truncate text-xs whitespace-nowrap", excluded ? "text-muted-foreground" : "text-foreground")}>
-              {row.name}
-            </span>
-          </button>
-          <ProviderTags row={row} />
-        </div>
-      </TableRowHeader>
-      <TableCell numeric>
-        <BidValue row={row} muted={excluded} tintClass={tint("bid")} wrap={(node) => reasonTooltip("bid", node)} />
-      </TableCell>
-      <TableCell numeric>
-        {reasonTooltip(
-          "latency",
-          <PartsValue text={format.latency(row.conditions.p95LatencyMs)} muted={excluded} tintClass={tint("latency")} />,
-        )}
-      </TableCell>
-      <TableCell numeric>
-        {reasonTooltip(
-          "dataAge",
-          <PartsValue text={format.dataAge(row.conditions.dataAgeMs)} muted={excluded} tintClass={tint("dataAge")} />,
-        )}
-      </TableCell>
-      <TableCell numeric>
-        <SuccessBars
-          values={successSamples(row)}
-          threshold={view.policy.minSuccessRate}
-          label={row.conditions.available ? format.percent(row.successRate) : "–"}
-          ariaLabel={
-            row.conditions.available
-              ? `Success rate ${format.percent(row.successRate)}`
-              : "No successful requests: the provider is not responding"
-          }
-          className={cn("[&>span]:w-14", excluded && !failing.success && "[&>span]:text-muted-foreground")}
+    <SuccessBars
+      values={successSamples(row)}
+      threshold={view.policy.minSuccessRate}
+      label={row.conditions.available ? format.percent(row.successRate) : "–"}
+      ariaLabel={
+        row.conditions.available
+          ? `Success rate ${format.percent(row.successRate)}`
+          : "No successful requests: the provider is not responding"
+      }
+      className={cn("tabular-nums [&>span]:w-14", excluded && !failing.success && "[&>span]:text-muted-foreground")}
+    />
+  );
+}
+
+function TrendCell(props: CellProps) {
+  const { view } = useProvidersGrid();
+  const row = providerOf(props);
+  if (!row) return null;
+  const trend = providerTrend(row, view.policy);
+  const tone: SparklineTone =
+    row.role === "pinned-failing" ? "negative" : row.isActive ? "active" : row.role === "excluded" ? "muted" : "neutral";
+  return (
+    <Tooltip content={trend.description}>
+      <span className="flex w-fit cursor-help">
+        <Sparkline
+          values={trend.values}
+          limit={trend.limit}
+          tone={tone}
+          width={60}
+          height={22}
+          {...trendScale(trend)}
+          ariaLabel={trend.description}
         />
-      </TableCell>
-      <TableCell>
-        <Tooltip content={trend.description}>
-          <span className="flex w-fit cursor-help">
-            <Sparkline
-              values={trend.values}
-              limit={trend.limit}
-              tone={sparkTone}
-              width={60}
-              height={22}
-              {...trendScale(trend)}
-              ariaLabel={trend.description}
-            />
-          </span>
-        </Tooltip>
-      </TableCell>
-      <TableCell>
-        <StatusBadge row={row} />
-      </TableCell>
-      <TableCell>
-        {row.isPendingTarget ? (
-          <PendingRouteText marketId={view.id} />
-        ) : (
-          <RouteText route={route} />
-        )}
-      </TableCell>
-      <TableCell className="py-0 pl-1! last:pr-2">
-        <div className="flex justify-end">
-          <ProviderRowMenu marketId={view.id} row={row} mode={view.policy.mode} onSelect={onSelect} />
-        </div>
-      </TableCell>
-    </MotionRow>
+      </span>
+    </Tooltip>
+  );
+}
+
+function StatusCell(props: CellProps) {
+  const row = providerOf(props);
+  return row ? <StatusBadge row={row} /> : null;
+}
+
+function RouteCell(props: CellProps) {
+  const { view } = useProvidersGrid();
+  const row = providerOf(props);
+  if (!row) return null;
+  return row.isPendingTarget ? <PendingRouteText marketId={view.id} /> : <RouteText route={routeLabel(row)} />;
+}
+
+function ActionsCell(props: CellProps) {
+  const { view, onSelect } = useProvidersGrid();
+  const row = providerOf(props);
+  if (!row) return null;
+  return (
+    // The menu opens without selecting the row.
+    <div data-grid-ignore-click="" className="flex justify-end">
+      <ProviderRowMenu marketId={view.id} row={row} mode={view.policy.mode} onSelect={onSelect} />
+    </div>
   );
 }
 
