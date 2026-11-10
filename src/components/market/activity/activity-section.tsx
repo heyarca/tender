@@ -259,12 +259,14 @@ function ActivityRow({
                 {provider ? (
                   <ProviderLogo src={provider.logo} name={provider.name} size={16} className="mt-0.5" />
                 ) : null}
-                <span className="min-w-0">{entry.title}</span>
-                {source ? (
-                  <Badge tone="active" className="mt-px" data-slot="activity-source">
-                    {SOURCE_LABELS[source]}
-                  </Badge>
-                ) : null}
+                <span className="min-w-0">
+                  {entry.title}
+                  {source ? (
+                    <Badge tone="active" className="ml-1.5 align-[1px]" data-slot="activity-source">
+                      {SOURCE_LABELS[source]}
+                    </Badge>
+                  ) : null}
+                </span>
               </p>
             )}
           </div>
