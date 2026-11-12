@@ -8,6 +8,7 @@ import { topUpBeforeAgentCharge, type VaultedTopUp } from "@/lib/paypal/vault";
 import { serveWithCredits } from "@/lib/server/credits";
 import { ApiError } from "@/lib/server/http";
 import { getMarketDefinition, isMarketId, providerName, type MarketId, type RoutingPolicy, type ServedEnvelope } from "@/lib/tender";
+import { parseRequestInputs } from "@/lib/tender/request-inputs";
 import { findMarkets, marketBids, nextChargeMicros } from "./markets";
 import { formatMicros } from "@/components/credits/money";
 import { usdToMicros } from "./money";
@@ -201,6 +202,13 @@ function serverTools(accountId: string) {
       }),
       execute: async ({ marketId, policy, params, count = 1 }) => {
         if (!isMarketId(marketId)) return { ran: 0, error: `Unknown market: ${marketId}` };
+        // Reject invalid contract inputs before a saved PayPal account can be charged.
+        let requestParams: Record<string, string>;
+        try {
+          requestParams = parseRequestInputs(marketId, params);
+        } catch (error) {
+          return { ran: 0, refused: { code: "invalid_request", message: error instanceof Error ? error.message : "Invalid request inputs" } };
+        }
         const before = await getAccount(accountId);
         if (!before?.mandate) {
           return { ran: 0, refused: { code: "no_spending_limit", message: "No spending limit is approved. Ask for one with request_spending_limit." } };
@@ -220,7 +228,7 @@ function serverTools(accountId: string) {
             const nextCharge = chargeEstimate(marketId, routing);
             if (balance < lowBalanceThreshold(nextCharge)) autoTopUpResult = await autoTopUp(accountId, nextCharge);
           }
-          const { status, body } = await serveWithCredits({ accountId, actor: "agent", marketId, params, policy: routing });
+          const { status, body } = await serveWithCredits({ accountId, actor: "agent", marketId, params: requestParams, policy: routing });
           const result = body as ContractBody;
           if (status !== 200 || !result.payment) {
             refused = { code: result.error?.code ?? `http_${status}`, message: result.error?.message ?? "The request failed" };

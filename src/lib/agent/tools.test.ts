@@ -47,6 +47,22 @@ describe("manual and automatic top-ups", () => {
     expect(mocks.serve).not.toHaveBeenCalled();
   });
 
+  it.each([
+    { label: "unknown", params: { unexpected: "input" } },
+    { label: "blank", params: { prompt: "   " } },
+    { label: "oversized", params: { prompt: "x".repeat(501) } },
+  ])("rejects $label request inputs before any automatic PayPal top-up", async ({ params }) => {
+    mocks.account.mockResolvedValue({ balanceMicros: 0, mandate: { hasVault: true, weeklyCapMicros: 5_000_000, spentThisWeekMicros: 0 } });
+    expect(await execute("run_request", { marketId: "chat-general", params })).toMatchObject({
+      ran: 0,
+      refused: { code: "invalid_request" },
+    });
+    expect(mocks.beforeCharge).not.toHaveBeenCalled();
+    expect(mocks.vaultTopUp).not.toHaveBeenCalled();
+    expect(mocks.createOrder).not.toHaveBeenCalled();
+    expect(mocks.serve).not.toHaveBeenCalled();
+  });
+
   it("retains the guarded automatic path before low-balance paid requests", async () => {
     mocks.account.mockResolvedValue({ balanceMicros: 0, mandate: { hasVault: true, weeklyCapMicros: 5_000_000, spentThisWeekMicros: 0 } });
     mocks.beforeCharge.mockResolvedValue({ status: "REFUSED", reason: "weekly_limit", weeklyCapMicros: 5_000_000, topUpsThisWeekMicros: 5_000_000 });
