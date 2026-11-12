@@ -85,11 +85,11 @@ function table(rows, columns) {
 }
 
 function installAgentInstructions(cwd) {
-  const targets = ["AGENTS.md", "CLAUDE.md"].map((f) => join(cwd, f));
-  const existing = targets.filter((f) => existsSync(f));
-  const files = existing.length ? existing : [targets[0]];
+  // AGENTS.md is always written because most coding agents read it; CLAUDE.md only when the project has one.
+  const files = [join(cwd, "AGENTS.md"), join(cwd, "CLAUDE.md")].filter((file, index) => index === 0 || existsSync(file));
   for (const file of files) {
-    const current = existsSync(file) ? readFileSync(file, "utf8") : "";
+    const existed = existsSync(file);
+    const current = existed ? readFileSync(file, "utf8") : "";
     let next;
     if (current.includes(BEGIN) && current.includes(END)) {
       next = current.slice(0, current.indexOf(BEGIN)) + AGENT_BLOCK + current.slice(current.indexOf(END) + END.length);
@@ -102,7 +102,7 @@ function installAgentInstructions(cwd) {
       continue;
     }
     writeFileSync(file, next);
-    console.log(`${lime("✓")} ${existing.includes(file) ? "Updated" : "Created"} ${name}`);
+    console.log(`${lime("✓")} ${existed ? "Updated" : "Created"} ${name}`);
   }
 }
 
