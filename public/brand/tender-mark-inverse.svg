@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 318 159" width="318" height="159" fill="#c8ff00">
   <title>Tender</title>
-  <path d="M3.8 3.8h12.4M3.8 10h7.6M3.8 16.2h1.6" stroke="#c8ff00" stroke-width="4" stroke-linecap="round"/>
-  <circle cx="12.6" cy="16.2" r="3.1" fill="#c8ff00"/>
+  <path d="M94.8165 159H64.1835V105.88L14.5872 134.427L0 108.048L49.5963 79.1386L0 50.9523L14.5872 24.5727L64.1835 53.1205V0H94.8165V53.1205L144.778 24.5727L159 50.9523L109.768 79.1386L159 107.686L144.413 134.066L94.8165 105.518V159Z"/>
+  <rect x="159" width="159" height="159"/>
 </svg>

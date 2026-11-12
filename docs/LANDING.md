@@ -15,7 +15,7 @@ bun run verify
 
 | Section | Component | Content |
 | --- | --- | --- |
-| Navigation | `LandingChrome` | Floating tray: wordmark, Markets, How it works, Marketplace, Try Tender |
+| Navigation | `LandingChrome` | Floating tray: wordmark and mark, Markets, How it works, Marketplace, Try Tender |
 | Hero | `HeroSection` | Headline, two actions, aerial traffic film with a routing card driven by the engine |
 | `#markets` | `MarketsSection` | Bitcoin and weather cards with the real result components |
 | `#how-it-works` | `RequirementsSection` | Requirement accordion beside the real routing policy form |
@@ -52,7 +52,9 @@ shadow and inner highlight, hover and active states, a press scale, and an offse
 ## Media and metadata
 
 Real photography and video live in `public/landing/` (sources and licenses: see the media manifest
-section below). The Tender wordmark source is `public/brand/tender-wordmark.svg`.
+section below). The Tender wordmark source is `public/brand/tender-wordmark.svg`. The mark (an asterisk
+beside a square) comes from the Figma file "Tender" (Frame 10); its geometry lives in
+`src/components/shell/tender-mark.tsx`, and `public/brand/tender-mark*.svg` and `src/app/icon.svg` use it.
 
 `opengraph-image.png` and `twitter-image.png` in `src/app` and `src/app/landing` are the owner's social
 preview ("Tender. Always on the best API."), exported from the Figma file "Tender" (Frame 30, node 11:172). Next resolves their absolute URLs from the Vercel deployment URL.

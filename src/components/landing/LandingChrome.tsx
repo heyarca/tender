@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
+import { TenderMark } from "@/components/shell/tender-mark";
 import { ButtonLink } from "./LandingButton";
 import { TenderWordmark } from "./TenderWordmark";
 import { landingStyles as styles } from "./styles";
@@ -7,7 +8,7 @@ import { landingStyles as styles } from "./styles";
 export const DEMO_HREF = "/markets";
 
 export function LandingLogo({ large = false }: { large?: boolean }) {
-  return <Link href="/landing" className={`${styles.logo} ${large ? styles.logoLarge : ""}`} aria-label="Tender home"><TenderWordmark title={null} /></Link>;
+  return <Link href="/landing" className={`${styles.logo} ${large ? styles.logoLarge : ""}`} aria-label="Tender home"><TenderWordmark title={null} /><TenderMark title={null} className={styles.logoMark} /></Link>;
 }
 
 export function LandingHeader() {

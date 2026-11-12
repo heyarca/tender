@@ -83,6 +83,7 @@ export const landingStyles = {
   heroVideo: "tenderLanding_heroVideo",
   logo: "tenderLanding_logo",
   logoLarge: "tenderLanding_logoLarge",
+  logoMark: "tenderLanding_logoMark",
   marketCard: "tenderLanding_marketCard",
   marketCatalogLink: "tenderLanding_marketCatalogLink",
   marketDescription: "tenderLanding_marketDescription",

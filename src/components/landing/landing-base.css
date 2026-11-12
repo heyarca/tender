@@ -70,9 +70,12 @@
 /* Header: floating tray */
 .tenderLanding_header { position: fixed; inset: 20px 0 auto; z-index: 60; display: flex; justify-content: center; padding-inline: 20px; pointer-events: none; }
 .tenderLanding_headerInner { pointer-events: auto; display: flex; align-items: center; gap: 12px; width: min(880px, 100%); height: 56px; padding: 8px 8px 8px 22px; border-radius: 16px; background: rgb(236 236 236 / 0.8); -webkit-backdrop-filter: saturate(1.6) blur(16px); backdrop-filter: saturate(1.6) blur(16px); box-shadow: inset 0 0 0 1px rgb(3 8 10 / 0.05), 0 10px 28px -18px rgb(3 8 10 / 0.3); }
-.tenderLanding_logo { display: inline-flex; flex-shrink: 0; align-items: center; color: var(--lp-ink); border-radius: 6px; }
+.tenderLanding_logo { display: inline-flex; flex-shrink: 0; align-items: center; gap: 8px; color: var(--lp-ink); border-radius: 6px; }
 .tenderLanding_logo svg { width: auto; height: 20px; }
 .tenderLanding_logoLarge svg { height: 52px; color: var(--lp-lime); }
+.tenderLanding_logo .tenderLanding_logoMark { height: 17px; transform: translateY(-2px); }
+.tenderLanding_logoLarge { gap: 22px; }
+.tenderLanding_logoLarge .tenderLanding_logoMark { height: 45px; transform: translateY(-5px); }
 .tenderLanding_navigation { display: flex; flex: 1; justify-content: center; gap: 2px; }
 .tenderLanding_navLink { padding: 8px 14px; border-radius: 10px; font-size: 15px; line-height: 20px; color: var(--lp-ink-2); transition: background-color 0.15s var(--lp-ease), color 0.15s var(--lp-ease); }
 .tenderLanding_navLink:hover { background: rgb(3 8 10 / 0.05); color: var(--lp-ink); }
