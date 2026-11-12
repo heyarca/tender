@@ -1,5 +1,8 @@
 import { execFile } from "node:child_process";
+import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -136,5 +139,28 @@ describe("CLI provider display names", () => {
     expect((await handlers.get_balance()).recent[0].provider).toBe("fernline");
     active = "deleted-provider";
     expect((await tender.callMarket("sf-weather")).providerName).toBeNull();
+  });
+});
+
+describe("init", () => {
+  async function init(files) {
+    const dir = await mkdtemp(join(tmpdir(), "tender-init-"));
+    for (const [name, text] of Object.entries(files)) await writeFile(join(dir, name), text);
+    const { stdout } = await exec("node", [cli, "--no-mcp", "--base-url", baseUrl], { cwd: dir });
+    return { dir, stdout };
+  }
+
+  it("creates AGENTS.md in an empty project", async () => {
+    const { dir, stdout } = await init({});
+    expect(stdout).toContain("Created AGENTS.md");
+    expect(await readFile(join(dir, "AGENTS.md"), "utf8")).toContain("<!-- tender:begin -->");
+  });
+
+  it("writes AGENTS.md and updates an existing CLAUDE.md", async () => {
+    const { dir, stdout } = await init({ "CLAUDE.md": "# Project\n" });
+    expect(stdout).toContain("Created AGENTS.md");
+    expect(stdout).toContain("Updated CLAUDE.md");
+    expect(await readFile(join(dir, "AGENTS.md"), "utf8")).toContain("<!-- tender:begin -->");
+    expect(await readFile(join(dir, "CLAUDE.md"), "utf8")).toMatch(/^# Project\n\n<!-- tender:begin -->/);
   });
 });
