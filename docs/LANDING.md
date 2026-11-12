@@ -54,5 +54,5 @@ shadow and inner highlight, hover and active states, a press scale, and an offse
 Real photography and video live in `public/landing/` (sources and licenses: see the media manifest
 section below). The Tender wordmark source is `public/brand/tender-wordmark.svg`.
 
-`opengraph-image.png` and `twitter-image.png` in `src/app/landing` are the owner's social preview
-("Tender — The Everything API"). Next resolves their absolute URLs from the Vercel deployment URL.
+`opengraph-image.png` and `twitter-image.png` in `src/app` and `src/app/landing` are the owner's social
+preview ("Tender. Always on the best API."), exported from the Figma file "Tender" (Frame 30, node 11:172). Next resolves their absolute URLs from the Vercel deployment URL.
