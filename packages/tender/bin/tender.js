@@ -73,6 +73,10 @@ function paidCallError(error, baseUrl, id) {
   return error;
 }
 
+function providerName(providers, id) {
+  return providers?.find((provider) => provider.id === id)?.name ?? id;
+}
+
 function table(rows, columns) {
   const widths = columns.map((c) => Math.max(c.label.length, ...rows.map((r) => String(c.get(r)).length)));
   const line = (cells) => cells.map((cell, i) => String(cell).padEnd(widths[i])).join("  ");
@@ -287,7 +291,7 @@ async function main() {
       { label: "STATUS", get: (p) => p.evaluation?.status ?? "" },
     ]);
     const active = m.routing?.active_provider ?? m.routing?.provider;
-    if (active) console.log(`\nRouting to ${bold(active)}`);
+    if (active) console.log(`\nRouting to ${bold(providerName(m.providers, active))}`);
     return;
   }
   if (command === "call") {
@@ -295,7 +299,7 @@ async function main() {
     const result = await tender.callMarket(args[1], { params: paramsFrom(flags), policy: policyFrom(flags) })
       .catch((error) => { throw paidCallError(error, tender.baseUrl, args[1]); });
     const { charged_micros, balance_micros } = result.payment;
-    console.log(`${bold(args[1])} served by ${bold(result.provider ?? "unknown")} · charged ${formatMicros(charged_micros ?? 0)} · balance ${formatMicros(balance_micros ?? 0)}`);
+    console.log(`${bold(args[1])} served by ${bold(result.providerName ?? result.provider ?? "unknown")} · charged ${formatMicros(charged_micros ?? 0)} · balance ${formatMicros(balance_micros ?? 0)}`);
     console.log(JSON.stringify(result.data, null, 2));
     return;
   }
@@ -304,13 +308,21 @@ async function main() {
     console.log(`Balance ${bold(formatMicros(account.balance_micros))}`);
     const last = (account.ledger ?? []).slice(0, 5);
     if (last.length) {
+      const marketIds = [...new Set(last.filter((entry) => entry.provider_id && entry.market_id).map((entry) => entry.market_id))];
+      const markets = new Map(await Promise.all(marketIds.map(async (id) => {
+        const market = await tender.market(id).catch((error) => {
+          if (error.status !== 404) console.error(`tender: Could not load provider names for ${id}; showing IDs.`);
+          return null; // Deleted markets can remain in the ledger.
+        });
+        return [id, market];
+      })));
       console.log("");
       table(last, [
         { label: "WHEN", get: (e) => e.created_at.replace("T", " ").slice(0, 19) },
         { label: "KIND", get: (e) => e.kind },
         { label: "AMOUNT", get: (e) => formatMicros(e.amount_micros) },
         { label: "MARKET", get: (e) => e.market_id ?? "" },
-        { label: "PROVIDER", get: (e) => e.provider_id ?? "" },
+        { label: "PROVIDER", get: (e) => providerName(markets.get(e.market_id)?.providers, e.provider_id) ?? "" },
       ]);
     }
     return;

@@ -1,3 +1,4 @@
+import { timeZoneLabel as zoneAt } from "@/lib/tender/time-zone";
 import { cn } from "@/lib/utils";
 import { Delta } from "@/components/viz/Delta";
 import { formatAge, formatClock, formatLatency, formatUsd } from "@/components/viz/format";
@@ -24,6 +25,8 @@ export interface BitcoinResultProps {
   chartHeight?: number;
   /** Show the provenance footer (Served by …). Default true. */
   showMeta?: boolean;
+  /** Preview: elapsed chart time and data age at response, without a wall-clock freshness claim. */
+  preview?: boolean;
   className?: string;
 }
 
@@ -46,9 +49,10 @@ export function BitcoinResult({
   points,
   providers,
   timeZone = "UTC",
-  timeZoneLabel = "UTC",
+  timeZoneLabel,
   chartHeight = 160,
   showMeta = true,
+  preview = false,
   className,
 }: BitcoinResultProps) {
   const status = request?.status ?? "ok";
@@ -77,20 +81,20 @@ export function BitcoinResult({
       <ResultStatusLine request={request} hasPrevious={quote !== null} className="mt-3">
         {quote ? (
           <>
-            <span className="truncate tabular-nums">
-              Source {formatClock(quote.sourceTimestamp, timeZone, { milliseconds: true })} {timeZoneLabel}
-            </span>
-            <span aria-hidden="true" className="text-faint">
-              ·
-            </span>
-            <span className="truncate tabular-nums">Data age {formatAge(quote.dataAgeMs)}</span>
+            {!preview ? <>
+              <span className="truncate tabular-nums">
+                Source {formatClock(quote.sourceTimestamp, timeZone, { milliseconds: true })} {timeZoneLabel ?? zoneAt(timeZone, quote.sourceTimestamp)}
+              </span>
+              <span aria-hidden="true" className="text-faint">·</span>
+            </> : null}
+            <span className="truncate tabular-nums">Data age{preview ? " at response" : ""} {formatAge(quote.dataAgeMs)}</span>
             <span aria-hidden="true" className="text-faint">
               ·
             </span>
             <span className="truncate tabular-nums">Latency {formatLatency(quote.latencyMs)}</span>
           </>
         ) : (
-          <span>Run a request to see the current price</span>
+          <span>No result yet. The next request shows the current price here.</span>
         )}
       </ResultStatusLine>
 
@@ -101,6 +105,7 @@ export function BitcoinResult({
         timeZone={timeZone}
         timeZoneLabel={timeZoneLabel}
         height={chartHeight}
+        elapsedTime={preview}
       />
 
       {showMeta && (

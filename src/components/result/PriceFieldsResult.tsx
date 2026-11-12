@@ -48,7 +48,7 @@ export function PriceFieldsResult({
   points,
   providers,
   timeZone = "UTC",
-  timeZoneLabel = "UTC",
+  timeZoneLabel,
   chartHeight = 160,
   showMeta = true,
   className,
@@ -96,7 +96,7 @@ export function PriceFieldsResult({
         {reading ? (
           <ReadingMeta reading={reading} label={contract.freshness.label} timeZone={timeZone} timeZoneLabel={timeZoneLabel} />
         ) : (
-          <span>Run a request to see the current price</span>
+          <span>No result yet. The next request shows the current price here.</span>
         )}
       </ResultStatusLine>
 

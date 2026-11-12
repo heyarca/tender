@@ -245,7 +245,7 @@ async function executeContract(selection: RouteSelection, inputs: Readonly<Recor
     ok: true,
     requestId: result.requestId,
     providerId: result.providerId,
-    head: { request_id: result.requestId, market: marketId, contract: contractId, provider: result.providerId,
+    head: { request_id: result.requestId, market: marketId, contract: contractId, provider: result.providerId, params: inputs,
       latency_ms: result.latencyMs, data_age_ms: result.dataAgeMs },
     tail: { ...violations, reference_source: source, reference_timestamp: timestamp, data },
   };

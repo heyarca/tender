@@ -5,7 +5,7 @@ import { BiddingAgentsSection } from "@/components/market/bidding/bidding-agents
 import { ActivitySection } from "@/components/market/activity/activity-section";
 import { AskTender } from "@/components/ask/ask-tender";
 import { ProviderConditionsSection } from "@/components/market/conditions/provider-conditions-section";
-import { MarketUiProvider } from "@/components/market/market-ui";
+import { focusSection, MarketUiProvider } from "@/components/market/market-ui";
 import { CreditsSection } from "@/components/credits/credits-section";
 import { ApiDialog } from "@/components/market/page/api-dialog";
 import { MarketCommandPalette } from "@/components/market/page/market-command-palette";
@@ -21,6 +21,7 @@ import { ProvidersSection } from "@/components/market/providers/providers-sectio
 import { useHotkey } from "@/components/shell/command-palette";
 import { PageContainer } from "@/components/shell/page-container";
 import type { MarketId } from "@/lib/tender";
+import { getMarketSpec } from "@/lib/registry";
 import { useMarketView, useTenderActions } from "@/lib/tender/client";
 
 export interface MarketPageProps {
@@ -49,7 +50,11 @@ function MarketPageContent({ marketId, onSwitchMarket }: MarketPageProps) {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [apiOpen, setApiOpen] = useState(false);
 
-  const run = useCallback(() => actions.runRequest(marketId), [actions, marketId]);
+  const upstream = getMarketSpec(marketId)?.source === "upstream";
+  const run = useCallback(() => {
+    if (upstream) focusSection("credits");
+    else actions.runRequest(marketId);
+  }, [actions, marketId, upstream]);
   const openApi = useCallback(() => setApiOpen(true), []);
   const openPalette = useCallback(() => setPaletteOpen(true), []);
 
@@ -59,7 +64,7 @@ function MarketPageContent({ marketId, onSwitchMarket }: MarketPageProps) {
 
   return (
     <>
-      <MarketTopNav onSearch={openPalette} onOpenApi={openApi} onRun={run} />
+      <MarketTopNav onSearch={openPalette} onOpenApi={openApi} onRun={run} runLabel={upstream ? "Request options" : "Run request"} />
       <MarketStickyBar view={view} onRun={run} onOpenApi={openApi} />
       <PageContainer>
         <MarketHeader

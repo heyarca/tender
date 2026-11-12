@@ -86,7 +86,7 @@ describe("server render", () => {
     );
     expect(ok).toContain("61°F");
     expect(ok).toContain("Overcast");
-    expect(ok).toContain("Observed 10:24 AM PT");
+    expect(ok).toContain("Observed 10:24 AM PST");
     expect(ok).toContain("Served by");
 
     const failed = render(

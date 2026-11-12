@@ -18,7 +18,9 @@ import {
   type ContractSpec,
   type MarketSpec,
 } from "@/lib/registry";
-import { PRICE_UNIT } from "./constants";
+import { FIXTURE_EPOCH, PRICE_UNIT } from "./constants";
+import { timeZoneLabel } from "./time-zone";
+export { timeZoneLabel } from "./time-zone";
 import { getApiSnippets, sampleResponseJson } from "./snippets";
 import type {
   ConditionInputSpecs,
@@ -223,22 +225,6 @@ function inputsFor(spec: MarketSpec, contract: ContractSpec, policy: PolicyLimit
 // Definitions
 // ---------------------------------------------------------------------------
 
-const TIME_ZONE_LABELS: Readonly<Record<string, string>> = {
-  "America/Los_Angeles": "PT",
-  "America/New_York": "ET",
-  "Europe/London": "GMT",
-  "Asia/Seoul": "KST",
-  "Asia/Tokyo": "JST",
-  "Asia/Singapore": "SGT",
-  "Asia/Shanghai": "CST",
-  UTC: "UTC",
-};
-
-/** Short label of an IANA time zone ("PT", "KST", "UTC"). */
-export function timeZoneLabel(timeZone: string): string {
-  return TIME_ZONE_LABELS[timeZone] ?? timeZone.split("/").pop()?.replace(/_/g, " ") ?? timeZone;
-}
-
 const PRICE_DEFINITIONS: Readonly<Record<MarketId, string>> = {
   "btc-usd": "BTC/USD spot mid price in USD, volume-weighted across major USD venues.",
 };
@@ -298,7 +284,7 @@ export function buildMarketDefinition(spec: MarketSpec): MarketDefinition {
     contractUrl: contractUrl(spec),
     description: spec.description,
     timeZone: spec.timeZone,
-    timeZoneLabel: timeZoneLabel(spec.timeZone),
+    timeZoneLabel: timeZoneLabel(spec.timeZone, FIXTURE_EPOCH),
     icon: spec.icon ?? getCategory(spec.categoryId)?.icon ?? "circle",
     units: { price: PRICE_UNIT, dataAge: contract.freshness.unit, value: primary?.unit ?? "" },
     seriesField: seriesFieldOf(contract),

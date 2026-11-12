@@ -1,7 +1,9 @@
+import { createHash } from "node:crypto";
 import { tool, type FlexibleSchema, type Tool } from "ai";
-import { paypalApiBase, paypalCredentials } from "@/lib/paypal/client";
+import { paypalApiBase, paypalCredentials, paypalFetch } from "@/lib/paypal/client";
 import { listLedger } from "@/lib/ledger";
 import { getStoredOrder } from "@/lib/paypal/orders";
+import { invoiceUrlFromResponse } from "./invoice-link";
 
 const LIVE_API_BASE = "https://api-m.paypal.com";
 /** Toolkit results can be long (transaction lists); the model gets the first part. */
@@ -60,6 +62,20 @@ function prepareInvoice(input: Record<string, unknown>): string | null {
   return email ? null : "Add the recipient email as primary_recipients[0].billing_info.email_address";
 }
 
+const INVOICE_ID = /^INV2(?:-[A-Z0-9]{4}){4}$/;
+
+/**
+ * PayPal invoice reference that ties an invoice to one Tender account. The account id also works as
+ * the browser's account cookie, so the reference holds a one-way hash of it, never the id itself.
+ */
+export function invoiceReference(accountId: string): string {
+  return `tender:${createHash("sha256").update(accountId).digest("base64url")}`;
+}
+
+function ownsInvoice(invoice: unknown, accountId: string): boolean {
+  return (invoice as { detail?: { reference?: unknown } } | null)?.detail?.reference === invoiceReference(accountId);
+}
+
 /**
  * PayPal Agent Toolkit tools as AI SDK tools, named `paypal_<action>` (for example `paypal_get_order`).
  * The toolkit builds tools for an older AI SDK, so each one is re-wrapped with its own schema and executor.
@@ -105,10 +121,40 @@ export async function paypalToolkitTools(accountId: string): Promise<Record<stri
         if (name === "create_invoice") {
           const problem = prepareInvoice(input);
           if (problem) return { error: problem };
+          // The reference binds an invoice to this Tender account before PayPal creates the draft.
+          input.reference = invoiceReference(accountId);
         }
         if (name === "get_order") {
           const order = await getStoredOrder(String(input.id ?? ""));
           if (order?.accountId !== accountId) return { error: "Order not found" };
+        }
+        if (name === "send_invoice") {
+          const invoiceId = typeof input.invoice_id === "string" && INVOICE_ID.test(input.invoice_id) ? input.invoice_id : null;
+          if (!invoiceId) return { error: "Invoice not found" };
+          let invoice: unknown;
+          try {
+            invoice = await paypalFetch(`/v2/invoicing/invoices/${invoiceId}`);
+          } catch {
+            return { error: "PayPal could not check this invoice. It was not sent." };
+          }
+          if (!ownsInvoice(invoice, accountId)) return { error: "Invoice not found" };
+          const result = readResult(await execute(input, {}));
+          if (result && typeof result === "object" && "error" in result) return result;
+          let invoiceUrl = invoiceUrlFromResponse(result);
+          // Some send responses have no body. Read the invoice again for its payer link.
+          if (!invoiceUrl) {
+            try {
+              const sentInvoice = await paypalFetch(`/v2/invoicing/invoices/${invoiceId}`);
+              if (ownsInvoice(sentInvoice, accountId)) invoiceUrl = invoiceUrlFromResponse(sentInvoice);
+            } catch {
+              // Sending succeeded; a failed link lookup must not invite a duplicate send.
+            }
+          }
+          return {
+            invoice_id: invoiceId,
+            status: "sent",
+            ...(invoiceUrl ? { invoice_url: invoiceUrl } : { note: "PayPal did not return an invoice link. Check the recipient email." }),
+          };
         }
         const result = readResult(await execute(input, {}));
         if (name === "list_transactions" && result && typeof result === "object" && "transaction_details" in result) {

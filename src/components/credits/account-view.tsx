@@ -1,13 +1,14 @@
 "use client";
 
 import { KeyRound, Plus, Wallet } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CustomCellRendererProps } from "ag-grid-react";
 import { Notice, RelativeTime } from "@/components/market/payments/payment-ui";
 import { Button } from "@/components/ui/button";
 import { CodeBlock } from "@/components/ui/code-block";
 import { CopyButton } from "@/components/ui/copy-button";
 import { DataGrid, type DataGridColumn } from "@/components/ui/data-grid";
+import { Dialog, DialogBody, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Section } from "@/components/ui/section";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -110,6 +111,19 @@ function ApiKeys() {
   const [created, setCreated] = useState<{ key: CreatedApiKeyView; origin: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [revoking, setRevoking] = useState<string | null>(null);
+  // The key stays set while the dialog closes, so its text does not change mid-animation.
+  const [revokeTarget, setRevokeTarget] = useState<ApiKeyView | null>(null);
+  const [revokeOpen, setRevokeOpen] = useState(false);
+  const [revokeError, setRevokeError] = useState<string | null>(null);
+  const revokeInFlight = useRef(false);
+  const cancelRevokeRef = useRef<HTMLButtonElement>(null);
+  const keyNameRef = useRef<HTMLInputElement>(null);
+
+  const requestRevoke = useCallback((key: ApiKeyView) => {
+    setRevokeError(null);
+    setRevokeTarget(key);
+    setRevokeOpen(true);
+  }, []);
 
   const [version, setVersion] = useState(0);
   const reload = useCallback(() => setVersion((value) => value + 1), []);
@@ -151,25 +165,32 @@ function ApiKeys() {
   };
 
   const revoke = useCallback(
-    async (key: ApiKeyView) => {
+    async () => {
+      if (!revokeTarget || revokeInFlight.current) return;
+      const key = revokeTarget;
+      revokeInFlight.current = true;
       setRevoking(key.id);
+      setRevokeError(null);
       try {
         const response = await fetch(`/api/keys/${encodeURIComponent(key.id)}`, { method: "DELETE" });
         if (!response.ok) throw new Error(await errorMessage(response, "Could not revoke the key."));
         setCreated((current) => (current?.key.id === key.id ? null : current));
+        setKeys((current) => current?.filter((item) => item.id !== key.id) ?? null);
+        setRevokeOpen(false);
         toast({ title: "Key revoked", description: `${key.label ?? "Untitled key"} (tk_${key.prefix}…) no longer works.` });
         reload();
       } catch (cause) {
-        toast({ tone: "negative", title: cause instanceof Error ? cause.message : "Could not revoke the key." });
+        setRevokeError(cause instanceof Error ? cause.message : "Could not revoke the key.");
       } finally {
+        revokeInFlight.current = false;
         setRevoking(null);
       }
     },
-    [reload],
+    [reload, revokeTarget],
   );
 
   const columns = useMemo<DataGridColumn<ApiKeyView>[]>(() => {
-    const params = { onRevoke: revoke, revoking };
+    const params = { onRevoke: requestRevoke, revoking };
     return [
       { colId: "name", headerName: "Name", cellRenderer: KeyNameCell, cellRendererParams: params, flex: 1, minWidth: 160 },
       { colId: "key", headerName: "Key", cellRenderer: KeyPrefixCell, cellRendererParams: params },
@@ -177,7 +198,7 @@ function ApiKeys() {
       { colId: "used", headerName: "Last used", cellRenderer: KeyUsedCell, cellRendererParams: params },
       { colId: "revoke", headerName: "Actions", headerHidden: true, align: "right", cellRenderer: KeyRevokeCell, cellRendererParams: params },
     ];
-  }, [revoke, revoking]);
+  }, [requestRevoke, revoking]);
 
   return (
     <Section
@@ -186,6 +207,38 @@ function ApiKeys() {
       title="API keys"
       description="Requests with a key pay with this balance. Use a key with the SDK, the MCP server, or any HTTP client."
     >
+      <Dialog
+        open={revokeOpen}
+        onOpenChange={(open) => {
+          if (!open && !revokeInFlight.current) setRevokeOpen(false);
+        }}
+      >
+        <DialogContent
+          size="sm"
+          title="Revoke API key?"
+          description={`${revokeTarget?.label ?? "Untitled key"} (tk_${revokeTarget?.prefix ?? ""}…) will stop working immediately. Apps using this key will lose access. This cannot be undone.`}
+          initialFocus={cancelRevokeRef}
+          // The revoked key's row is gone, so focus returns to the key form.
+          finalFocus={keyNameRef}
+          showCloseButton={!revoking}
+          footer={
+            <>
+              <Button ref={cancelRevokeRef} variant="outline" onClick={() => setRevokeOpen(false)} disabled={revoking !== null}>
+                Cancel
+              </Button>
+              <Button variant="destructive-outline" onClick={() => void revoke()} disabled={revoking !== null}>
+                {revoking ? "Revoking…" : "Revoke key"}
+              </Button>
+            </>
+          }
+        >
+          {revokeError ? (
+            <DialogBody>
+              <p role="alert" className="text-caption text-negative-text">{revokeError}</p>
+            </DialogBody>
+          ) : null}
+        </DialogContent>
+      </Dialog>
       <div className="flex flex-col gap-4">
         <form
           className="flex flex-wrap items-center gap-2"
@@ -195,6 +248,7 @@ function ApiKeys() {
           }}
         >
           <Input
+            ref={keyNameRef}
             aria-label="Key name"
             placeholder="Key name (optional)"
             value={label}

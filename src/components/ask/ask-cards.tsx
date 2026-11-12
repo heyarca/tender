@@ -13,7 +13,8 @@ import { AUTO_TOP_UP_MICROS, LOW_BALANCE_MICROS } from "@/lib/ledger/auto-top-up
 import { describePolicy, toRoutingPolicy } from "@/lib/agent/policy";
 import type { AskUITools } from "@/lib/agent/types";
 import { getMarketSpec } from "@/lib/registry";
-import { isMarketId } from "@/lib/tender";
+import { format, isMarketId, selectMarketView } from "@/lib/tender";
+import { useTenderSelector } from "@/lib/tender/client";
 
 type LimitInput = AskUITools["request_spending_limit"]["input"];
 type LimitOutput = AskUITools["request_spending_limit"]["output"];
@@ -60,6 +61,8 @@ export function SpendingLimitCard({ input, output, onAnswer }: { input: LimitInp
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const known = isMarketId(input.marketId);
+  const view = useTenderSelector((state) => isMarketId(input.marketId) ? selectMarketView(state.markets[input.marketId]) : null);
+  const provider = view?.route.activeProvider;
   const answered = output !== undefined;
 
   useEffect(() => {
@@ -117,6 +120,7 @@ export function SpendingLimitCard({ input, output, onAnswer }: { input: LimitInp
         <Row label="Weekly limit" value={formatMicros(usdToMicros(input.weeklyCapUsd))} />
         <Row label="Market" value={getMarketSpec(input.marketId)?.name ?? input.marketId} />
         {policy ? <Row label="Policy" value={policy} /> : null}
+        <Row label="Current provider" value={provider ? `${provider.name} · ${format.price(provider.conditions.bidPrice)} /M` : "No provider meets the policy"} />
         {paypalSaved ? <Row label="Automatic top-ups" value="PayPal saved" /> : null}
       </dl>
       <p className="text-caption leading-snug text-muted-foreground">
@@ -149,7 +153,7 @@ export function SpendingLimitCard({ input, output, onAnswer }: { input: LimitInp
   );
 }
 
-type TopUpOutput = { order_id: string; approve_url: string; amount: string; automatic_refused?: string };
+type TopUpOutput = { order_id: string; approve_url: string; amount: string };
 type TopUpState =
   | { kind: "idle" }
   | { kind: "waiting"; note?: string }
@@ -210,7 +214,7 @@ export function TopUpCard({ output }: { output: TopUpOutput }) {
     <CardFrame icon={<Wallet aria-hidden="true" />} title={`Add ${output.amount} with PayPal`}>
       <p className="text-caption leading-snug text-muted-foreground">
         {state.kind === "idle"
-          ? `${output.automatic_refused ? `Automatic top-up refused: ${output.automatic_refused}. ` : ""}Approve the payment in PayPal. Credits arrive right after.`
+          ? "Approve this one-off payment in PayPal. Your automatic top-up allowance stays unchanged."
           : (state.kind === "waiting" && state.note) || "Waiting for PayPal…"}
       </p>
       <div className="flex justify-end gap-2">

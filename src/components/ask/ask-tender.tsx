@@ -68,11 +68,16 @@ export function AskTender({ marketId, onSwitchMarket }: AskTenderProps) {
     // Paid requests move the balance; the balance chip and credits card read it again.
     onFinish: () => void refreshAccount(),
     onToolCall: ({ toolCall }) => {
-      if (toolCall.dynamic || toolCall.toolName !== "apply_policy") return;
+      if (toolCall.dynamic || (toolCall.toolName !== "apply_policy" && toolCall.toolName !== "request_spending_limit")) return;
       const { marketId: target, policy } = toolCall.input;
       const output = applyPolicy(store, target, policy);
       if (output.applied && target !== marketId) onSwitchMarket(target);
-      void addToolOutput({ tool: "apply_policy", toolCallId: toolCall.toolCallId, output });
+      if (toolCall.toolName === "apply_policy") {
+        void addToolOutput({ tool: "apply_policy", toolCallId: toolCall.toolCallId, output });
+      } else if (!output.applied) {
+        void addToolOutput({ tool: "request_spending_limit", toolCallId: toolCall.toolCallId, output: { approved: false, reason: output.error } });
+      }
+      // A prepared policy is not spending consent. Only the approval card answers the limit tool.
     },
   });
 

@@ -116,8 +116,7 @@ export function toolActivity(name: string, part: ToolPartState): Activity | null
         : { tone: "error", text: "Spending limit declined" };
     }
     case "top_up": {
-      const output = part.output as Output<"top_up">;
-      return done && output && "automatic" in output ? { tone: "done", text: savedPayPalTopUpText(output, false) } : null;
+      return done ? null : { tone: "pending", text: "Preparing a PayPal approval…" };
     }
     default: {
       const labels = PAYPAL_LABELS[name];

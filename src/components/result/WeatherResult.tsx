@@ -1,3 +1,4 @@
+import { timeZoneLabel as zoneAt } from "@/lib/tender/time-zone";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { compassDirection, formatAge, formatNumber, formatTimeOfDay } from "@/components/viz/format";
@@ -19,6 +20,8 @@ export interface WeatherResultProps {
   observedLabel?: string;
   /** Show the provenance footer (Served by …). Default true. */
   showMeta?: boolean;
+  /** Preview: show observation age at response, not a wall-clock freshness claim. */
+  preview?: boolean;
   className?: string;
 }
 
@@ -44,9 +47,10 @@ export function WeatherResult({
   reading,
   request,
   timeZone = "America/Los_Angeles",
-  timeZoneLabel = "PT",
+  timeZoneLabel,
   observedLabel,
   showMeta = true,
+  preview = false,
   className,
 }: WeatherResultProps) {
   const status = request?.status ?? "ok";
@@ -86,16 +90,16 @@ export function WeatherResult({
             <span aria-hidden="true" className="text-faint">
               ·
             </span>
-            <span className="truncate tabular-nums">
-              {observedLabel ?? `Observed ${formatTimeOfDay(reading.observedAt, timeZone)} ${timeZoneLabel}`}
-            </span>
-            <span aria-hidden="true" className="text-faint">
-              ·
-            </span>
-            <span className="truncate tabular-nums">Data age {formatAge(reading.dataAgeMs)}</span>
+            {!preview ? <>
+              <span className="truncate tabular-nums">
+                {observedLabel ?? `Observed ${formatTimeOfDay(reading.observedAt, timeZone)} ${timeZoneLabel ?? zoneAt(timeZone, reading.observedAt)}`}
+              </span>
+              <span aria-hidden="true" className="text-faint">·</span>
+            </> : null}
+            <span className="truncate tabular-nums">Data age{preview ? " at response" : ""} {formatAge(reading.dataAgeMs)}</span>
           </>
         ) : (
-          <span>Run a request to see current conditions</span>
+          <span>No result yet. The next request shows current conditions here.</span>
         )}
       </ResultStatusLine>
 

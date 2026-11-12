@@ -206,10 +206,10 @@ export function MarketHeader({ marketId, autoRun, onOpenApi, onAutoRunChange, on
             <SquareTerminal aria-hidden />
             API
           </Button>
-          <AutoRunSwitch checked={autoRun} onCheckedChange={onAutoRunChange} />
+          {getMarketSpec(marketId)?.source !== "upstream" ? <AutoRunSwitch checked={autoRun} onCheckedChange={onAutoRunChange} /> : null}
           <Button variant="primary" className="gap-2 px-4" onClick={onRun} aria-keyshortcuts="Meta+Enter Control+Enter">
             <Play aria-hidden />
-            Run request
+            {getMarketSpec(marketId)?.source === "upstream" ? "Request options" : "Run request"}
           </Button>
         </>
       }

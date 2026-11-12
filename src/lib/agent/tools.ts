@@ -4,10 +4,11 @@ import { getAccount, getAutopay, listLedger, lowBalanceThreshold } from "@/lib/l
 import { PayPalError } from "@/lib/paypal/client";
 import { paypalIssue } from "@/lib/paypal/http";
 import { createTopUpOrder } from "@/lib/paypal/orders";
-import { createVaultedTopUp, topUpBeforeAgentCharge, type VaultedTopUp } from "@/lib/paypal/vault";
+import { topUpBeforeAgentCharge, type VaultedTopUp } from "@/lib/paypal/vault";
 import { serveWithCredits } from "@/lib/server/credits";
 import { ApiError } from "@/lib/server/http";
 import { getMarketDefinition, isMarketId, providerName, type MarketId, type RoutingPolicy, type ServedEnvelope } from "@/lib/tender";
+import { parseRequestInputs } from "@/lib/tender/request-inputs";
 import { findMarkets, marketBids, nextChargeMicros } from "./markets";
 import { formatMicros } from "@/components/credits/money";
 import { usdToMicros } from "./money";
@@ -38,7 +39,7 @@ export const clientTools = {
   }),
   request_spending_limit: tool({
     description:
-      "Ask the user to approve a weekly spending limit for Ask Tender, with the market and routing policy to use. The user approves or declines in the panel. Required before any paid request.",
+      "Apply the requested routing policy and show a weekly spending approval card with the current provider and bid. Use directly when the market and budget are known; no separate get_market or apply_policy is needed. The user must approve in the panel before any paid request. Applying routing alone never spends credits.",
     inputSchema: z.object({
       weeklyCapUsd: z.number().positive().max(MAX_WEEKLY_CAP_USD).describe("Weekly limit in USD, for example 5"),
       marketId: marketIdSchema,
@@ -116,6 +117,7 @@ type ContractBody = {
   latency_ms?: number;
   data_age_ms?: number;
   price_usd?: number;
+  params?: Record<string, string>;
   data?: unknown;
   error?: { code?: string; message?: string };
   payment?: { charged_micros: number; balance_micros: number };
@@ -193,13 +195,20 @@ function serverTools(accountId: string) {
         marketId: marketIdSchema,
         policy: askPolicySchema.optional(),
         params: z
-          .record(z.string(), z.string().max(500))
+          .record(z.string(), z.string())
           .optional()
           .describe('Request inputs, for example { "text": "Where is the station?" } for translation or { "prompt": "..." } for chat'),
         count: z.number().int().min(1).max(MAX_RUN_COUNT).optional().describe(`How many requests, 1 to ${MAX_RUN_COUNT} (default 1)`),
       }),
       execute: async ({ marketId, policy, params, count = 1 }) => {
         if (!isMarketId(marketId)) return { ran: 0, error: `Unknown market: ${marketId}` };
+        // Reject invalid contract inputs before a saved PayPal account can be charged.
+        let requestParams: Record<string, string>;
+        try {
+          requestParams = parseRequestInputs(marketId, params);
+        } catch (error) {
+          return { ran: 0, refused: { code: "invalid_request", message: error instanceof Error ? error.message : "Invalid request inputs" } };
+        }
         const before = await getAccount(accountId);
         if (!before?.mandate) {
           return { ran: 0, refused: { code: "no_spending_limit", message: "No spending limit is approved. Ask for one with request_spending_limit." } };
@@ -219,7 +228,7 @@ function serverTools(accountId: string) {
             const nextCharge = chargeEstimate(marketId, routing);
             if (balance < lowBalanceThreshold(nextCharge)) autoTopUpResult = await autoTopUp(accountId, nextCharge);
           }
-          const { status, body } = await serveWithCredits({ accountId, actor: "agent", marketId, params, policy: routing });
+          const { status, body } = await serveWithCredits({ accountId, actor: "agent", marketId, params: requestParams, policy: routing });
           const result = body as ContractBody;
           if (status !== 200 || !result.payment) {
             refused = { code: result.error?.code ?? `http_${status}`, message: result.error?.message ?? "The request failed" };
@@ -243,6 +252,7 @@ function serverTools(accountId: string) {
             price_usd: result.price_usd ?? 0,
             charged_micros: result.payment.charged_micros,
             served_at: new Date().toISOString(),
+            ...(result.params ? { params: result.params } : {}),
             data: (result.data ?? {}) as Record<string, unknown>,
           });
         }
@@ -275,24 +285,21 @@ function serverTools(accountId: string) {
 }
 
 /**
- * PayPal top-up for the account. With a saved PayPal and an approved weekly limit it is charged
- * right away, with no approval; otherwise the user approves it from the panel and
- * `/api/ask/top-up` captures it.
+ * A one-off top-up the user approves in PayPal, even when PayPal is saved.
+ * Only run_request may initiate automatic, allowance-reserved vault charges.
  */
 function topUpTool(accountId: string, origin: string) {
   return tool({
     description:
-      "Add Tender credits with PayPal. With a saved PayPal the top-up happens right away (automatic: true), within the weekly limit. Otherwise the user approves it in PayPal from the panel; credits arrive after approval.",
+      "Offer a one-off Tender credits top-up. The user must approve this payment in PayPal, even with a saved account. It does not use the automatic top-up allowance. Credits arrive only after approval and capture.",
     inputSchema: z.object({ amountUsd: z.union([z.literal(5), z.literal(10), z.literal(20)]).describe("5, 10 or 20") }),
     execute: async ({ amountUsd }) => {
       const amountMicros = usdToMicros(amountUsd);
       try {
-        const automatic = await createVaultedTopUp({ accountId, amountMicros, actor: "agent" });
-        if (automatic.status !== "REFUSED") return { automatic: true as const, ...autoTopUpView(automatic) };
         const order = await createTopUpOrder({
           accountId,
           amountMicros,
-          actor: "agent",
+          actor: "user",
           returnUrl: `${origin}/api/ask/top-up`,
           cancelUrl: `${origin}/api/ask/top-up?cancel=1`,
         });
@@ -301,8 +308,6 @@ function topUpTool(accountId: string, origin: string) {
           approve_url: order.approveUrl,
           amount: formatMicros(amountMicros),
           status: "waiting_for_approval",
-          // Over the weekly limit the saved PayPal is not charged; the user can still approve this one.
-          ...(automatic.reason === "weekly_limit" ? { automatic_refused: weeklyLimitReached(automatic) } : {}),
         };
       } catch (error) {
         return { error: errorMessage(error) };
@@ -317,7 +322,6 @@ function topUpTool(accountId: string, origin: string) {
           order_id: output.order_id,
           amount: output.amount,
           status: output.status,
-          ...("automatic_refused" in output ? { automatic_refused: output.automatic_refused } : {}),
           approval: "The panel shows an Approve in PayPal button.",
         },
       };

@@ -130,7 +130,7 @@ describe("sorting", () => {
   it("sorts by each column and puts unavailable providers last by success", () => {
     expect(ids(sortProviders(rows, { key: "latency", direction: "asc" })).slice(0, 3)).toEqual(["owlbridge", "cinderlane", "kitefin"]);
     expect(ids(sortProviders(rows, { key: "dataAge", direction: "asc" }))[0]).toBe("owlbridge");
-    expect(ids(sortProviders(rows, { key: "name", direction: "asc" }))[0]).toBe("slatework");
+    expect(ids(sortProviders(rows, { key: "name", direction: "asc" }))[0]).toBe("cinderlane");
     expect(ids(sortProviders(rows, { key: "success", direction: "desc" })).at(-1)).toBe("kelpwave");
     expect(ids(sortProviders(rows, null))).toEqual(ids(rows));
   });

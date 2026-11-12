@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState, type KeyboardEvent, type PointerEvent } from "react";
+import { timeZoneLabel as zoneAt } from "@/lib/tender/time-zone";
 import { cn } from "@/lib/utils";
 import { ChartTooltip } from "./ChartTooltip";
 import { formatClock, formatUsd } from "./format";
@@ -17,6 +18,8 @@ export interface PriceChartProps {
   timeZone?: string;
   /** Suffix for tooltip times, e.g. `UTC` or `PT`. Default: `timeZone`. */
   timeZoneLabel?: string;
+  /** Show elapsed seconds from the first point instead of a wall clock for instructional charts. */
+  elapsedTime?: boolean;
   /** Chart height in px. Default 160. */
   height?: number;
   /** Price format for the tooltip. Default `$75,230.75`. */
@@ -60,6 +63,7 @@ export function PriceChart({
   points: input,
   timeZone = "UTC",
   timeZoneLabel,
+  elapsedTime = false,
   height = 160,
   formatPrice = formatUsd,
   formatTick,
@@ -142,7 +146,7 @@ export function PriceChart({
   const hovered = hoverIndex >= 0 && points[hoverIndex].t === hoverT ? points[hoverIndex] : null;
 
   const providerOf = (id: string | undefined) => (id && providers ? providers[id] : undefined);
-  const zoneLabel = timeZoneLabel ?? timeZone;
+  const timeText = (at: number) => elapsedTime ? `${Math.round((at - tFirst) / 1000)} s` : formatClock(at, timeZone);
 
   function locate(clientX: number, rect: DOMRect) {
     if (!points.length) return;
@@ -228,7 +232,7 @@ export function PriceChart({
         <g style={{ fontSize: TICK_FONT_PX }}>
           {xTicks.map((tick) => {
             const tx = x(tick);
-            const text = formatClock(tick, timeZone);
+            const text = timeText(tick);
             const half = (text.length * CHAR_PX) / 2;
             const anchor = tx - half < plot.left - 4 ? "start" : tx + half > width - 2 ? "end" : "middle";
             return (
@@ -386,7 +390,8 @@ export function PriceChart({
           width={width}
           height={height}
           timeZone={timeZone}
-          zoneLabel={zoneLabel}
+          timeText={elapsedTime ? timeText(hovered.t) : undefined}
+          zoneLabel={timeZoneLabel ?? zoneAt(timeZone, hovered.t)}
           formatPrice={formatPrice}
           provider={providerOf(hovered.providerId)}
         />
@@ -407,6 +412,7 @@ function PriceTooltip({
   height,
   timeZone,
   zoneLabel,
+  timeText,
   formatPrice,
   provider,
 }: {
@@ -417,6 +423,7 @@ function PriceTooltip({
   height: number;
   timeZone: string;
   zoneLabel: string;
+  timeText?: string;
   formatPrice: (price: number) => string;
   provider?: { name: string; logo?: string; color?: string };
 }) {
@@ -426,7 +433,7 @@ function PriceTooltip({
   return (
     <ChartTooltip left={Math.max(0, left)} top={top} className="w-max max-w-60">
       <div className="text-muted-foreground tabular-nums">
-        {formatClock(point.t, timeZone, { milliseconds: true })} {zoneLabel}
+        {timeText ?? `${formatClock(point.t, timeZone, { milliseconds: true })} ${zoneLabel}`}
       </div>
       <div
         className={cn(

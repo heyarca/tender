@@ -1,3 +1,4 @@
+import { timeZoneLabel as zoneAt } from "@/lib/tender/time-zone";
 import type { ContractSpec, FieldSpec } from "@/lib/registry";
 import { readField } from "@/lib/registry";
 import { cn } from "@/lib/utils";
@@ -116,12 +117,12 @@ export function ReadingMeta({
   reading: FieldsReading;
   label: string;
   timeZone: string;
-  timeZoneLabel: string;
+  timeZoneLabel?: string;
 }) {
   return (
     <>
       <span className="truncate tabular-nums">
-        Source {formatClock(reading.sourceTimestamp, timeZone)} {timeZoneLabel}
+        Source {formatClock(reading.sourceTimestamp, timeZone)} {timeZoneLabel ?? zoneAt(timeZone, reading.sourceTimestamp)}
       </span>
       <span aria-hidden="true" className="text-faint">
         ·
@@ -149,7 +150,7 @@ export function FieldsResult({
   points = [],
   providers,
   timeZone = "UTC",
-  timeZoneLabel = "UTC",
+  timeZoneLabel,
   chartHeight = 96,
   showMeta = true,
   className,
@@ -181,7 +182,7 @@ export function FieldsResult({
         {reading ? (
           <ReadingMeta reading={reading} label={contract.freshness.label} timeZone={timeZone} timeZoneLabel={timeZoneLabel} />
         ) : (
-          <span>Run a request to see the result</span>
+          <span>No result yet. The next request shows it here.</span>
         )}
       </ResultStatusLine>
 

@@ -14,7 +14,7 @@ import {
 import { useMemo, type ReactNode } from "react";
 import { CommandPalette, type CommandPaletteGroup } from "@/components/shell/command-palette";
 import { focusSection, MARKET_SECTIONS, useSelectedProvider } from "@/components/market/market-ui";
-import { CATEGORIES, getGroup, listMarkets } from "@/lib/registry";
+import { CATEGORIES, getGroup, getMarketSpec, listMarkets } from "@/lib/registry";
 import { format, isMarketId, PREFERENCE_LABELS, type MarketId, type MarketView, type RoutingPreference } from "@/lib/tender";
 import type { TenderActions } from "@/lib/tender/client";
 import { afterDialogClose } from "./after-dialog-close";
@@ -109,19 +109,21 @@ export function pageGroups({ view, actions, onOpenApi, onSelectProvider }: Palet
       items: [
         {
           id: "action:run",
-          label: "Run request",
+          label: getMarketSpec(marketId)?.source === "upstream" ? "Request options" : "Run request",
           icon: <Play />,
           shortcut: ["⌘", "↵"],
           keywords: ["send"],
-          onSelect: () => actions.runRequest(marketId),
+          onSelect: () => getMarketSpec(marketId)?.source === "upstream"
+            ? afterDialogClose(() => focusSection("credits"))
+            : actions.runRequest(marketId),
         },
-        {
+        ...(getMarketSpec(marketId)?.source !== "upstream" ? [{
           id: "action:auto-run",
           label: view.autoRun ? "Turn off Auto-run" : "Turn on Auto-run",
           description: "Every 2 s",
           icon: <Repeat />,
           onSelect: () => actions.setAutoRun(marketId, !view.autoRun),
-        },
+        }] : []),
         ...(pinned
           ? [
               {

@@ -4,6 +4,8 @@
  *
  * Import as a namespace: `import { format } from "@/lib/tender"` → `format.price(18)`.
  */
+import { timeZoneLabel } from "./time-zone";
+export { timeZoneLabel } from "./time-zone";
 import { PRICE_UNIT } from "./constants";
 import type { MarketTimeZone } from "./types";
 
@@ -159,11 +161,6 @@ export function compass(degrees: number): string {
 // Time
 // ---------------------------------------------------------------------------
 
-/** Short label of a market time zone: "PT" or "UTC". */
-export function timeZoneLabel(timeZone: MarketTimeZone): string {
-  return timeZone === "UTC" ? "UTC" : "PT";
-}
-
 const dateTimeFormats = new Map<string, Intl.DateTimeFormat>();
 function zonedParts(ms: number, timeZone: string, withDate: boolean): Record<string, string> {
   const key = `${timeZone}:${withDate}`;
@@ -213,7 +210,7 @@ export interface TimeOptions {
  * UTC: "18:04:31.220 UTC".
  */
 export function time(ms: number, timeZone: MarketTimeZone, options: TimeOptions = {}): string {
-  const label = options.zoneLabel === false ? "" : ` ${timeZoneLabel(timeZone)}`;
+  const label = options.zoneLabel === false ? "" : ` ${timeZoneLabel(timeZone, ms)}`;
   if (timeZone === "UTC") {
     const p = utcParts(ms);
     const withSeconds = options.seconds ?? true;

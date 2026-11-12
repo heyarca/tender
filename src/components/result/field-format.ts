@@ -1,3 +1,4 @@
+import { timeZoneLabel as zoneAt } from "@/lib/tender/time-zone";
 import type { FieldSpec } from "@/lib/registry";
 import { formatUsd } from "@/components/viz/format";
 
@@ -76,7 +77,7 @@ export function formatTimestamp(t: number, timeZone: string, timeZoneLabel?: str
     minute: "2-digit",
     hourCycle: "h23",
   }).format(t);
-  return timeZoneLabel ? `${text} ${timeZoneLabel}` : text;
+  return `${text} ${timeZoneLabel ?? zoneAt(timeZone, t)}`;
 }
 
 /** Calendar date (`2026-11-12` → `Nov 12, 2026`), read in UTC so the day never shifts. */

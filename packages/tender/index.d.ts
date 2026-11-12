@@ -83,6 +83,8 @@ export interface TenderPaymentRequirements {
 export interface TenderCallResult {
   status: number;
   provider: string | null;
+  /** Display name from market metadata, or null when the provider is unknown. */
+  providerName: string | null;
   /** Contract-shaped result (`response.data`). */
   data: unknown;
   /** Credits charged for this request and the balance after it, in micro-USD (1 USD = 1,000,000). */

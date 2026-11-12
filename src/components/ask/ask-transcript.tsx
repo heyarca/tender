@@ -1,10 +1,11 @@
 "use client";
 
-import { CircleCheck, LoaderCircle, TriangleAlert } from "lucide-react";
+import { CircleCheck, ExternalLink, LoaderCircle, TriangleAlert } from "lucide-react";
 import { getToolName, isToolUIPart, type ChatStatus } from "ai";
 
 import { Button } from "@/components/ui/button";
 import type { AskUIMessage, AskUITools } from "@/lib/agent/types";
+import { validatedInvoiceUrl } from "@/lib/agent/invoice-link";
 import { cn } from "@/lib/utils";
 
 import { SpendingLimitCard, TopUpCard } from "./ask-cards";
@@ -20,8 +21,9 @@ function ActivityRow({ activity }: { activity: Activity }) {
         activity.tone === "error" ? "text-negative-text" : "text-muted-foreground",
       )}
       data-tone={activity.tone}
+      role={activity.tone === "pending" ? "status" : undefined}
     >
-      {activity.tone === "pending" ? <LoaderCircle aria-hidden="true" className="animate-spin" /> : null}
+      {activity.tone === "pending" ? <LoaderCircle aria-hidden="true" className="animate-spin motion-reduce:animate-none" /> : null}
       {activity.tone === "done" ? <CircleCheck aria-hidden="true" className="text-primary-strong" /> : null}
       {activity.tone === "error" ? <TriangleAlert aria-hidden="true" /> : null}
       <span className="min-w-0">{activity.text}</span>
@@ -59,11 +61,24 @@ function AssistantMessage({
         if (part.type === "tool-request_spending_limit" && part.state === "output-available" && part.output.automatic_top_ups) {
           return <SpendingLimitCard key={key} input={part.input} output={part.output} />;
         }
-        if (part.type === "tool-top_up" && part.state === "output-available" && "approve_url" in part.output) {
+        if (part.type === "tool-top_up" && part.state === "output-available" && part.output.approve_url !== undefined) {
           return <TopUpCard key={key} output={part.output} />;
         }
-        const activity = toolActivity(getToolName(part), part);
-        return activity ? <ActivityRow key={key} activity={activity} /> : null;
+        const name = getToolName(part);
+        const activity = toolActivity(name, part);
+        const invoiceUrl = name === "paypal_send_invoice" && part.state === "output-available"
+          ? validatedInvoiceUrl((part.output as { invoice_url?: unknown } | undefined)?.invoice_url)
+          : null;
+        return activity ? (
+          <div key={key} className="flex flex-col gap-2">
+            <ActivityRow activity={activity} />
+            {invoiceUrl ? (
+              <a href={invoiceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-body font-medium text-primary-strong underline underline-offset-2">
+                Open PayPal invoice <ExternalLink aria-hidden="true" className="size-3.5" />
+              </a>
+            ) : null}
+          </div>
+        ) : null;
       })}
     </div>
   );
@@ -80,7 +95,14 @@ export interface AskTranscriptProps {
 /** Chat transcript: user bubbles, assistant text, tool activity rows, and approval cards. */
 export function AskTranscript({ messages, status, error, onRetry, onLimitAnswer }: AskTranscriptProps) {
   const last = messages.at(-1);
-  const waiting = status === "submitted" || (status === "streaming" && last?.role === "assistant" && last.parts.every((part) => part.type === "step-start"));
+  const busy = status === "submitted" || status === "streaming";
+  const parts = last?.role === "assistant" ? last.parts : [];
+  const activeTool = parts.some((part) => isToolUIPart(part) && (part.state === "input-streaming" || part.state === "input-available"));
+  const lastTool = parts.filter(isToolUIPart).at(-1);
+  const pendingText = lastTool && ["list_markets", "get_market", "apply_policy"].includes(getToolName(lastTool))
+    ? "Preparing your routing and spending approval…"
+    : "Reviewing your request…";
+  const waiting = busy && !activeTool;
   return (
     <div className="flex flex-col gap-5">
       {messages.map((message) =>
@@ -95,7 +117,7 @@ export function AskTranscript({ messages, status, error, onRetry, onLimitAnswer 
           <AssistantMessage key={message.id} message={message} onLimitAnswer={onLimitAnswer} />
         ),
       )}
-      {waiting ? <ActivityRow activity={{ tone: "pending", text: "Thinking…" }} /> : null}
+      {waiting ? <ActivityRow activity={{ tone: "pending", text: pendingText }} /> : null}
       {error ? (
         <div className="flex items-center justify-between gap-3 rounded-lg border border-negative/30 bg-negative-bg px-3 py-2 text-caption text-negative-text">
           Ask Tender could not answer.

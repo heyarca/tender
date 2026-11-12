@@ -23,7 +23,7 @@ export interface ResultRequest {
   source?: ResultSource;
 }
 
-export type ResultSource = "ask-tender" | "credits";
+export type ResultSource = "ask-tender" | "credits" | "usdc";
 
 export type WeatherCondition =
   | "clear"

@@ -13,7 +13,7 @@ export function usePaidRequest(market: PaymentMarket) {
   const [stage, setStage] = useState<PaidRequestStage>("idle");
   const inFlight = useRef(false);
   const run = useCallback(async (options?: PaidRequestOptions | PaymentPolicy): Promise<PaidRequestResult | null> => {
-    const requestOptions: PaidRequestOptions = options && ("policy" in options || "conditions" in options) ? options as PaidRequestOptions : { policy: options as PaymentPolicy | undefined };
+    const requestOptions: PaidRequestOptions = options && ("policy" in options || "conditions" in options || "params" in options) ? options as PaidRequestOptions : { policy: options as PaymentPolicy | undefined };
     if (inFlight.current) return null;
     inFlight.current = true;
     setPending(true);

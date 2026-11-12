@@ -243,7 +243,7 @@ describe("CopyButton", () => {
 describe("Display primitives", () => {
   it("ProviderLogo falls back to the first letter", () => {
     const { container, rerender } = render(<ProviderLogo name="Kelpwave" />);
-    expect(container.textContent).toBe("N");
+    expect(container.textContent).toBe("K");
     rerender(<ProviderLogo name="Fernline" src="/providers/fernline.svg" decorative={false} />);
     expect(screen.getByRole("img", { name: "Fernline" })).toBeTruthy();
     expect(container.querySelector("img")?.getAttribute("src")).toBe("/providers/fernline.svg");
