@@ -80,10 +80,10 @@ Keep USDC/x402 as an "also supports stablecoins" footnote, off the main demo pat
 - [x] **Third-party trademarks in the product:** every provider is fictional except our own Arca Labs and
       THE ZONE BIO, with original logos ([`provider-logos.md`](provider-logos.md)). The README screenshot
       shows the current landing.
-- [ ] **Third-party trademarks in media:** the landing demo video (`public/demo.mp4`) and its poster
-      show third-party names and logos (a Cloudflare outage headline, a TechCrunch clipping, old provider
-      tables). Replace them, or keep them off the submission path.
-- [ ] Video: our own footage, screen recording, royalty-free or no music.
+- [x] **Third-party trademarks in media:** `public/demo.mp4` and its poster are the PayPal-edition
+      walkthrough recorded on production on Nov 12 (fictional providers only), the same cut as the
+      Devpost video.
+- [x] Video: our own screen recording, narration generated with ElevenLabs, no music.
 - [x] Hosted demo at https://tender.heyarca.app with a PayPal **sandbox buyer account** (email +
       password, in the Devpost testing instructions only, never in the repo), and a "Start over" button
       (Account page) so judges start clean.
