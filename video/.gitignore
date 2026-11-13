@@ -1,0 +1,9 @@
+node_modules/
+capture/clips/
+capture/work/
+capture/manifest.json
+comp/src/timeline.json
+comp/placeholder/
+comp/qa-tmp/
+comp/*.log
+out/

@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Demo video tooling has its own dependencies (see video/README.md).
+    "video/**",
   ]),
 ]);
 

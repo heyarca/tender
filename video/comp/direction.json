@@ -1,0 +1,920 @@
+{
+  "order": [
+    "s01_open",
+    "s02_markets",
+    "s03_routing",
+    "s04_checkout",
+    "s05_ask",
+    "s06_vault",
+    "s07_bidding",
+    "s08_payouts",
+    "s09_agents",
+    "s10_close"
+  ],
+  "title": {
+    "dur": 2.1,
+    "dissolve": 0.5,
+    "text": "Make APIs compete for your traffic."
+  },
+  "endCard": {
+    "minDur": 4.5
+  },
+  "defaults": {
+    "windowWidth": 0.78,
+    "wordsPerSecond": 2.6,
+    "voLead": 0.3,
+    "tail": 0.35,
+    "sceneXfade": 0.3,
+    "captionMaxChars": 84,
+    "captionHold": 0.25,
+    "maxSpeed": 2.5,
+    "rampStep": 0.3,
+    "waitKeep": 1.2,
+    "waitRampMax": 6.0,
+    "waitCutKeepBefore": 0.7,
+    "waitCutKeepAfter": 0.5,
+    "cutDissolveFrames": 8,
+    "maxZoom": 1.9,
+    "fitWidth": 0.72,
+    "fitHeight": 0.62,
+    "cameraMove": 1.0,
+    "cameraArriveEarly": 0.25,
+    "musicGap": 0.22,
+    "musicUnderVo": 0.07,
+    "duckAttack": 0.25,
+    "duckRelease": 0.6,
+    "musicFadeIn": 1.0,
+    "musicFadeOut": 2.5,
+    "popupHost": "www.sandbox.paypal.com",
+    "firstZoomAt": 2.0,
+    "redactColor": "#f7fafa",
+    "captionZone": 150,
+    "chapterDur": 2.7
+  },
+  "scenes": {
+    "s01_open": {
+      "in": 0.0,
+      "camera": [
+        {
+          "at": "mark:route_switch",
+          "arrive": 0.6,
+          "rect": {
+            "x": 100,
+            "y": 470,
+            "w": 1240,
+            "h": 430
+          }
+        },
+        {
+          "at": "mark:routing_card_full",
+          "arrive": 0.2,
+          "rect": "mark:routing_card_full",
+          "zoom": 1.5
+        },
+        {
+          "at": 13.8,
+          "arrive": 1.0,
+          "rect": "full"
+        }
+      ],
+      "voLead": -0.5
+    },
+    "s02_markets": {
+      "chapter": "API markets",
+      "in": 0.3,
+      "out": 23.8,
+      "edits": [
+        {
+          "from": 10.4,
+          "to": 13.6,
+          "speed": 2.5
+        },
+        {
+          "from": 15.0,
+          "to": 17.6,
+          "cut": true
+        },
+        {
+          "from": 19.9,
+          "to": 22.6,
+          "cut": true
+        }
+      ],
+      "sync": [
+        {
+          "phrase": "Each provider bids",
+          "at": "mark:directory_grid",
+          "lead": 0.3,
+          "holdAt": 1.85
+        },
+        {
+          "phrase": "The directory runs on AG Grid",
+          "at": "mark:quick_filter",
+          "lead": 2.0,
+          "holdAt": 13.7
+        }
+      ],
+      "camera": [
+        {
+          "at": 0.9,
+          "arrive": 2.4,
+          "move": 2.4,
+          "rect": {
+            "x": 376,
+            "y": 420,
+            "w": 960,
+            "h": 260
+          },
+          "zoom": 1.3
+        },
+        {
+          "at": "mark:directory_grid",
+          "arrive": 0.3,
+          "rect": {
+            "x": 330,
+            "y": 420,
+            "w": 1030,
+            "h": 440
+          }
+        },
+        {
+          "at": "click:2",
+          "rect": {
+            "x": 110,
+            "y": 290,
+            "w": 820,
+            "h": 330
+          }
+        },
+        {
+          "at": "mark:sort_header-0.6",
+          "rect": {
+            "x": 376,
+            "y": 440,
+            "w": 960,
+            "h": 400
+          }
+        },
+        {
+          "at": "mark:sf_weather_row",
+          "arrive": 0.3,
+          "rect": {
+            "x": 377,
+            "y": 640,
+            "w": 1006,
+            "h": 170
+          },
+          "zoom": 1.4
+        }
+      ]
+    },
+    "s03_routing": {
+      "chapter": "Routing policy",
+      "in": 7.5,
+      "out": 28.6,
+      "edits": [
+        {
+          "from": 15.4,
+          "to": 18.1,
+          "speed": 2.0
+        },
+        {
+          "from": 21.8,
+          "to": 24.6,
+          "cut": true
+        }
+      ],
+      "sync": [
+        {
+          "phrase": "Tighten the latency limit",
+          "at": "click:2",
+          "lead": 0.4,
+          "holdAt": 13.9
+        },
+        {
+          "phrase": "Traffic moves to Kitefin",
+          "at": "mark:routing_summary",
+          "lead": 0.0
+        },
+        {
+          "phrase": "and Tender explains every exclusion",
+          "at": "mark:routing_decision_after",
+          "lead": 0.3
+        }
+      ],
+      "camera": [
+        {
+          "at": 7.6,
+          "rect": {
+            "x": 349,
+            "y": 110,
+            "w": 966,
+            "h": 330
+          }
+        },
+        {
+          "at": 11.6,
+          "rect": {
+            "x": 349,
+            "y": 150,
+            "w": 966,
+            "h": 610
+          }
+        },
+        {
+          "at": "mark:routing_policy_section",
+          "arrive": 0.3,
+          "rect": {
+            "x": 328,
+            "y": 100,
+            "w": 1008,
+            "h": 420
+          },
+          "zoom": 1.4
+        },
+        {
+          "at": "key:5",
+          "arrive": 0.2,
+          "rect": "mark:routing_summary",
+          "zoom": 1.45
+        },
+        {
+          "at": "mark:providers_grid_after",
+          "arrive": 0.1,
+          "rect": {
+            "x": 349,
+            "y": 160,
+            "w": 966,
+            "h": 640
+          }
+        },
+        {
+          "at": "mark:routing_decision_after",
+          "arrive": 0.6,
+          "rect": "mark:routing_decision_after"
+        }
+      ],
+      "redact": [
+        {
+          "rect": {
+            "x": 100,
+            "y": 284,
+            "w": 208,
+            "h": 76
+          },
+          "cloneDy": 82
+        }
+      ]
+    },
+    "s04_checkout": {
+      "chapter": "Fund with PayPal Checkout",
+      "in": 1.4,
+      "out": 93.6,
+      "edits": [
+        {
+          "from": 9.0,
+          "to": 16.4,
+          "cut": true
+        },
+        {
+          "from": 16.6,
+          "to": 18.3,
+          "speed": 1.5
+        },
+        {
+          "from": 19.15,
+          "to": 19.85,
+          "cut": true
+        },
+        {
+          "from": 19.9,
+          "to": 22.6,
+          "speed": 2.5
+        },
+        {
+          "from": 22.6,
+          "to": 53.5,
+          "cut": true
+        },
+        {
+          "from": 55.0,
+          "to": 58.2,
+          "cut": true
+        },
+        {
+          "from": 59.3,
+          "to": 62.6,
+          "cut": true
+        },
+        {
+          "from": 64.8,
+          "to": 68.5,
+          "cut": true
+        },
+        {
+          "from": 69.7,
+          "to": 78.7,
+          "cut": true
+        },
+        {
+          "from": 82.2,
+          "to": 91.0,
+          "cut": true
+        }
+      ],
+      "sync": [
+        {
+          "phrase": "Here we add ten dollars",
+          "at": "mark:add_funds_dialog",
+          "lead": 0.3
+        },
+        {
+          "phrase": "Tender creates the order",
+          "at": "open:1",
+          "lead": 0.3
+        },
+        {
+          "phrase": "the buyer approves it in PayPal",
+          "at": "mark:pp_review",
+          "lead": 0.4
+        },
+        {
+          "phrase": "and Tender captures the payment",
+          "at": "close:1",
+          "lead": 1.2
+        },
+        {
+          "phrase": "The balance changes only after",
+          "at": "mark:add_funds_success",
+          "lead": 0.3
+        },
+        {
+          "phrase": "Each request then pays",
+          "at": "mark:credits_card",
+          "lead": 0.2
+        }
+      ],
+      "camera": [
+        {
+          "at": "mark:add_funds_dialog+0.35",
+          "arrive": 0,
+          "rect": "mark:add_funds_dialog",
+          "zoom": 1.6
+        },
+        {
+          "at": "open:1+1.0",
+          "arrive": 0,
+          "rect": "popup:1"
+        },
+        {
+          "at": "mark:add_funds_success+0.1",
+          "arrive": 0,
+          "rect": "mark:add_funds_success",
+          "zoom": 1.5
+        },
+        {
+          "at": "mark:balance_chip_after",
+          "rect": "mark:balance_chip_after",
+          "zoom": 1.8
+        },
+        {
+          "at": "mark:credits_card",
+          "arrive": 0.2,
+          "rect": {
+            "x": 328,
+            "y": 100,
+            "w": 1008,
+            "h": 320
+          },
+          "zoom": 1.6
+        },
+        {
+          "at": "mark:credits_result",
+          "rect": {
+            "x": 349,
+            "y": 200,
+            "w": 966,
+            "h": 210
+          },
+          "zoom": 1.75
+        },
+        {
+          "at": 91.0,
+          "arrive": 0,
+          "move": 0.6,
+          "rect": {
+            "x": 232,
+            "y": 250,
+            "w": 976,
+            "h": 420
+          },
+          "zoom": 1.3
+        },
+        {
+          "at": "mark:transactions_grid",
+          "arrive": 0.2,
+          "rect": {
+            "x": 232,
+            "y": 330,
+            "w": 976,
+            "h": 330
+          },
+          "zoom": 1.45
+        }
+      ],
+      "redact": [
+        {
+          "to": 75.3,
+          "rect": {
+            "x": 100,
+            "y": 728,
+            "w": 208,
+            "h": 76
+          },
+          "cloneDy": 82
+        },
+        {
+          "from": 76.5,
+          "to": 86.6,
+          "rect": {
+            "x": 100,
+            "y": 284,
+            "w": 208,
+            "h": 76
+          },
+          "cloneDy": 82
+        },
+        {
+          "from": 78.0,
+          "to": 81.17,
+          "rect": {
+            "x": 318,
+            "y": 462,
+            "w": 1028,
+            "h": 373
+          }
+        },
+        {
+          "from": 78.0,
+          "to": 81.17,
+          "rect": {
+            "x": 318,
+            "y": 835,
+            "w": 962,
+            "h": 65
+          }
+        },
+        {
+          "from": 81.17,
+          "to": 86.6,
+          "rect": {
+            "x": 318,
+            "y": 433,
+            "w": 1028,
+            "h": 402
+          }
+        },
+        {
+          "from": 81.17,
+          "to": 86.6,
+          "rect": {
+            "x": 318,
+            "y": 835,
+            "w": 962,
+            "h": 65
+          }
+        }
+      ],
+      "cursorHide": [
+        {
+          "from": 19.15,
+          "to": 53.5
+        }
+      ]
+    },
+    "s05_ask": {
+      "chapter": "Ask Tender",
+      "in": 1.0,
+      "out": 27.6,
+      "edits": [
+        {
+          "from": 6.0,
+          "to": 9.75,
+          "speed": 2.5
+        },
+        {
+          "from": 9.75,
+          "to": 16.8,
+          "cut": true
+        },
+        {
+          "from": 16.8,
+          "to": 18.5,
+          "speed": 2.5
+        },
+        {
+          "from": 19.9,
+          "to": 24.6,
+          "cut": true
+        }
+      ],
+      "sync": [
+        {
+          "phrase": "Describe what your app needs",
+          "at": "mark:prompt_typing_start",
+          "lead": 0.3
+        },
+        {
+          "phrase": "The agent finds the market",
+          "at": "mark:prompt_sent",
+          "lead": 0.1
+        },
+        {
+          "phrase": "and asks for one approval",
+          "at": "mark:approval_card",
+          "lead": 0.3
+        }
+      ],
+      "camera": [
+        {
+          "at": "mark:prompt_typing_start",
+          "arrive": 0,
+          "rect": {
+            "x": 1020,
+            "y": 620,
+            "w": 420,
+            "h": 280
+          },
+          "zoom": 1.75
+        },
+        {
+          "at": "mark:prompt_sent+0.5",
+          "arrive": 0,
+          "rect": {
+            "x": 1020,
+            "y": 0,
+            "w": 420,
+            "h": 620
+          }
+        },
+        {
+          "at": "mark:approval_card",
+          "arrive": 0.4,
+          "rect": "mark:approval_card",
+          "zoom": 1.75
+        }
+      ],
+      "redact": [
+        {
+          "rect": {
+            "x": 100,
+            "y": 728,
+            "w": 208,
+            "h": 76
+          },
+          "cloneDy": 82
+        }
+      ]
+    },
+    "s06_vault": {
+      "chapter": "Automatic top-ups with PayPal Vault",
+      "startCamera": "keep",
+      "xfade": 0.2,
+      "in": 1.8,
+      "out": 91.2,
+      "edits": [
+        {
+          "from": 3.4,
+          "to": 9.5,
+          "cut": true
+        },
+        {
+          "from": 11.2,
+          "to": 55.9,
+          "cut": true
+        },
+        {
+          "from": 57.4,
+          "to": 59.4,
+          "cut": true
+        },
+        {
+          "from": 61.9,
+          "to": 63.9,
+          "cut": true
+        },
+        {
+          "from": 66.0,
+          "to": 67.3,
+          "cut": true
+        },
+        {
+          "from": 67.3,
+          "to": 73.8,
+          "speed": 2.5
+        },
+        {
+          "from": 73.8,
+          "to": 87.9,
+          "cut": true
+        }
+      ],
+      "sync": [
+        {
+          "phrase": "Approving saves your PayPal account",
+          "at": "click:2",
+          "lead": 0.6
+        },
+        {
+          "phrase": "This account started at zero",
+          "at": "mark:limit_approved_card",
+          "lead": 0.0
+        },
+        {
+          "phrase": "and reported the provider",
+          "at": "mark:panel_final",
+          "lead": 0.3
+        }
+      ],
+      "camera": [
+        {
+          "at": 1.8,
+          "rect": {
+            "x": 1036,
+            "y": 196,
+            "w": 388,
+            "h": 356
+          },
+          "zoom": 1.75
+        },
+        {
+          "at": "open:1+0.6",
+          "arrive": 0,
+          "rect": "popup:1"
+        },
+        {
+          "at": "mark:limit_approved_card",
+          "arrive": 0.3,
+          "rect": {
+            "x": 1020,
+            "y": 100,
+            "w": 420,
+            "h": 330
+          },
+          "zoom": 1.75
+        },
+        {
+          "at": "mark:panel_final",
+          "arrive": 0.0,
+          "rect": {
+            "x": 1020,
+            "y": 300,
+            "w": 420,
+            "h": 380
+          },
+          "zoom": 1.9
+        }
+      ],
+      "redact": [
+        {
+          "rect": {
+            "x": 100,
+            "y": 728,
+            "w": 208,
+            "h": 76
+          },
+          "cloneDy": 82
+        }
+      ],
+      "tail": 1.4,
+      "cursorHide": [
+        {
+          "from": "mark:panel_final-0.3",
+          "to": "end"
+        }
+      ]
+    },
+    "s07_bidding": {
+      "chapter": "Provider bidding agents",
+      "in": 0.8,
+      "out": 30.6,
+      "edits": [
+        {
+          "from": 2.6,
+          "to": 3.95,
+          "cut": true
+        },
+        {
+          "from": 6.99,
+          "to": 22.36,
+          "cut": true
+        },
+        {
+          "at": 25.9,
+          "hold": 5.0
+        },
+        {
+          "from": 26.0,
+          "to": 29.3,
+          "cut": true
+        }
+      ],
+      "sync": [
+        {
+          "phrase": "In each bidding round",
+          "at": "click:1",
+          "lead": 0.3
+        }
+      ],
+      "redact": [
+        {
+          "rect": {
+            "x": 100,
+            "y": 284,
+            "w": 208,
+            "h": 76
+          },
+          "cloneDy": 82
+        },
+        {
+          "from": 3.86,
+          "to": 22.45,
+          "rect": {
+            "x": 480,
+            "y": 211,
+            "w": 204,
+            "h": 26
+          }
+        },
+        {
+          "from": 22.35,
+          "to": 28.5,
+          "rect": {
+            "x": 535,
+            "y": 211,
+            "w": 204,
+            "h": 26
+          }
+        }
+      ],
+      "camera": [
+        {
+          "at": 0.8,
+          "rect": "mark:providers_grid_before"
+        },
+        {
+          "at": "mark:bidding_section",
+          "arrive": 0.2,
+          "rect": "mark:bidding_section"
+        },
+        {
+          "at": "mark:bid_history",
+          "arrive": 0.3,
+          "rect": {
+            "x": 328,
+            "y": 236,
+            "w": 1008,
+            "h": 260
+          },
+          "zoom": 1.45
+        },
+        {
+          "at": 25.9,
+          "arrive": 0,
+          "move": 3.5,
+          "rect": {
+            "x": 600,
+            "y": 236,
+            "w": 736,
+            "h": 260
+          },
+          "zoom": 1.65
+        },
+        {
+          "at": "mark:providers_grid_after",
+          "arrive": 0.2,
+          "rect": "mark:providers_grid_after"
+        }
+      ]
+    },
+    "s08_payouts": {
+      "chapter": "Provider payouts",
+      "in": 1.0,
+      "out": 38.4,
+      "edits": [
+        {
+          "from": 7.0,
+          "to": 8.5,
+          "cut": true
+        },
+        {
+          "from": 11.4,
+          "to": 16.9,
+          "speed": 2.5
+        },
+        {
+          "from": 17.5,
+          "to": 36.0,
+          "cut": true
+        }
+      ],
+      "sync": [
+        {
+          "phrase": "Settling sends one PayPal Payouts batch",
+          "at": "click:1",
+          "lead": 0.4
+        },
+        {
+          "phrase": "and Tender tracks each payout",
+          "at": "mark:payout_batches",
+          "lead": 0.2
+        },
+        {
+          "phrase": "PayPal handles both sides",
+          "at": "mark:status_success",
+          "lead": 0.3
+        }
+      ],
+      "camera": [
+        {
+          "at": "mark:settle_button",
+          "arrive": 0.2,
+          "rect": {
+            "x": 860,
+            "y": 60,
+            "w": 480,
+            "h": 260
+          },
+          "zoom": 1.6
+        },
+        {
+          "at": "mark:settle_notice",
+          "arrive": 0.1,
+          "rect": {
+            "x": 104,
+            "y": 60,
+            "w": 1232,
+            "h": 420
+          }
+        },
+        {
+          "at": "mark:payout_batches",
+          "arrive": 0.0,
+          "rect": {
+            "x": 290,
+            "y": 690,
+            "w": 1050,
+            "h": 180
+          },
+          "zoom": 1.75
+        }
+      ],
+      "tail": 1.0
+    },
+    "s09_agents": {
+      "chapter": "Tender for coding agents",
+      "in": 1.0,
+      "out": 14.0,
+      "edits": [
+        {
+          "from": 5.7,
+          "to": 7.0,
+          "cut": true
+        },
+        {
+          "from": 9.4,
+          "to": 11.0,
+          "cut": true
+        }
+      ],
+      "camera": [
+        {
+          "at": "mark:install_command",
+          "arrive": 0.0,
+          "rect": {
+            "x": 600,
+            "y": 60,
+            "w": 740,
+            "h": 160
+          },
+          "zoom": 1.75
+        },
+        {
+          "at": 7.0,
+          "arrive": 0,
+          "move": 0.6,
+          "rect": "full"
+        },
+        {
+          "at": "mark:api_keys",
+          "arrive": 0.3,
+          "rect": "mark:api_keys"
+        }
+      ]
+    },
+    "s10_close": {
+      "kind": "end",
+      "tail": 1.8
+    }
+  }
+}

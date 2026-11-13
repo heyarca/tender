@@ -1,0 +1,26 @@
+{
+  "name": "tender-demo-comp",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "timeline": "bun scripts/build-timeline.ts",
+    "render": "bun scripts/render.ts"
+  },
+  "dependencies": {
+    "@remotion/bundler": "4.0.543",
+    "@remotion/cli": "4.0.543",
+    "@remotion/media": "4.0.543",
+    "@remotion/renderer": "4.0.543",
+    "react": "19",
+    "react-dom": "19",
+    "remotion": "4.0.543"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.4",
+    "@types/react": "19",
+    "@types/react-dom": "19",
+    "playwright-core": "^1.65.0",
+    "typescript": "^7.0.2"
+  }
+}
